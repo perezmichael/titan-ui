@@ -499,7 +499,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                     <button className="text-gray-400 hover:text-gray-600 p-2">
                       <Paperclip className="w-4 h-4" />
                     </button>
-                    <button className="w-8 h-8 bg-gray-300 hover:bg-gray-400 text-white rounded flex items-center justify-center">
+                    <button className="w-8 h-8 bg-[#455a4f] hover:bg-[#3a4a42] text-white rounded flex items-center justify-center transition-colors">
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M2 8L14 8M14 8L8 2M14 8L8 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -581,7 +581,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                     </div>
                   </div>
                   
-                  <button className="w-8 h-8 bg-gray-400 hover:bg-gray-500 text-white rounded flex items-center justify-center flex-shrink-0">
+                  <button className="w-8 h-8 bg-[#455a4f] hover:bg-[#3a4a42] text-white rounded flex items-center justify-center flex-shrink-0 transition-colors">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                       <path d="M2 8L14 8M14 8L8 2M14 8L8 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

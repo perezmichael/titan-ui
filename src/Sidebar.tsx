@@ -1,5 +1,6 @@
-import { Search, Plus, Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TitanLogo } from './TitanLogo';
+import { Button } from './ui/button';
 
 interface Conversation {
   id: string;
@@ -172,68 +173,77 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
       <div className={`border-b border-gray-200 flex flex-col items-center ${collapsed ? 'py-4 gap-4' : 'p-3 gap-2'}`}>
         {!collapsed ? (
           <div className="flex items-center gap-2 w-full">
-            <button className="p-1 hover:bg-gray-200 rounded" onClick={onToggleCollapse}>
-              <ChevronLeft className="w-4 h-4 text-gray-600" />
-            </button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-600" onClick={onToggleCollapse}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
             <TitanLogo className="h-4" collapsed={false} />
           </div>
         ) : (
           <>
             <TitanLogo className="h-4" collapsed={true} />
-            <button className="p-1.5 hover:bg-gray-200 rounded flex justify-center" onClick={onToggleCollapse}>
-              <ChevronRight className="w-4 h-4 text-gray-600" />
-            </button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-gray-600" onClick={onToggleCollapse}>
+              <ChevronRight className="w-4 h-4" />
+            </Button>
           </>
         )}
       </div>
 
       {/* Main Menu */}
-      <div className={collapsed ? 'py-4 flex flex-col items-center' : 'py-2'}>
+      <div className={`${collapsed ? 'py-4 flex flex-col items-center gap-1' : 'py-2 px-2 flex flex-col gap-0.5'}`}>
+        {/* New Chat — primary action, visually distinct */}
         <button
-          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start'} hover:bg-gray-200/50 flex items-center gap-3 ${
-            activeView === 'chat' ? 'bg-gray-200/70' : ''
+          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start rounded-lg border'} flex items-center gap-2.5 transition-colors ${
+            activeView === 'chat'
+              ? 'bg-[#455a4f] border-[#455a4f] text-white'
+              : 'border-gray-300 bg-white hover:bg-gray-100 text-gray-700'
           }`}
-          onClick={() => {
-            onViewChange('chat');
-            onConversationSelect('new-chat');
-          }}
+          onClick={() => { onViewChange('chat'); onConversationSelect('new-chat'); }}
           title={collapsed ? "New Chat" : ""}
         >
-          <MessageSquare className="w-4 h-4 text-gray-700 flex-shrink-0" />
-          {!collapsed && <span className="text-xs font-medium text-gray-900">New Chat</span>}
+          <Plus className={`w-4 h-4 flex-shrink-0 ${activeView === 'chat' ? 'text-white' : 'text-gray-600'}`} />
+          {!collapsed && <span className="text-xs font-medium">New Chat</span>}
         </button>
-        
+
+        {/* Agents */}
         <button
-          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start'} hover:bg-gray-200/50 flex items-center gap-3 ${
-            activeView === 'agents' || activeView === 'commercial-lending' ? 'bg-[#455a4f]' : ''
+          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start rounded-lg'} flex items-center gap-2.5 transition-colors ${
+            activeView === 'agents' || activeView === 'commercial-lending' || activeView === 'tprm'
+              ? 'bg-[#455a4f] text-white'
+              : 'hover:bg-gray-200/70 text-gray-700'
           }`}
           onClick={() => onViewChange('agents')}
           title={collapsed ? "Agents" : ""}
         >
-          <Bot className={`w-4 h-4 flex-shrink-0 ${activeView === 'agents' || activeView === 'commercial-lending' ? 'text-white' : 'text-gray-700'}`} />
-          {!collapsed && <span className={`text-xs font-medium ${activeView === 'agents' || activeView === 'commercial-lending' ? 'text-white' : 'text-gray-900'}`}>Agents</span>}
+          <Bot className={`w-4 h-4 flex-shrink-0 ${activeView === 'agents' || activeView === 'commercial-lending' || activeView === 'tprm' ? 'text-white' : 'text-gray-700'}`} />
+          {!collapsed && <span className="text-xs font-medium">Agents</span>}
         </button>
-        
+
+        {/* Connectors */}
         <button
-          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start'} hover:bg-gray-200/50 flex items-center gap-3 ${
-            activeView === 'connectors' ? 'bg-gray-200/70' : ''
+          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start rounded-lg'} flex items-center gap-2.5 transition-colors ${
+            activeView === 'connectors' || activeView === 'knowledge-base'
+              ? 'bg-[#455a4f] text-white'
+              : 'hover:bg-gray-200/70 text-gray-700'
           }`}
           onClick={() => onViewChange('connectors')}
           title={collapsed ? "Connectors" : ""}
         >
-          <Plug className="w-4 h-4 text-gray-700 flex-shrink-0" />
-          {!collapsed && <span className="text-xs font-medium text-gray-900">Connectors</span>}
+          <Plug className={`w-4 h-4 flex-shrink-0 ${activeView === 'connectors' || activeView === 'knowledge-base' ? 'text-white' : 'text-gray-700'}`} />
+          {!collapsed && <span className="text-xs font-medium">Connectors</span>}
         </button>
-        
+
+        {/* Uploads */}
         <button
-          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start'} hover:bg-gray-200/50 flex items-center gap-3 ${
-            activeView === 'uploads' ? 'bg-gray-200/70' : ''
+          className={`${collapsed ? 'w-10 h-10 rounded-lg justify-center' : 'w-full px-3 py-2 justify-start rounded-lg'} flex items-center gap-2.5 transition-colors ${
+            activeView === 'uploads'
+              ? 'bg-[#455a4f] text-white'
+              : 'hover:bg-gray-200/70 text-gray-700'
           }`}
           onClick={() => onViewChange('uploads')}
           title={collapsed ? "Your Uploads" : ""}
         >
-          <Upload className="w-4 h-4 text-gray-700 flex-shrink-0" />
-          {!collapsed && <span className="text-xs font-medium text-gray-900">Your Uploads</span>}
+          <Upload className={`w-4 h-4 flex-shrink-0 ${activeView === 'uploads' ? 'text-white' : 'text-gray-700'}`} />
+          {!collapsed && <span className="text-xs font-medium">Your Uploads</span>}
         </button>
       </div>
 

@@ -3,6 +3,7 @@ import { AtlasLogo } from './AtlasLogo';
 import { PowerBILogo } from './PowerBILogo';
 import { SharePointLogo } from './SharePointLogo';
 import { HelpjuiceLogo } from './HelpjuiceLogo';
+import { Button } from './ui/button';
 import { useState, useEffect } from 'react';
 
 interface ConnectedSystem {
@@ -321,7 +322,7 @@ export function ConnectorsView({ onDocumentSelect, initialConnector = null }: Co
               onClick={() => goToPage(page)}
               className={`px-2 py-1 text-xs border rounded ${
                 currentPage === page
-                  ? 'bg-blue-600 text-white border-blue-600'
+                  ? 'bg-[#455a4f] text-white border-[#455a4f]'
                   : 'border-gray-200 hover:bg-gray-50'
               }`}
             >
@@ -360,13 +361,14 @@ export function ConnectorsView({ onDocumentSelect, initialConnector = null }: Co
       <div className="flex-1 bg-[#f5f5f3] overflow-y-auto">
         <div className="max-w-6xl mx-auto p-8">
           {/* Back button and header */}
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setSelectedConnector(null)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-6 transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-600 mb-6 pl-0 hover:pl-0"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to all connectors
-          </button>
+          </Button>
 
           {/* Connector header */}
           <div className={`bg-white border rounded-lg p-6 mb-6 ${
@@ -548,8 +550,11 @@ export function ConnectorsView({ onDocumentSelect, initialConnector = null }: Co
                         
                       </div>
                     )}
-                    <div className="text-xs text-gray-600">
-                      <span className="font-medium">{system.documentCount}</span> files
+                    <div className="flex items-center justify-between">
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">{system.documentCount}</span> files
+                      </div>
+                      <span className="text-xs text-[#455a4f] font-medium">Browse →</span>
                     </div>
                   </div>
                 </div>

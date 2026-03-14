@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FileText, Download, Trash2, Upload as UploadIcon, MessageSquare, X, Search, ChevronDown, FileSpreadsheet, File } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface UploadedDocument {
   id: string;
@@ -208,20 +209,14 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
                     {selectedDocs.size} {selectedDocs.size === 1 ? 'document' : 'documents'} selected
                   </span>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleBulkDownload}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-                    >
+                    <Button variant="outline" size="sm" onClick={handleBulkDownload}>
                       <Download className="w-3.5 h-3.5" />
                       Download
-                    </button>
-                    <button
-                      onClick={handleBulkDelete}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-700 bg-white border border-red-300 rounded hover:bg-red-50 transition-colors"
-                    >
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleBulkDelete}>
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -299,20 +294,24 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex items-center justify-end gap-1">
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleDownloadSingle(doc)}
-                              className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
                               title="Download document"
+                              className="h-7 w-7 text-gray-500 hover:text-gray-700"
                             >
                               <Download className="w-3.5 h-3.5" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleDelete(doc.id)}
-                              className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                               title="Delete from memory"
+                              className="h-7 w-7 text-gray-500 hover:text-red-600 hover:bg-red-50"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </td>
                       </tr>
@@ -337,12 +336,9 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Delete Document</h3>
                 </div>
-                <button
-                  onClick={cancelDelete}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
+                <Button variant="ghost" size="icon" onClick={cancelDelete} className="h-7 w-7 text-gray-400">
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
               
               <p className="text-sm text-gray-600 mb-6">
@@ -350,18 +346,12 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
               </p>
               
               <div className="flex gap-3 justify-end">
-                <button
-                  onClick={cancelDelete}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
+                <Button variant="outline" onClick={cancelDelete}>
                   Cancel
-                </button>
-                <button
-                  onClick={() => confirmDelete(deleteConfirm)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                >
+                </Button>
+                <Button variant="destructive" onClick={() => confirmDelete(deleteConfirm)}>
                   Delete Document
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -380,12 +370,9 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">Delete {selectedDocs.size} Documents</h3>
                 </div>
-                <button
-                  onClick={() => setBulkDeleteConfirm(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
+                <Button variant="ghost" size="icon" onClick={() => setBulkDeleteConfirm(false)} className="h-7 w-7 text-gray-400">
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
               
               <p className="text-sm text-gray-600 mb-6">
@@ -393,18 +380,12 @@ export function UploadsView({ onDocumentSelect, onChatNavigate }: UploadsViewPro
               </p>
               
               <div className="flex gap-3 justify-end">
-                <button
-                  onClick={() => setBulkDeleteConfirm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
+                <Button variant="outline" onClick={() => setBulkDeleteConfirm(false)}>
                   Cancel
-                </button>
-                <button
-                  onClick={confirmBulkDelete}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
-                >
+                </Button>
+                <Button variant="destructive" onClick={confirmBulkDelete}>
                   Delete {selectedDocs.size} {selectedDocs.size === 1 ? 'Document' : 'Documents'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
