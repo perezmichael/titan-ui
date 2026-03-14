@@ -447,6 +447,27 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                 </p>
               </div>
 
+              {/* Suggested prompts */}
+              <div className="w-full max-w-2xl px-4 mb-6">
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { label: 'Regulatory', prompt: 'Summarize the key points of Regulation B (ECOA)' },
+                    { label: 'Compliance', prompt: 'What are our BSA/AML filing requirements?' },
+                    { label: 'Lending', prompt: 'What does our commercial lending policy say about covenant violations?' },
+                    { label: 'Risk', prompt: 'Summarize our third-party risk management policy' },
+                  ].map(({ label, prompt }) => (
+                    <button
+                      key={prompt}
+                      onClick={() => {}}
+                      className="text-left px-3 py-2.5 rounded-lg border border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50 transition-colors group"
+                    >
+                      <span className="block text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-0.5 group-hover:text-gray-500">{label}</span>
+                      <span className="text-xs text-gray-700 leading-snug">{prompt}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Input box positioned in center area */}
               <div className="w-full max-w-2xl px-4">
                 <div className="relative">

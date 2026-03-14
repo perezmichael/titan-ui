@@ -259,8 +259,28 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                 </Sheet>
               </div>
               
-              {/* Right side - Sources count, internet assisted indicator, and timestamp */}
+              {/* Right side - Assurance level, sources count, internet assisted indicator, and timestamp */}
               <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                {confidence && (
+                  <>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium uppercase tracking-wide ${getConfidenceBadgeColor(confidence)}`}>
+                      {confidence === 'High' && <CheckCircle2 className="w-3 h-3" />}
+                      {confidence === 'Medium' && <Info className="w-3 h-3" />}
+                      {confidence === 'Low' && <XCircle className="w-3 h-3" />}
+                      {confidence} confidence
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
+                {!confidence && confidenceThresholdPassed !== undefined && (
+                  <>
+                    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium uppercase tracking-wide ${confidenceThresholdPassed ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                      {confidenceThresholdPassed ? <CheckCircle2 className="w-3 h-3" /> : <Info className="w-3 h-3" />}
+                      {confidenceThresholdPassed ? 'Sufficient' : 'Limited'}
+                    </span>
+                    <span>•</span>
+                  </>
+                )}
                 {internetSearchAssisted && (
                   <>
                     <span className="text-gray-500">Internet search assisted</span>
