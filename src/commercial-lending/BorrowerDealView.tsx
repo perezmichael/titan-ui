@@ -65,6 +65,7 @@ interface KnowledgeBaseDoc {
 }
 
 export function BorrowerDealView({ borrower, onBack }: BorrowerDealViewProps) {
+  const [mobilePanelTab, setMobilePanelTab] = useState<'chat' | 'dossier'>('dossier');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -528,20 +529,35 @@ export function BorrowerDealView({ borrower, onBack }: BorrowerDealViewProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
       {/* Back Button - Full Width */}
-      <div className="px-6 py-3 border-b border-gray-200 bg-white">
+      <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors pl-8 sm:pl-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Portfolio
         </button>
+        {/* Mobile tab switcher */}
+        <div className="flex md:hidden bg-gray-100 rounded-lg p-0.5 gap-0.5">
+          <button
+            onClick={() => setMobilePanelTab('dossier')}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${mobilePanelTab === 'dossier' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'}`}
+          >
+            Dossier
+          </button>
+          <button
+            onClick={() => setMobilePanelTab('chat')}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${mobilePanelTab === 'chat' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'}`}
+          >
+            Chat
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Deal Intelligence Chat */}
-        <div className="w-[500px] flex flex-col bg-white border-r border-gray-200">
+        <div className={`flex flex-col bg-white border-r border-gray-200 md:w-[500px] w-full ${mobilePanelTab === 'chat' ? 'flex' : 'hidden md:flex'}`}>
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[#455a4f]" />
@@ -605,10 +621,10 @@ export function BorrowerDealView({ borrower, onBack }: BorrowerDealViewProps) {
         </div>
 
         {/* Right Side - Borrower Dossier */}
-        <div className="flex-1 flex flex-col bg-[#f5f5f3] relative">
+        <div className={`flex-1 flex flex-col bg-[#f5f5f3] relative w-full ${mobilePanelTab === 'dossier' ? 'flex' : 'hidden md:flex'}`}>
           {/* Scrollable Content */}
           <div className="flex-1 overflow-y-auto">
-            <div className="px-8 py-6">
+            <div className="px-4 sm:px-8 py-6">
             <div className="mb-6">
               {/* Borrower Name with Edit/Audit Icons */}
               <div className="group flex items-start gap-2 mb-2">
@@ -733,7 +749,7 @@ export function BorrowerDealView({ borrower, onBack }: BorrowerDealViewProps) {
               </div>
               
               {/* Key Info Grid */}
-              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 
                 
                 
@@ -914,7 +930,7 @@ export function BorrowerDealView({ borrower, onBack }: BorrowerDealViewProps) {
               />
               
               {/* Side Panel */}
-              <div className="fixed right-0 top-0 bottom-0 w-[400px] bg-white shadow-2xl z-50 flex flex-col">
+              <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col">
                 {(() => {
                   // Check both header fields and deal fields
                   const headerField = headerFields.find(f => f.id === selectedFieldForAudit);

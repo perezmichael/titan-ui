@@ -59,6 +59,7 @@ interface KnowledgeBaseDoc {
 }
 
 export function VendorProfile({ vendor, onBack }: VendorProfileProps) {
+  const [mobilePanelTab, setMobilePanelTab] = useState<'chat' | 'profile'>('profile');
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -1328,20 +1329,35 @@ export function VendorProfile({ vendor, onBack }: VendorProfileProps) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
       {/* Back Button - Full Width */}
-      <div className="px-6 py-3 border-b border-gray-200 bg-white">
+      <div className="px-4 sm:px-6 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors pl-8 sm:pl-0"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Vendors
         </button>
+        {/* Mobile tab switcher */}
+        <div className="flex md:hidden bg-gray-100 rounded-lg p-0.5 gap-0.5">
+          <button
+            onClick={() => setMobilePanelTab('profile')}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${mobilePanelTab === 'profile' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'}`}
+          >
+            Profile
+          </button>
+          <button
+            onClick={() => setMobilePanelTab('chat')}
+            className={`px-3 py-1.5 text-xs rounded-md transition-colors ${mobilePanelTab === 'chat' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-600'}`}
+          >
+            Chat
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Chat */}
-        <div className="w-[500px] flex flex-col bg-white border-r border-gray-200">
+        <div className={`flex flex-col bg-white border-r border-gray-200 md:w-[500px] w-full ${mobilePanelTab === 'chat' ? 'flex' : 'hidden md:flex'}`}>
           <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-gray-400" />
@@ -1412,8 +1428,8 @@ export function VendorProfile({ vendor, onBack }: VendorProfileProps) {
       </div>
 
       {/* Right Side - Vendor Dossier */}
-      <div className="flex-1 overflow-y-auto bg-[#f5f5f3]">
-        <div className="px-8 py-6">
+      <div className={`flex-1 overflow-y-auto bg-[#f5f5f3] w-full ${mobilePanelTab === 'profile' ? 'block' : 'hidden md:block'}`}>
+        <div className="px-4 sm:px-8 py-6">
           {/* Header */}
           <div className="mb-6">
             {!isEditingHeader ? (
@@ -2024,7 +2040,7 @@ export function VendorProfile({ vendor, onBack }: VendorProfileProps) {
               />
               
               {/* Side Panel */}
-              <div className="fixed right-0 top-0 bottom-0 w-[400px] bg-white shadow-2xl z-50 flex flex-col">
+              <div className="fixed right-0 top-0 bottom-0 w-full sm:w-[400px] bg-white shadow-2xl z-50 flex flex-col">
                 {(() => {
                   const field = extractedFields.find(f => f.id === selectedFieldForAudit);
                   if (!field) return null;

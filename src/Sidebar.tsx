@@ -1,5 +1,6 @@
 import { Search, Plus, Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TitanLogo } from './TitanLogo';
+import { useIsMobile } from './ui/use-mobile';
 
 interface Conversation {
   id: string;
@@ -27,6 +28,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeConversationId, onConversationSelect, activeView, onViewChange, collapsed, onToggleCollapse, uploadCompleted, uploadProgress, uploadStarted, agentContext }: SidebarProps) {
+  const isMobile = useIsMobile();
   const conversationGroups: ConversationGroup[] = [
     {
       title: 'TODAY',
@@ -167,7 +169,15 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
   const activeConversations = agentContext === 'commercial-lending' ? commercialLendingConversations : conversationGroups;
 
   return (
-    <div className={`bg-[#efeeeb] flex flex-col h-screen border-r border-gray-200 transition-all duration-300 ${collapsed ? 'w-[60px]' : 'w-[240px]'}`}>
+    <div className={`bg-[#efeeeb] flex flex-col h-screen border-r border-gray-200 transition-all duration-300 ${
+      isMobile
+        ? collapsed
+          ? 'w-0 overflow-hidden border-0'
+          : 'w-[240px] fixed inset-y-0 left-0 z-50 shadow-xl'
+        : collapsed
+          ? 'w-[60px]'
+          : 'w-[240px]'
+    }`}>
       {/* Header */}
       <div className={`border-b border-gray-200 flex flex-col items-center ${collapsed ? 'py-4 gap-4' : 'p-3 gap-2'}`}>
         {!collapsed ? (

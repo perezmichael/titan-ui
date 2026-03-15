@@ -633,22 +633,22 @@ export function VendorPortfolioList({ onVendorSelect, onBack }: VendorPortfolioL
   return (
     <>
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
-        <div className="flex items-center gap-4">
+      <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-4">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Agents
+            <span className="hidden sm:inline">Back to Agents</span>
           </button>
-          <div className="h-4 w-px bg-gray-300"></div>
-          <h1 className="text-xl text-gray-900">Third-Party Risk Management Agent</h1>
+          <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
+          <h1 className="text-base sm:text-xl text-gray-900 truncate">Third-Party Risk Management Agent</h1>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-6 py-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
         {/* Processing Indicator */}
         {isProcessingVendor && (
           <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
@@ -784,33 +784,30 @@ export function VendorPortfolioList({ onVendorSelect, onBack }: VendorPortfolioL
         </div>
 
         {/* Controls Bar */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-lg text-gray-900">
             {chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult ? 'Query Results' : 'Vendor Portfolio'}
           </h2>
           <div className="flex items-center gap-3">
             {!(chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult) && (
-              <>
-                <div className="relative w-80">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search vendors..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#455a4f] focus:border-transparent bg-white"
-                  />
-                </div>
-                
-              </>
+              <div className="relative flex-1 sm:w-80 sm:flex-none">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search vendors..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#455a4f] focus:border-transparent bg-white"
+                />
+              </div>
             )}
-            <button 
+            <button
               onClick={() => {
                 setShowNewVendorModal(true);
                 setNewVendorStep('method');
                 setUploadedVendorDocs([]);
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors flex-shrink-0"
             >
               <Plus className="w-4 h-4" />
               New Vendor

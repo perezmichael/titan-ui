@@ -6,7 +6,8 @@ import { UploadsView } from './UploadsView';
 import { AgentsView } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
 import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Menu } from 'lucide-react';
+import { useIsMobile } from './ui/use-mobile';
 
 interface SelectedDocument {
   id: string;
@@ -27,6 +28,14 @@ export default function App() {
   const [uploadStarted, setUploadStarted] = useState<boolean>(false);
   const hasStartedUploadRef = useRef<boolean>(false);
   const progressRef = useRef<number>(0);
+  const isMobile = useIsMobile();
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+    }
+  }, [isMobile]);
 
   // Handle upload progress - runs independently of which view is active
   useEffect(() => {
@@ -82,7 +91,23 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-[#f5f5f3]">
-      <Sidebar 
+      {/* Mobile: backdrop when sidebar open */}
+      {isMobile && !sidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/30 z-40"
+          onClick={() => setSidebarCollapsed(true)}
+        />
+      )}
+      {/* Mobile: hamburger button when sidebar is closed */}
+      {isMobile && sidebarCollapsed && (
+        <button
+          className="fixed top-3 left-3 z-30 p-2 bg-white border border-gray-200 rounded-lg shadow-sm"
+          onClick={() => setSidebarCollapsed(false)}
+        >
+          <Menu className="w-4 h-4 text-gray-600" />
+        </button>
+      )}
+      <Sidebar
         activeConversationId={activeConversationId}
         onConversationSelect={handleConversationSelect}
         activeView={activeView}
