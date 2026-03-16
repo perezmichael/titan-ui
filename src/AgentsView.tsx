@@ -1,4 +1,4 @@
-import { FileText, Plus, Settings, X, Trash2, UserPlus, ArrowLeft, Sparkles, Send } from 'lucide-react';
+import { FileText, Plus, Settings, X, Trash2, UserPlus, ArrowLeft, Sparkles, Send, ChevronRight, Clock } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -292,7 +292,130 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
     );
   }
 
-  // Main agents view
+  const enabledAgents = agents.filter(a => a.enabled);
+
+  const recentActivity: Record<string, { id: string; name: string; detail: string; meta: string; date: string }[]> = {
+    'commercial-lending': [
+      { id: '1', name: 'VFN Holdings Inc', detail: 'Deal QA completed', meta: 'Note 20240001-001 · RR 2', date: '3/10' },
+      { id: '2', name: 'Fibernet Solutions LLC', detail: 'Documents uploaded', meta: 'Note 20240078-001 · RR 2', date: '3/8' },
+      { id: '3', name: 'GH3 Cler SNU', detail: 'Annual Review in progress', meta: 'Note 20230045-001 · RR 3', date: '3/5' },
+    ],
+    'tprm': [
+      { id: '1', name: 'CloudBank Solutions', detail: 'SOC 2 review completed', meta: 'AXM-2024-001 · High risk', date: '3/12' },
+      { id: '2', name: 'SecureData Inc', detail: 'New vendor onboarded', meta: 'AXM-2024-012 · Moderate risk', date: '3/9' },
+    ],
+  };
+
+  // ─── Single-agent focused view ───────────────────────────────────────────────
+  if (enabledAgents.length === 1) {
+    const agent = enabledAgents[0];
+    const agentSkills = skills.filter(s => s.agentId === agent.id);
+    const recent = recentActivity[agent.id] || [];
+
+    return (
+      <div className="flex-1 flex flex-col h-screen bg-[#f5f5f3]">
+        <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl text-gray-900">Agents</h1>
+          </div>
+          <button
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-8">
+          <div className="max-w-lg">
+
+            {/* Greeting */}
+            <div className="mb-7">
+              <p className="text-xs text-gray-400 mb-0.5">Good morning, Tom.</p>
+              <h2 className="text-xl text-gray-900">What are you working on today?</h2>
+            </div>
+
+            {/* Hero Agent Card */}
+            <div
+              className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 cursor-pointer hover:border-gray-300 hover:shadow transition-all"
+              onClick={() => onAgentLaunch?.(agent.id)}
+            >
+              <div className="px-6 py-5">
+                <div className="flex items-start gap-4">
+                  <div className="w-11 h-11 bg-[#455a4f] rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base text-gray-900 mb-1">{agent.name}</h3>
+                    <p className="text-sm text-gray-500 leading-relaxed">{agent.description}</p>
+                  </div>
+                </div>
+                <div className="mt-5 pt-4 border-t border-gray-100 flex items-center justify-between">
+                  <div className="flex flex-wrap gap-2">
+                    {agentSkills.map((skill) => (
+                      <button
+                        key={skill.label}
+                        onClick={(e) => { e.stopPropagation(); onAgentLaunch?.(agent.id); }}
+                        className="px-3 py-1.5 text-xs rounded-full border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                        type="button"
+                      >
+                        {skill.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAgentLaunch?.(agent.id); }}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors flex-shrink-0 ml-3"
+                    type="button"
+                  >
+                    Open
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Records */}
+            {recent.length > 0 && (
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-3">Recent</p>
+                <div className="space-y-1.5">
+                  {recent.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => onAgentLaunch?.(agent.id)}
+                      className="w-full bg-white rounded-lg border border-gray-200 px-4 py-3 text-left hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-4"
+                      type="button"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-gray-900 truncate">{item.name}</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-xs text-gray-500">{item.detail}</span>
+                          <span className="text-gray-300">·</span>
+                          <span className="text-xs text-gray-400">{item.meta}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {item.date}
+                        </span>
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Multi-agent view ─────────────────────────────────────────────────────────
   return (
     <div className="flex-1 flex flex-col h-screen bg-[#f5f5f3]">
       {/* Header */}
