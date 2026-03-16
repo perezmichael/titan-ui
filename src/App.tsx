@@ -24,6 +24,7 @@ export default function App() {
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uploadCompleted, setUploadCompleted] = useState(false);
+  const [initialBorrowerId, setInitialBorrowerId] = useState<string | undefined>(undefined);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStarted, setUploadStarted] = useState<boolean>(false);
   const hasStartedUploadRef = useRef<boolean>(false);
@@ -146,8 +147,9 @@ export default function App() {
         <AgentsView 
           onDocumentSelect={handleDocumentSelect}
           onChatNavigate={handleChatNavigate}
-          onAgentLaunch={(agentId) => {
+          onAgentLaunch={(agentId, recordId) => {
             if (agentId === 'commercial-lending') {
+              setInitialBorrowerId(recordId);
               setActiveView('commercial-lending');
             } else if (agentId === 'knowledge-base') {
               setActiveView('knowledge-base');
@@ -158,8 +160,9 @@ export default function App() {
         />
       )}
       {activeView === 'commercial-lending' && (
-        <CommercialLendingWorkspace 
-          onBack={() => setActiveView('agents')}
+        <CommercialLendingWorkspace
+          onBack={() => { setActiveView('agents'); setInitialBorrowerId(undefined); }}
+          initialBorrowerId={initialBorrowerId}
         />
       )}
       {activeView === 'knowledge-base' && (

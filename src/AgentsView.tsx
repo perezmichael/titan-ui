@@ -19,7 +19,7 @@ interface SelectedDocument {
 interface AgentsViewProps {
   onDocumentSelect?: (document: SelectedDocument) => void;
   onChatNavigate?: (chatId: string) => void;
-  onAgentLaunch?: (agentId: string) => void;
+  onAgentLaunch?: (agentId: string, recordId?: string) => void;
 }
 
 interface Agent {
@@ -384,7 +384,7 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
                   {recent.map((item) => (
                     <button
                       key={item.id}
-                      onClick={() => onAgentLaunch?.(agent.id)}
+                      onClick={() => onAgentLaunch?.(agent.id, item.id)}
                       className="w-full bg-white rounded-lg border border-gray-200 px-4 py-3 text-left hover:border-gray-300 hover:shadow-sm transition-all flex items-center gap-4"
                       type="button"
                     >
