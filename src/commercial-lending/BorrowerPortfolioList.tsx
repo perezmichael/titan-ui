@@ -590,7 +590,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                         {message.type === 'assistant' ? (
                           <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
                             <div className="text-xs text-gray-900">{message.content}</div>
-                            
+
                             {/* Insights */}
                             {message.queryResult?.insights && message.queryResult.insights.length > 0 && (
                               <ul className="space-y-1 mt-2">
@@ -601,6 +601,48 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                                   </li>
                                 ))}
                               </ul>
+                            )}
+
+                            {/* Inline Record Cards */}
+                            {message.queryResult?.borrowers && message.queryResult.borrowers.length > 0 && (
+                              <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+                                {message.queryResult.borrowers.map((borrower) => (
+                                  <div key={borrower.id} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <div className="text-xs font-medium text-gray-900">{borrower.name}</div>
+                                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                                          <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${getRiskRatingBadgeClass(borrower.riskRating)}`}>
+                                            RR {borrower.riskRating} — {borrower.riskRatingLabel}
+                                          </span>
+                                          <span className="text-[10px] text-gray-500">{formatCurrency(borrower.totalCreditExposure)} exposure</span>
+                                          <span className="text-[10px] text-gray-400">·</span>
+                                          <span className="text-[10px] text-gray-500">Matures {formatDate(borrower.maturityDate)}</span>
+                                        </div>
+                                      </div>
+                                      {borrower.id === '1' && (
+                                        <button
+                                          onClick={() => onBorrowerSelect({
+                                            id: borrower.id,
+                                            name: borrower.name,
+                                            cipCode: borrower.cipCode,
+                                            relationshipId: borrower.relationshipId,
+                                            noteNumber: borrower.noteNumber,
+                                            riskRating: borrower.riskRating,
+                                            riskRatingLabel: borrower.riskRatingLabel,
+                                            loanOfficer: borrower.loanOfficer,
+                                            underwriter: borrower.underwriter,
+                                            facilities: borrower.facilities,
+                                          })}
+                                          className="text-[10px] px-2 py-1 text-[#455a4f] border border-[#455a4f] rounded hover:bg-[#455a4f] hover:text-white transition-colors flex-shrink-0 whitespace-nowrap"
+                                        >
+                                          Open Record
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             )}
 
                             {/* Timestamp */}
