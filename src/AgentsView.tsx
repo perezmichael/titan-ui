@@ -336,6 +336,38 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
               <h2 className="text-xl text-gray-900">What are you working on today?</h2>
             </div>
 
+            {/* Unfinished Business */}
+            <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-5 py-4">
+              <p className="text-[10px] font-semibold text-amber-700 uppercase tracking-wide mb-3">In Progress</p>
+              <div className="space-y-3">
+                {[
+                  { id: 'wf-1', workflowName: 'Deal QA', recordName: 'GH3 Cler SNU', completedSteps: 4, totalSteps: 7 },
+                  { id: 'wf-2', workflowName: 'Annual Review', recordName: 'Retail Plaza Holdings', completedSteps: 2, totalSteps: 5 },
+                ].map(w => (
+                  <button
+                    key={w.id}
+                    onClick={(e) => { e.stopPropagation(); onAgentLaunch?.(agent.id); }}
+                    className="w-full flex items-center gap-3 py-0.5 text-left rounded-lg group"
+                    type="button"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-gray-900 truncate">{w.workflowName} · {w.recordName}</div>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="h-1.5 w-28 bg-amber-200 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 rounded-full transition-all"
+                            style={{ width: `${(w.completedSteps / w.totalSteps) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-amber-700">Step {w.completedSteps} of {w.totalSteps}</span>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-3.5 h-3.5 text-amber-400 group-hover:text-amber-600 transition-colors flex-shrink-0" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Hero Agent Card */}
             <div
               className="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 cursor-pointer hover:border-gray-300 hover:shadow transition-all"
