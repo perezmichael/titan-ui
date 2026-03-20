@@ -6,6 +6,7 @@ import { UploadsView } from './UploadsView';
 import { AgentsView } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
 import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
+import { AgentWorkspace } from './AgentWorkspace';
 import { ChevronRight, Menu } from 'lucide-react';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -160,9 +161,8 @@ export default function App() {
         />
       )}
       {activeView === 'commercial-lending' && (
-        <CommercialLendingWorkspace
+        <AgentWorkspace
           onBack={() => { setActiveView('agents'); setInitialBorrowerId(undefined); }}
-          initialBorrowerId={initialBorrowerId}
         />
       )}
       {activeView === 'knowledge-base' && (
