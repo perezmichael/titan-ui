@@ -37,8 +37,6 @@ export interface SelectedBorrower {
   cipCode: string;
   relationshipId?: string;
   noteNumber: string;
-  riskRating: number;
-  riskRatingLabel: string;
   loanOfficer?: string;
   underwriter?: string;
   facilities?: Facility[];

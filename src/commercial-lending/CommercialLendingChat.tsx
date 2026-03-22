@@ -7,7 +7,6 @@ interface Borrower {
   id: string;
   name: string;
   noteNumber: string;
-  riskRating: number;
 }
 
 interface ChatMessage {
@@ -35,12 +34,12 @@ interface WorkflowRun {
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 const mockBorrowers: Borrower[] = [
-  { id: '1', name: 'VFN Holdings Inc',        noteNumber: '20240001-001', riskRating: 2 },
-  { id: '2', name: 'GH3 Cler SNU',            noteNumber: '20230045-001', riskRating: 3 },
-  { id: '3', name: 'Fibernet Solutions LLC',  noteNumber: '20240078-001', riskRating: 2 },
-  { id: '4', name: 'Retail Plaza Holdings',   noteNumber: '20230122-001', riskRating: 4 },
-  { id: '5', name: 'Healthcare Properties Inc', noteNumber: '20240055-001', riskRating: 1 },
-  { id: '6', name: 'Meridian Office Partners', noteNumber: '20230198-001', riskRating: 3 },
+  { id: '1', name: 'VFN Holdings Inc',          noteNumber: '20240001-001' },
+  { id: '2', name: 'GH3 Cler SNU',              noteNumber: '20230045-001' },
+  { id: '3', name: 'Fibernet Solutions LLC',    noteNumber: '20240078-001' },
+  { id: '4', name: 'Retail Plaza Holdings',     noteNumber: '20230122-001' },
+  { id: '5', name: 'Healthcare Properties Inc', noteNumber: '20240055-001' },
+  { id: '6', name: 'Meridian Office Partners',  noteNumber: '20230198-001' },
 ];
 
 const workflows: Workflow[] = [
@@ -113,20 +112,6 @@ function getMockResponse(query: string, recordName?: string, workflowId?: string
   return recordName
     ? `I've reviewed the documents on file for **${recordName}**. Try asking about DSCR, covenants, maturity, guarantors, or collateral.`
     : "I can help with that. Try asking about maturities, risk ratings, or asset class exposure.";
-}
-
-// ─── RR badge ─────────────────────────────────────────────────────────────────
-
-function RRBadge({ rating }: { rating: number }) {
-  const colors =
-    rating <= 2 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-    rating === 3 ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                   'bg-orange-50 text-orange-700 border-orange-200';
-  return (
-    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${colors}`}>
-      RR{rating}
-    </span>
-  );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -324,7 +309,6 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                       <div className="text-xs font-medium text-gray-900 truncate">{b.name}</div>
                       <div className="text-[11px] text-gray-400 mt-0.5">{b.noteNumber}</div>
                     </div>
-                    <RRBadge rating={b.riskRating} />
                   </button>
                 ))}
               </div>

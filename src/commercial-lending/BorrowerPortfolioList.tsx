@@ -60,8 +60,6 @@ interface Borrower {
   loanOfficer: string;
   underwriter: string;
   maturityDate: string;
-  riskRating: number;
-  riskRatingLabel: string;
   status: 'Active' | 'Renewal' | 'Payoff';
   facilities: BorrowerFacility[];
   dateAdded: string;
@@ -81,8 +79,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Sarah Chen',
     underwriter: 'Michael Park',
     maturityDate: '2027-12-15',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
     status: 'Active',
     facilities: [
       {
@@ -112,8 +108,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Michael Torres',
     underwriter: 'Lisa Zhang',
     maturityDate: '2026-08-30',
-    riskRating: 3,
-    riskRatingLabel: 'Strong Satisfactory',
     status: 'Renewal',
     facilities: [
       {
@@ -165,8 +159,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Jennifer Wu',
     underwriter: 'David Kim',
     maturityDate: '2028-06-01',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
     status: 'Active',
     facilities: [
       {
@@ -240,8 +232,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'David Park',
     underwriter: 'Rachel Martinez',
     maturityDate: '2027-03-31',
-    riskRating: 4,
-    riskRatingLabel: 'Satisfactory',
     status: 'Active',
     facilities: [
       {
@@ -271,8 +261,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Sarah Chen',
     underwriter: 'James Thompson',
     maturityDate: '2028-09-15',
-    riskRating: 1,
-    riskRatingLabel: 'Superior',
     status: 'Active',
     facilities: [
       {
@@ -319,7 +307,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
 
   const suggestedQueries = [
     'Which loans have maturities in the next 90 days?',
-    'Show me all borrowers with risk rating 4 or 5',
+    'Show me all borrowers with upcoming renewals',
     'What is the total exposure for Data Center asset class?',
   ];
 
@@ -385,19 +373,6 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
         ] : []
       };
     }
-    // Risk rating filter
-    else if (lowerQuery.includes('risk rating 4') || lowerQuery.includes('risk rating 5') || (lowerQuery.includes('4 or 5'))) {
-      const highRiskBorrowers = mockBorrowers.filter(b => b.riskRating >= 4);
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${highRiskBorrowers.length} borrower${highRiskBorrowers.length !== 1 ? 's' : ''} with risk rating 4 or 5`,
-        borrowers: highRiskBorrowers,
-        insights: highRiskBorrowers.length > 0 ? [
-          `Total exposure: ${formatCurrency(highRiskBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Average risk rating: ${(highRiskBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / highRiskBorrowers.length).toFixed(1)}`
-        ] : []
-      };
-    }
     // Asset class query
     else if (lowerQuery.includes('data center')) {
       const dataCenterBorrowers = mockBorrowers.filter(b => b.assetClass.toLowerCase().includes('data center'));
@@ -407,19 +382,18 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
         borrowers: dataCenterBorrowers,
         insights: dataCenterBorrowers.length > 0 ? [
           `Total exposure: ${formatCurrency(dataCenterBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Average risk rating: ${(dataCenterBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / dataCenterBorrowers.length).toFixed(1)}`
+          `Asset class: Data Center`
         ] : []
       };
     }
     // Default response
     else {
       const totalExposure = mockBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0);
-      const avgRiskRating = mockBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / mockBorrowers.length;
       queryResult = {
         type: 'summary',
-        summary: `Your portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(totalExposure)}. The average risk rating is ${avgRiskRating.toFixed(1)}.`,
+        summary: `Your portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(totalExposure)}.`,
         insights: [
-          `Highest risk: ${mockBorrowers.filter(b => b.riskRating >= 4).length} borrowers`,
+          `Active loans: ${mockBorrowers.filter(b => b.status === 'Active').length} borrowers`,
           `Total commitments: ${formatCurrency(mockBorrowers.reduce((sum, b) => sum + b.commitment, 0))}`
         ]
       };
@@ -457,17 +431,6 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     borrower.noteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.cipCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const getRiskRatingBadgeClass = (rating: number) => {
-    switch (rating) {
-      case 1: return 'bg-green-50 text-green-900 border-green-200';
-      case 2: return 'bg-green-50 text-green-700 border-green-200';
-      case 3: return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 4: return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 5: return 'bg-red-50 text-red-700 border-red-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -781,8 +744,6 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                                 cipCode: borrower.cipCode,
                                 relationshipId: borrower.relationshipId,
                                 noteNumber: borrower.noteNumber,
-                                riskRating: borrower.riskRating,
-                                riskRatingLabel: borrower.riskRatingLabel,
                                 loanOfficer: borrower.loanOfficer,
                                 underwriter: borrower.underwriter,
                                 facilities: borrower.facilities
