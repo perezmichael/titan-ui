@@ -131,7 +131,11 @@ function RRBadge({ rating }: { rating: number }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CommercialLendingChat() {
+interface CommercialLendingChatProps {
+  onChatStarted?: () => void;
+}
+
+export function CommercialLendingChat({ onChatStarted }: CommercialLendingChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedRecord, setSelectedRecord] = useState<Borrower | null>(null);
@@ -182,7 +186,10 @@ export function CommercialLendingChat() {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMsg]);
+    setMessages(prev => {
+      if (prev.length === 0) onChatStarted?.();
+      return [...prev, userMsg];
+    });
     setInput('');
     setIsThinking(true);
 

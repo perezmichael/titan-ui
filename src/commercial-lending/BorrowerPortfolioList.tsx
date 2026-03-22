@@ -292,7 +292,8 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
   // Tab state
-  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('chat');
+  const [chatStarted, setChatStarted] = useState(false);
 
   // Workflow detail state
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
@@ -479,7 +480,8 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          {/* Left: back + title */}
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
             <button
               onClick={onBack}
               className="flex items-center gap-1 sm:gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
@@ -487,23 +489,46 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Back to Agents</span>
             </button>
-            <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
-            <h1 className="text-base sm:text-xl text-gray-900 truncate">Commercial Lending Agent</h1>
+            <div className="h-4 w-px bg-gray-300 hidden sm:block flex-shrink-0"></div>
+            <h1 className="text-base sm:text-lg text-gray-900 truncate hidden sm:block">Commercial Lending Agent</h1>
           </div>
-          <button
-            onClick={onSettingsOpen}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+
+          {/* Center: pill toggle — hidden once chat is started */}
+          {!(activeTab === 'chat' && chatStarted) && (
+            <div className="flex items-center bg-gray-100 rounded-full p-1 gap-0.5 flex-shrink-0">
+              {(['chat', 'records', 'workflows'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-1.5 text-sm rounded-full transition-all capitalize ${
+                    activeTab === tab
+                      ? 'bg-white text-gray-900 font-medium shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Right: settings */}
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onSettingsOpen}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Chat Tab — full-height, manages its own scroll */}
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
-          <CommercialLendingChat />
+          <CommercialLendingChat onChatStarted={() => setChatStarted(true)} />
         </div>
       )}
 
@@ -526,48 +551,6 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
           </div>
         )}
 
-        {/* Tab Navigation */}
-        <div className="flex gap-1 mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('records')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-              activeTab === 'records'
-                ? 'text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Records
-            {activeTab === 'records' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('workflows')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-              activeTab === 'workflows'
-                ? 'text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Workflows
-            {activeTab === 'workflows' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('chat')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-              activeTab === 'chat'
-                ? 'text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Chat
-            {activeTab === 'chat' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-            )}
-          </button>
-        </div>
 
         {/* Query Section */}
         {activeTab === 'records' && (
