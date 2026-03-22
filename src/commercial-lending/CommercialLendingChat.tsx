@@ -122,13 +122,11 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   const [selectedRecords, setSelectedRecords] = useState<Borrower[]>([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [showRecordDropdown, setShowRecordDropdown] = useState(false);
-  const [showWorkflowDropdown, setShowWorkflowDropdown] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<Workflow | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recordDropdownRef = useRef<HTMLDivElement>(null);
-  const workflowDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -140,15 +138,11 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
       if (recordDropdownRef.current && !recordDropdownRef.current.contains(e.target as Node)) {
         setShowRecordDropdown(false);
       }
-      if (workflowDropdownRef.current && !workflowDropdownRef.current.contains(e.target as Node)) {
-        setShowWorkflowDropdown(false);
-      }
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const multiRecord = selectedRecords.length > 1;
   const suggestions = selectedRecords.length === 1 ? recordSuggestions : globalSuggestions;
   const hasMessages = messages.length > 0;
 
@@ -156,8 +150,6 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
     setSelectedRecords(prev =>
       prev.some(r => r.id === b.id) ? prev.filter(r => r.id !== b.id) : [...prev, b]
     );
-    // Clear workflow if multi-selecting
-    if (selectedRecords.length >= 1) setSelectedWorkflow(null);
   };
 
   const send = (queryOverride?: string, workflowOverride?: Workflow | null) => {
@@ -261,22 +253,20 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         </button>
       </div>
 
-      {/* Suggested chips — hidden when workflow selected */}
-      {!selectedWorkflow && (
-        <div className="px-4 pb-3 flex flex-wrap gap-1.5">
-          {suggestions.map(s => (
-            <button
-              key={s}
-              onClick={() => send(s)}
-              className="px-2.5 py-1 text-xs rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Suggested chips */}
+      <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+        {suggestions.map(s => (
+          <button
+            key={s}
+            onClick={() => send(s)}
+            className="px-2.5 py-1 text-xs rounded-full border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
 
-      {/* Bottom bar: selectors */}
+      {/* Bottom bar: record selector only */}
       <div className="px-3 pb-3 pt-2 border-t border-gray-100 flex items-center gap-2">
 
         {/* Record selector */}
@@ -300,7 +290,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
             {selectedRecords.length > 0 ? (
               <X
                 className="w-3 h-3 flex-shrink-0 ml-0.5 hover:text-red-500 transition-colors"
-                onClick={e => { e.stopPropagation(); setSelectedRecords([]); setSelectedWorkflow(null); }}
+                onClick={e => { e.stopPropagation(); setSelectedRecords([]); }}
               />
             ) : (
               <ChevronDown className="w-3 h-3 flex-shrink-0" />
@@ -313,7 +303,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                 <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Select records</span>
                 {selectedRecords.length > 0 && (
                   <button
-                    onClick={() => { setSelectedRecords([]); setSelectedWorkflow(null); }}
+                    onClick={() => { setSelectedRecords([]); }}
                     className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors"
                   >
                     Clear all
@@ -352,52 +342,6 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
           )}
         </div>
 
-        {/* Workflow selector */}
-        <div className="relative" ref={workflowDropdownRef}>
-          <button
-            onClick={() => { if (!multiRecord) { setShowWorkflowDropdown(o => !o); setShowRecordDropdown(false); } }}
-            disabled={multiRecord}
-            title={multiRecord ? 'Workflows require a single record' : undefined}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors border ${
-              multiRecord
-                ? 'bg-gray-50 text-gray-300 border-gray-200 cursor-not-allowed'
-                : selectedWorkflow
-                  ? 'bg-[#f0f4f2] text-[#455a4f] border-[#c8d8d2]'
-                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
-            <span>{selectedWorkflow ? selectedWorkflow.name : 'Run a workflow'}</span>
-            {selectedWorkflow ? (
-              <X
-                className="w-3 h-3 flex-shrink-0 ml-0.5 hover:text-red-500 transition-colors"
-                onClick={e => { e.stopPropagation(); setSelectedWorkflow(null); }}
-              />
-            ) : (
-              <ChevronDown className="w-3 h-3 flex-shrink-0" />
-            )}
-          </button>
-
-          {showWorkflowDropdown && (
-            <div className="absolute bottom-full mb-2 left-0 w-52 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-              <div className="px-3 py-2 border-b border-gray-100">
-                <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Select a workflow</span>
-              </div>
-              {workflows.map(wf => (
-                <button
-                  key={wf.id}
-                  onClick={() => handleStartWorkflow(wf)}
-                  className={`w-full px-3 py-3 text-left hover:bg-gray-50 transition-colors ${
-                    selectedWorkflow?.id === wf.id ? 'bg-[#f0f4f2]' : ''
-                  }`}
-                >
-                  <div className="text-xs font-medium text-gray-900">{wf.name}</div>
-                  <div className="text-[11px] text-gray-400 mt-0.5">{wf.steps} steps</div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
