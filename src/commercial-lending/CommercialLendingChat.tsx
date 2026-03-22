@@ -399,10 +399,10 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         <div className="w-full max-w-2xl">
           {/* Heading */}
           <h2 className="text-2xl font-medium text-gray-900 text-center mb-1">
-            Quick question?
+            What do you need help with?
           </h2>
           <p className="text-sm text-gray-500 text-center mb-8">
-            Ask anything across your portfolio. Narrow to a specific record for a quick lookup, or run a workflow below.
+            Ask questions across your portfolio, select a record to go deeper, or run a workflow.
           </p>
 
           {inputBox}
