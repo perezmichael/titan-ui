@@ -508,8 +508,8 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                 <div className="space-y-3">
                   <p className="text-sm text-gray-500">
                     {selectedRecordsForChat.length === 1
-                      ? `Ask anything about ${selectedRecordsForChat[0].name}`
-                      : `Ask across ${selectedRecordsForChat.length} records`}
+                      ? `Deep dive into ${selectedRecordsForChat[0].name} — reference the dossier on the right`
+                      : `Analyze ${selectedRecordsForChat.length} records side by side — switch between dossiers using the tabs`}
                   </p>
                   <div className="flex flex-col gap-2">
                     {recordChatSuggestions.map((s, i) => (
@@ -564,7 +564,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                 <Sparkles className="w-4 h-4 text-[#455a4f] flex-shrink-0 mb-0.5" />
                 <textarea
                   rows={1}
-                  placeholder="Ask about these records…"
+                  placeholder={selectedRecordsForChat.length === 1 ? `Ask about ${selectedRecordsForChat[0].name}…` : `Ask across ${selectedRecordsForChat.length} records…`}
                   value={recordsChatInput}
                   onChange={e => setRecordsChatInput(e.target.value)}
                   onKeyDown={e => {

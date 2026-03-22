@@ -227,10 +227,10 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
             selectedWorkflow
               ? `Ask about the ${selectedWorkflow.name} workflow, or send to start…`
               : selectedRecords.length === 1
-              ? `Ask about ${selectedRecords[0].name}…`
+              ? `Quick question about ${selectedRecords[0].name}…`
               : selectedRecords.length > 1
-              ? `Ask across ${selectedRecords.length} records…`
-              : 'How can I help you today?'
+              ? `Quick question across ${selectedRecords.length} records…`
+              : 'Ask anything about your portfolio…'
           }
           value={input}
           onChange={e => setInput(e.target.value)}
@@ -399,10 +399,10 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         <div className="w-full max-w-2xl">
           {/* Heading */}
           <h2 className="text-2xl font-medium text-gray-900 text-center mb-1">
-            What do you need help with?
+            Quick question?
           </h2>
           <p className="text-sm text-gray-500 text-center mb-8">
-            Ask questions across your portfolio, select a record to go deeper, or run a workflow.
+            Ask anything across your portfolio. Narrow to a specific record for a quick lookup, or run a workflow below.
           </p>
 
           {inputBox}
