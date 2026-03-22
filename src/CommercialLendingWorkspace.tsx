@@ -78,7 +78,7 @@ export function CommercialLendingWorkspace({ onBack }: CommercialLendingWorkspac
   };
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-[#f5f5f3]">
+    <div className="flex-1 flex flex-col h-screen bg-white">
       {currentView === 'portfolio' && (
         <BorrowerPortfolioList 
           onBorrowerSelect={handleBorrowerSelect} 

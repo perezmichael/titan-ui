@@ -78,11 +78,11 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
     <div className="flex gap-3 mb-4">
       {/* Avatar */}
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
-        type === 'assistant' ? 'bg-[#ff6b5a] text-white' : 'bg-[#455a4f] text-white'
+        type === 'assistant' ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-600'
       }`}>
         {type === 'assistant' ? (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="3" y="3" width="8" height="8" fill="white" />
+            <rect x="3" y="3" width="8" height="8" fill="currentColor" />
           </svg>
         ) : (
           'TB'
@@ -392,7 +392,7 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
           </div>
         ) : (
           <>
-            <div className="text-xs text-gray-900 mb-1.5">{content}</div>
+            <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 mb-1.5 max-w-[85%] ml-auto">{content}</div>
             
             {/* Attachment for user messages */}
             {attachment && (

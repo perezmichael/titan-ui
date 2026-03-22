@@ -309,9 +309,9 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const showDocumentChip = selectedDocument && conversationId !== 'new-chat';
 
   return (
-    <div className="flex-1 flex h-screen bg-[#f5f5f3]">
+    <div className="flex-1 flex h-screen bg-white">
       {/* Chat Section */}
-      <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
+      <div className={`flex flex-col h-screen bg-white transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
           <div className="border-b border-gray-200 bg-white px-4 py-3">
@@ -407,7 +407,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                       {uploadProgress < 100 ? (
                         <>
                           <div className="flex items-center gap-3">
-                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                             <div className="text-sm text-gray-900">Processing 6 files (39.6 MB)... • Step {Math.max(1, Math.min(Math.ceil(uploadProgress * 7 / 100), 7))} of 7 complete</div>
                           </div>
                           <div className="text-xs text-gray-500 mt-3">
@@ -450,7 +450,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
               {/* Input box positioned in center area */}
               <div className="w-full max-w-2xl px-4">
                 <div className="relative">
-                  <div className="w-full border border-gray-300 rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-20 focus-within:border-gray-400">
+                  <div className="w-full border border-gray-300 rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-20 focus-within:border-[#E05C3A] transition-colors">
                     {/* Document attachment chip inside input */}
                     {selectedDocument && (
                       <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded px-2 py-1 mb-2">
@@ -524,10 +524,10 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         {!isNewConversationWithDoc && (
           <div className="border-t border-gray-200 bg-white p-4">
             <div className="max-w-3xl">
-              <div className="relative border border-gray-300 rounded-lg">
+              <div className="relative border border-gray-300 rounded-lg focus-within:border-[#E05C3A] transition-colors">
                 <textarea
-                  placeholder={selectedDocument ? `Ask about ${selectedDocument.name}...` : "Type a message..."}
-                  className="w-full resize-none rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-12 outline-none focus:border-gray-400 pb-12"
+                  placeholder={selectedDocument ? `Ask about ${selectedDocument.name}...` : "Type a message or drop files to begin..."}
+                  className="w-full resize-none rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-12 outline-none pb-12"
                   rows={1}
                   style={{ minHeight: '52px' }}
                 />

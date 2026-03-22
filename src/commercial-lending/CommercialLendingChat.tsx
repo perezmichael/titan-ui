@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Sparkles, FileText, Zap, ChevronDown, X, ChevronRight, Clock } from 'lucide-react';
+import { Sparkles, FileText, Zap, ChevronDown, X, ChevronRight, Clock } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -206,7 +206,7 @@ export function CommercialLendingChat() {
 
   // ── Input box (shared between empty and messages state) ──────────────────────
   const inputBox = (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-visible">
+    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-visible focus-within:border-[#E05C3A] transition-colors">
       {/* Textarea row */}
       <div className="flex items-start gap-3 px-4 pt-4 pb-2">
         <Sparkles className="w-4 h-4 text-[#455a4f] flex-shrink-0 mt-0.5" />
@@ -233,9 +233,11 @@ export function CommercialLendingChat() {
         <button
           onClick={() => send()}
           disabled={!input.trim() && !selectedWorkflow}
-          className="p-1.5 bg-[#455a4f] text-white rounded-lg hover:bg-[#3a4a42] transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex-shrink-0 mt-0.5"
+          className="w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 mt-0.5"
         >
-          <Send className="w-3.5 h-3.5" />
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M2 8L14 8M14 8L8 2M14 8L8 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </button>
       </div>
 
@@ -483,7 +485,7 @@ export function CommercialLendingChat() {
               )}
               <div className={`max-w-[85%] flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                 {msg.role === 'user' ? (
-                  <div className="bg-[#455a4f] text-white text-sm rounded-2xl rounded-tr-sm px-4 py-2.5 leading-relaxed">
+                  <div className="bg-white border border-gray-200 text-gray-900 text-sm rounded-2xl rounded-tr-sm px-4 py-2.5 leading-relaxed">
                     {msg.content}
                   </div>
                 ) : (
@@ -498,21 +500,9 @@ export function CommercialLendingChat() {
           ))}
 
           {isThinking && (
-            <div className="flex gap-3">
-              <div className="w-7 h-7 rounded-lg bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-sm px-4 py-3">
-                <div className="flex gap-1 items-center h-5">
-                  {[0, 1, 2].map(i => (
-                    <div
-                      key={i}
-                      className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-bounce"
-                      style={{ animationDelay: `${i * 0.15}s` }}
-                    />
-                  ))}
-                </div>
-              </div>
+            <div className="flex items-center gap-2.5 px-1 py-2 text-sm text-gray-500">
+              <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              Searching the knowledge base
             </div>
           )}
           <div ref={messagesEndRef} />
