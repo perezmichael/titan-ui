@@ -124,6 +124,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   const [showRecordDropdown, setShowRecordDropdown] = useState(false);
   const [showWorkflowDropdown, setShowWorkflowDropdown] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [pendingWorkflow, setPendingWorkflow] = useState<Workflow | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recordDropdownRef = useRef<HTMLDivElement>(null);
@@ -195,9 +196,15 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   };
 
   const handleStartWorkflow = (wf: Workflow) => {
-    setSelectedWorkflow(wf);
     setShowWorkflowDropdown(false);
-    send('', wf);
+    setPendingWorkflow(wf);
+  };
+
+  const handleRecordPickedForWorkflow = (record: Borrower) => {
+    setSelectedRecord(record);
+    setSelectedWorkflow(pendingWorkflow);
+    setPendingWorkflow(null);
+    send('', pendingWorkflow);
   };
 
   // ── Input box (shared between empty and messages state) ──────────────────────
@@ -349,6 +356,52 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
       </div>
     </div>
   );
+
+  // ── Record picker (shown after clicking a workflow card) ─────────────────────
+  if (pendingWorkflow) {
+    return (
+      <div className="flex flex-col h-full px-6 py-6 overflow-y-auto">
+        <div className="w-full max-w-2xl mx-auto">
+          {/* Back + heading */}
+          <button
+            onClick={() => setPendingWorkflow(null)}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-6"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Back
+          </button>
+
+          <div className="mb-6">
+            <h2 className="text-xl font-medium text-gray-900 mb-1">
+              Run {pendingWorkflow.name}
+            </h2>
+            <p className="text-sm text-gray-500">Select the record you want to run this workflow on.</p>
+          </div>
+
+          <div className="space-y-2">
+            {mockBorrowers.map(b => (
+              <button
+                key={b.id}
+                onClick={() => handleRecordPickedForWorkflow(b)}
+                className="w-full flex items-center justify-between gap-4 px-4 py-3.5 bg-white border border-gray-200 rounded-xl hover:border-[#455a4f] hover:bg-[#f8faf9] transition-all text-left group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-[#f0f4f2] flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-[#455a4f]" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{b.name}</div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">{b.noteNumber}</div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f] transition-colors flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ── Empty state ───────────────────────────────────────────────────────────────
   if (!hasMessages) {
