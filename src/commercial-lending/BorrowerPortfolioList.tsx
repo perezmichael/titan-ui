@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings } from 'lucide-react';
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
 import { WorkflowPanel } from './WorkflowPanel';
@@ -18,21 +18,6 @@ interface BorrowerPortfolioListProps {
   onWorkflowOpen?: (workflowId: string, workflowName: string) => void;
   onSettingsOpen?: () => void;
   onSessionCreated?: (session: AgentSession) => void;
-}
-
-interface ChatMessage {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  queryResult?: QueryResult;
-}
-
-interface QueryResult {
-  type: 'summary' | 'filtered';
-  summary: string;
-  borrowers?: Borrower[];
-  insights?: string[];
 }
 
 interface BorrowerFacility {
@@ -282,11 +267,7 @@ const mockBorrowers: Borrower[] = [
 export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
-  
-  // Query state
-  const [queryInput, setQueryInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  
+
   // Tab state
   const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('chat');
   const [chatStarted, setChatStarted] = useState(false);
@@ -297,6 +278,14 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
 
   // New record modal states
   const [showNewRecordModal, setShowNewRecordModal] = useState(false);
+
+  // Records workspace
+  const [selectedRecordsForChat, setSelectedRecordsForChat] = useState<Borrower[]>([]);
+  const [recordsChatMessages, setRecordsChatMessages] = useState<{id: string; role: 'user'|'assistant'; content: string}[]>([]);
+  const [recordsChatInput, setRecordsChatInput] = useState('');
+  const [activeDossierTab, setActiveDossierTab] = useState<string | null>(null);
+  const [recordsIsThinking, setRecordsIsThinking] = useState(false);
+  const recordsChatEndRef = useRef<HTMLDivElement>(null);
   const [newRecordStep, setNewRecordStep] = useState<'method' | 'upload'>('method');
   const [uploadedRecordDocs, setUploadedRecordDocs] = useState<Array<{ name: string; type: string; size: string }>>([]);
   const [isProcessingRecord, setIsProcessingRecord] = useState(false);
@@ -305,110 +294,62 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
 
-  const suggestedQueries = [
-    'Which loans have maturities in the next 90 days?',
-    'Show me all borrowers with upcoming renewals',
-    'What is the total exposure for Data Center asset class?',
+  const recordChatSuggestions = [
+    "What's the current DSCR?",
+    'Any open covenant exceptions?',
+    'When does this deal mature?',
+    'Show recent documents',
+    'Summarize key risk factors',
   ];
 
-  const clearQuery = () => {
-    setChatMessages([]);
-    setQueryInput('');
+  const toggleRecordForChat = (b: Borrower) => {
+    setSelectedRecordsForChat(prev => {
+      const exists = prev.some(r => r.id === b.id);
+      if (exists) {
+        const next = prev.filter(r => r.id !== b.id);
+        if (activeDossierTab === b.id && next.length > 0) setActiveDossierTab(next[0].id);
+        return next;
+      } else {
+        if (prev.length === 0) setActiveDossierTab(b.id);
+        return [...prev, b];
+      }
+    });
   };
 
-  const handleStartWorkflow = (workflowId: string, stepNumber?: number) => {
-    // Generate portfolio-level workflow initiation message
-    const workflowMessages: Record<string, string> = {
-      'deal-qa': `I'll guide you through the Deal QA workflow. This comprehensive quality assurance review will verify loan documentation and data extraction across 7 steps.\n\nTo begin, please select a specific borrower from your portfolio list, and I'll walk you through a systematic QA review of their deal file.`,
-      
-      'annual-review': `I'll guide you through the Annual Review workflow. This systematic credit review assesses ongoing creditworthiness, covenant compliance, and risk rating across 8 comprehensive steps.\n\nYour portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(mockBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}.\n\nWould you like me to identify which borrowers are due for annual review, or would you like to select a specific borrower to begin the review process?`
-    };
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: `Start ${workflowId === 'deal-qa' ? 'Deal QA' : workflowId === 'annual-review' ? 'Annual Review' : ''} workflow`,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    };
-
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      type: 'assistant',
-      content: workflowMessages[workflowId] || 'Starting workflow...',
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-    };
-
-    setChatMessages(prev => [...prev, userMessage, assistantMessage]);
+  const sendRecordsChat = (queryOverride?: string) => {
+    const q = (queryOverride ?? recordsChatInput).trim();
+    if (!q) return;
+    setRecordsChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: q }]);
+    setRecordsChatInput('');
+    setRecordsIsThinking(true);
+    setTimeout(() => {
+      const names = selectedRecordsForChat.map(r => r.name).join(' and ');
+      const lq = q.toLowerCase();
+      let response = '';
+      if (lq.includes('dscr') || lq.includes('debt service')) {
+        response = `The DSCR for **${names}** is 1.42x as of the most recent review, which is above the covenant minimum of 1.25x.`;
+      } else if (lq.includes('covenant') || lq.includes('exception')) {
+        response = `No open covenant exceptions on file for **${names}**. Last covenant review completed 12/15/2024.`;
+      } else if (lq.includes('matur')) {
+        response = selectedRecordsForChat.length === 1
+          ? `The primary facility for **${names}** matures on ${formatDate(selectedRecordsForChat[0].maturityDate)}.`
+          : selectedRecordsForChat.map(r => `**${r.name}**: ${formatDate(r.maturityDate)}`).join('\n');
+      } else if (lq.includes('document') || lq.includes('file')) {
+        response = `Found 4 documents on file for **${names}**: Term Sheet (01/15/2024), Financial Statements Q4 2024, Appraisal Report (08/10/2024), Credit Agreement (01/15/2024).`;
+      } else if (lq.includes('risk')) {
+        response = `Key risk factors for **${names}**: (1) Sector concentration in ${selectedRecordsForChat[0].assetClass}, (2) Upcoming maturity requiring refinancing, (3) Interest rate sensitivity given floating rate structure.`;
+      } else {
+        response = `Based on available data for **${names}**: the relationship is ${selectedRecordsForChat[0].status} with total credit exposure of ${formatCurrency(selectedRecordsForChat[0].totalCreditExposure)} across ${selectedRecordsForChat[0].facilities.length} facilities. What would you like to explore?`;
+      }
+      setRecordsChatMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: response }]);
+      setRecordsIsThinking(false);
+    }, 900);
   };
 
-  const handleQuery = (query: string) => {
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: query,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    };
-    
-    setChatMessages(prev => [...prev, userMessage]);
-    setQueryInput('');
-    
-    const lowerQuery = query.toLowerCase();
-    let queryResult: QueryResult;
-    
-    // Maturities in next 90 days
-    if (lowerQuery.includes('maturity') || lowerQuery.includes('maturities') || (lowerQuery.includes('90') && lowerQuery.includes('days'))) {
-      const today = new Date();
-      const next90Days = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const upcomingMaturities = mockBorrowers.filter(b => {
-        const maturityDate = new Date(b.maturityDate);
-        return maturityDate <= next90Days && maturityDate >= today;
-      });
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${upcomingMaturities.length} loan${upcomingMaturities.length !== 1 ? 's' : ''} with maturities in the next 90 days`,
-        borrowers: upcomingMaturities,
-        insights: upcomingMaturities.length > 0 ? [
-          `Total exposure maturing: ${formatCurrency(upcomingMaturities.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Earliest maturity: ${formatDate(upcomingMaturities[0].maturityDate)}`
-        ] : []
-      };
-    }
-    // Asset class query
-    else if (lowerQuery.includes('data center')) {
-      const dataCenterBorrowers = mockBorrowers.filter(b => b.assetClass.toLowerCase().includes('data center'));
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${dataCenterBorrowers.length} Data Center loan${dataCenterBorrowers.length !== 1 ? 's' : ''}`,
-        borrowers: dataCenterBorrowers,
-        insights: dataCenterBorrowers.length > 0 ? [
-          `Total exposure: ${formatCurrency(dataCenterBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Asset class: Data Center`
-        ] : []
-      };
-    }
-    // Default response
-    else {
-      const totalExposure = mockBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0);
-      queryResult = {
-        type: 'summary',
-        summary: `Your portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(totalExposure)}.`,
-        insights: [
-          `Active loans: ${mockBorrowers.filter(b => b.status === 'Active').length} borrowers`,
-          `Total commitments: ${formatCurrency(mockBorrowers.reduce((sum, b) => sum + b.commitment, 0))}`
-        ]
-      };
-    }
-    
-    // Add assistant response
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      type: 'assistant',
-      content: queryResult.summary,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      queryResult
-    };
-    
-    setChatMessages(prev => [...prev, assistantMessage]);
+  const handleStartWorkflow = (workflowId: string) => {
+    const name = workflowId === 'deal-qa' ? 'Deal QA' : 'Annual Review';
+    setSelectedWorkflowId(workflowId);
+    setSelectedWorkflowName(name);
   };
 
   const toggleBorrowerExpansion = (borrowerId: string) => {
@@ -421,16 +362,17 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     setExpandedBorrowers(newExpanded);
   };
 
-  // Filter borrowers - either from query results or regular filters
-  const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
-  const queryResult = lastMessage?.type === 'assistant' ? lastMessage.queryResult : null;
-  
-  const filteredBorrowers = queryResult?.borrowers || mockBorrowers.filter(borrower => 
-    !searchQuery || 
+  const filteredBorrowers = mockBorrowers.filter(borrower =>
+    !searchQuery ||
     borrower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.noteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.cipCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Auto-scroll records chat
+  useEffect(() => {
+    recordsChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [recordsChatMessages, recordsIsThinking]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -526,176 +468,291 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
         </div>
       )}
 
-      {/* Main Content — Records & Workflows tabs */}
-      <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-6 ${activeTab === 'chat' ? 'hidden' : ''}`}>
-        {/* Processing Indicator */}
-        {isProcessingRecord && (
-          <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-[#455a4f] rounded-full flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white animate-spin" />
+      {/* Records split-pane workspace — visible when records selected */}
+      {activeTab === 'records' && selectedRecordsForChat.length > 0 && (
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left chat panel */}
+          <div className="w-[380px] flex-shrink-0 flex flex-col border-r border-gray-200 bg-white">
+            {/* Selected record pills + Clear */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap flex-1">
+                {selectedRecordsForChat.map(r => (
+                  <span key={r.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eef2f0] text-[#455a4f] text-xs rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#455a4f] flex-shrink-0" />
+                    {r.name}
+                    <button onClick={() => toggleRecordForChat(r)} className="ml-0.5 hover:opacity-70">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
               </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900 mb-1">Processing Documents and Creating a New Record</h4>
-                <p className="text-xs text-gray-600">
-                  You may close this page. The new record will appear when processing is complete.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-        {/* Query Section */}
-        {activeTab === 'records' && (
-          <div className="bg-white rounded-lg border border-gray-200 mb-6 flex flex-col" style={chatMessages.length > 0 ? { height: '400px' } : {}}>
-            {/* Header */}
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
-              <Sparkles className="w-5 h-5 text-[#455a4f]" />
-              <h2 className="text-base text-gray-900">Ask about your documents and data</h2>
-              {chatMessages.length > 0 && (
-                <button
-                  onClick={clearQuery}
-                  className="ml-auto text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
+              <button
+                onClick={() => { setSelectedRecordsForChat([]); setRecordsChatMessages([]); setActiveDossierTab(null); }}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+              >
+                Clear
+              </button>
             </div>
 
-            {/* Chat Messages Area */}
-            {chatMessages.length > 0 && (
-              <div className="flex-1 overflow-y-auto px-6 py-4">
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {recordsChatMessages.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-500">
+                    {selectedRecordsForChat.length === 1
+                      ? `Ask anything about ${selectedRecordsForChat[0].name}`
+                      : `Ask across ${selectedRecordsForChat.length} records`}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {recordChatSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => sendRecordsChat(s)}
+                        className="text-left px-3 py-2 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div className="space-y-4">
-                  {chatMessages.map((message) => (
-                    <div key={message.id} className="flex gap-3">
-                      {/* Avatar */}
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
-                        message.type === 'assistant' ? 'bg-[#ff6b5a] text-white' : 'bg-[#455a4f] text-white'
+                  {recordsChatMessages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-2'}`}>
+                      {msg.role === 'assistant' && (
+                        <div className="w-6 h-6 rounded-md bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
+                      <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs ${
+                        msg.role === 'user'
+                          ? 'bg-white border border-gray-200 text-gray-900'
+                          : 'bg-gray-100 text-gray-900'
                       }`}>
-                        {message.type === 'assistant' ? (
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <rect x="3" y="3" width="8" height="8" fill="white" />
-                          </svg>
-                        ) : (
-                          'TB'
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {message.type === 'assistant' ? (
-                          <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
-                            <div className="text-xs text-gray-900">{message.content}</div>
-                            
-                            {/* Insights */}
-                            {message.queryResult?.insights && message.queryResult.insights.length > 0 && (
-                              <ul className="space-y-1 mt-2">
-                                {message.queryResult.insights.map((insight, index) => (
-                                  <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-                                    <span className="text-[#455a4f] mt-0.5">•</span>
-                                    <span>{insight}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-
-                            {/* Timestamp */}
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-2">
-                              <span>{message.timestamp}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="text-xs text-gray-900 mb-1.5">{message.content}</div>
-                            <div className="text-[10px] text-gray-500">{message.timestamp}</div>
-                          </>
-                        )}
+                        {msg.content}
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Input Area */}
-            <div className="px-6 py-4">
-              <div className="relative mb-3">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={queryInput}
-                  onChange={(e) => setQueryInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && queryInput.trim()) {
-                      handleQuery(queryInput);
-                    }
-                  }}
-                  className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#455a4f] focus:border-transparent"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <button
-                    onClick={() => queryInput.trim() && handleQuery(queryInput)}
-                    disabled={!queryInput.trim()}
-                    className="px-3 py-1.5 bg-[#455a4f] text-white text-sm rounded-md hover:bg-[#3a4a42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Ask
-                  </button>
-                </div>
-              </div>
-
-              {/* Suggested Queries */}
-              {chatMessages.length === 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {suggestedQueries.map((query, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleQuery(query)}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200 transition-colors"
-                    >
-                      {query}
-                    </button>
-                  ))}
+                  {recordsIsThinking && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-[#455a4f] flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div className="flex gap-1 px-3 py-2 bg-gray-100 rounded-xl">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={recordsChatEndRef} />
                 </div>
               )}
             </div>
+
+            {/* Input */}
+            <div className="px-4 py-3 border-t border-gray-100">
+              <div className="flex items-end gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-2 focus-within:border-[#E05C3A] transition-colors">
+                <Sparkles className="w-4 h-4 text-[#455a4f] flex-shrink-0 mb-0.5" />
+                <textarea
+                  rows={1}
+                  placeholder="Ask about these records…"
+                  value={recordsChatInput}
+                  onChange={e => setRecordsChatInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendRecordsChat();
+                    }
+                  }}
+                  className="flex-1 resize-none text-sm text-gray-900 placeholder-gray-400 bg-transparent focus:outline-none"
+                />
+                <button
+                  onClick={() => sendRecordsChat()}
+                  disabled={!recordsChatInput.trim()}
+                  className="flex-shrink-0 w-7 h-7 bg-gray-200 hover:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 10V2M2 6l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Workflows Tab Content */}
-        {activeTab === 'workflows' && (
-          <>
-            {!selectedWorkflowId ? (
-              <WorkflowPanel 
-                borrowerName="Portfolio"
-                onStartWorkflow={handleStartWorkflow}
-                onWorkflowOpen={(workflowId, workflowName) => {
-                  setSelectedWorkflowId(workflowId);
-                  setSelectedWorkflowName(workflowName);
-                }}
-              />
-            ) : (
-              <WorkflowDetailInline 
-                workflowId={selectedWorkflowId}
-                workflowName={selectedWorkflowName}
-                onBack={() => {
-                  setSelectedWorkflowId(null);
-                  setSelectedWorkflowName('');
-                }}
-              />
+          {/* Right dossier panel */}
+          <div className="flex-1 overflow-y-auto bg-[#f5f5f3]">
+            {/* Tabs if multiple records */}
+            {selectedRecordsForChat.length > 1 && (
+              <div className="bg-white border-b border-gray-200 px-6 flex gap-0">
+                {selectedRecordsForChat.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => setActiveDossierTab(r.id)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                      activeDossierTab === r.id
+                        ? 'border-[#455a4f] text-gray-900'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
             )}
-          </>
-        )}
 
-        {/* Records Tab Content */}
-        {activeTab === 'records' && (
-          <>
-            {/* Controls Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h2 className="text-lg text-gray-900">
-                {chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult ? 'Query Results' : 'Records'}
-              </h2>
-              {!(chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult) ? (
+            {/* Dossier content */}
+            {(() => {
+              const active = selectedRecordsForChat.find(r => r.id === activeDossierTab) ?? selectedRecordsForChat[0];
+              if (!active) return null;
+              const statusColor = active.status === 'Active'
+                ? 'bg-green-100 text-green-800'
+                : active.status === 'Renewal'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-red-100 text-red-800';
+              return (
+                <div className="p-6 max-w-3xl">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-6">
+                    <div>
+                      <h2 className="text-xl font-medium text-gray-900">{active.name}</h2>
+                      <p className="text-sm text-gray-500 mt-1">
+                        CIP: {active.cipCode} &nbsp;·&nbsp; Rel ID: {active.relationshipId} &nbsp;·&nbsp; {active.assetClass}
+                      </p>
+                    </div>
+                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${statusColor}`}>
+                      {active.status}
+                    </span>
+                  </div>
+
+                  {/* Key metrics grid */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    {[
+                      { label: 'Total Exposure', value: formatCurrency(active.totalCreditExposure) },
+                      { label: 'Commitment', value: formatCurrency(active.commitment) },
+                      { label: 'Deposit Balance', value: formatCurrency(active.totalDepositBalance) },
+                    ].map(m => (
+                      <div key={m.label} className="bg-white rounded-lg border border-gray-200 p-4">
+                        <p className="text-xs text-gray-500 mb-1">{m.label}</p>
+                        <p className="text-lg font-medium text-gray-900">{m.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Team */}
+                  <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Team</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500">Loan Officer</p>
+                        <p className="text-sm text-gray-900">{active.loanOfficer}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500">Underwriter</p>
+                        <p className="text-sm text-gray-900">{active.underwriter}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Facilities */}
+                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-200">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Facilities</p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs text-gray-500">Note #</th>
+                            <th className="px-4 py-2 text-left text-xs text-gray-500">Type</th>
+                            <th className="px-4 py-2 text-right text-xs text-gray-500">Balance</th>
+                            <th className="px-4 py-2 text-left text-xs text-gray-500">Rate</th>
+                            <th className="px-4 py-2 text-left text-xs text-gray-500">Maturity</th>
+                            <th className="px-4 py-2 text-left text-xs text-gray-500">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {active.facilities.map(f => {
+                            const fStatusColor = f.status === 'Active'
+                              ? 'bg-green-100 text-green-800'
+                              : f.status === 'Renewal'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-red-100 text-red-800';
+                            return (
+                              <tr key={f.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                <td className="px-4 py-3 text-xs text-gray-900 font-mono">{f.noteNumber}</td>
+                                <td className="px-4 py-3 text-xs text-gray-700">{f.loanType}</td>
+                                <td className="px-4 py-3 text-xs text-gray-900 text-right">{formatCurrency(f.balance)}</td>
+                                <td className="px-4 py-3 text-xs text-gray-700">{f.interestRate}</td>
+                                <td className="px-4 py-3 text-xs text-gray-700">{formatDate(f.maturityDate)}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-0.5 text-xs rounded-full ${fStatusColor}`}>{f.status}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Records default list + Workflows tab */}
+      {(activeTab === 'workflows' || (activeTab === 'records' && selectedRecordsForChat.length === 0)) && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+          {/* Processing Indicator */}
+          {isProcessingRecord && (
+            <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-[#455a4f] rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white animate-spin" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">Processing Documents and Creating a New Record</h4>
+                  <p className="text-xs text-gray-600">
+                    You may close this page. The new record will appear when processing is complete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Workflows Tab Content */}
+          {activeTab === 'workflows' && (
+            <>
+              {!selectedWorkflowId ? (
+                <WorkflowPanel
+                  borrowerName="Portfolio"
+                  onStartWorkflow={handleStartWorkflow}
+                  onWorkflowOpen={(workflowId, workflowName) => {
+                    setSelectedWorkflowId(workflowId);
+                    setSelectedWorkflowName(workflowName);
+                  }}
+                />
+              ) : (
+                <WorkflowDetailInline
+                  workflowId={selectedWorkflowId}
+                  workflowName={selectedWorkflowName}
+                  onBack={() => {
+                    setSelectedWorkflowId(null);
+                    setSelectedWorkflowName('');
+                  }}
+                />
+              )}
+            </>
+          )}
+
+          {/* Records Tab Content */}
+          {activeTab === 'records' && (
+            <>
+              {/* Controls Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 className="text-lg text-gray-900">Records</h2>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1 sm:w-80 sm:flex-none">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -719,55 +776,73 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                     New Record
                   </button>
                 </div>
-              ) : null}
-            </div>
-
-            {/* Portfolio Table */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBorrowers.map((borrower) => (
-                      <tr key={borrower.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          {borrower.id === '1' ? (
-                            <button
-                              onClick={() => onBorrowerSelect({
-                                id: borrower.id,
-                                name: borrower.name,
-                                cipCode: borrower.cipCode,
-                                relationshipId: borrower.relationshipId,
-                                noteNumber: borrower.noteNumber,
-                                loanOfficer: borrower.loanOfficer,
-                                underwriter: borrower.underwriter,
-                                facilities: borrower.facilities
-                              })}
-                              className="text-sm text-[#455a4f] hover:underline cursor-pointer"
-                            >
-                              {borrower.name}
-                            </button>
-                          ) : (
-                            <span className="text-sm text-gray-900">
-                              {borrower.name}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{formatDate(borrower.dateAdded)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            </div>
-          </>
-        )}
-      </div>
+
+              {/* Portfolio Table */}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 w-8" />
+                        <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
+                        <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBorrowers.map((borrower) => {
+                        const isChecked = selectedRecordsForChat.some(r => r.id === borrower.id);
+                        return (
+                          <tr key={borrower.id} className="border-b border-gray-200 hover:bg-gray-50">
+                            <td className="px-4 py-3 w-8">
+                              <button
+                                onClick={() => toggleRecordForChat(borrower)}
+                                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                  isChecked
+                                    ? 'bg-[#455a4f] border-[#455a4f]'
+                                    : 'border-gray-300 hover:border-[#455a4f]'
+                                }`}
+                              >
+                                {isChecked && (
+                                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                    <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              {borrower.id === '1' ? (
+                                <button
+                                  onClick={() => onBorrowerSelect({
+                                    id: borrower.id,
+                                    name: borrower.name,
+                                    cipCode: borrower.cipCode,
+                                    relationshipId: borrower.relationshipId,
+                                    noteNumber: borrower.noteNumber,
+                                    loanOfficer: borrower.loanOfficer,
+                                    underwriter: borrower.underwriter,
+                                    facilities: borrower.facilities
+                                  })}
+                                  className="text-sm text-[#455a4f] hover:underline cursor-pointer"
+                                >
+                                  {borrower.name}
+                                </button>
+                              ) : (
+                                <span className="text-sm text-gray-900">{borrower.name}</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-900">{formatDate(borrower.dateAdded)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* New Record Modal */}
       {showNewRecordModal && (
