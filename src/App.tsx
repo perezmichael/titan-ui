@@ -21,6 +21,7 @@ interface SelectedDocument {
 export default function App() {
   const [activeConversationId, setActiveConversationId] = useState('new-chat');
   const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
+  const [previousView, setPreviousView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'knowledge-base' | 'tprm' | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uploadCompleted, setUploadCompleted] = useState(false);
@@ -149,6 +150,7 @@ export default function App() {
           onDocumentSelect={handleDocumentSelect}
           onChatNavigate={handleChatNavigate}
           onAgentLaunch={(agentId) => {
+            setPreviousView(activeView as any);
             if (agentId === 'commercial-lending') {
               setActiveView('commercial-lending');
             } else if (agentId === 'knowledge-base') {
@@ -161,7 +163,7 @@ export default function App() {
       )}
       {activeView === 'commercial-lending' && (
         <CommercialLendingWorkspace
-          onBack={() => setActiveView('agents')}
+          onBack={() => setActiveView(previousView ?? 'agents')}
           onSessionCreated={session => setAgentSessions(prev => [session, ...prev])}
         />
       )}
@@ -172,8 +174,8 @@ export default function App() {
         />
       )}
       {activeView === 'tprm' && (
-        <TPRMWorkbench 
-          onBack={() => setActiveView('agents')}
+        <TPRMWorkbench
+          onBack={() => setActiveView(previousView ?? 'agents')}
         />
       )}
     </div>

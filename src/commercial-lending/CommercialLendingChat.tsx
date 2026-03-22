@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, FileText, Zap, ChevronDown, X, ChevronRight, Clock } from 'lucide-react';
+import { Sparkles, FileText, Zap, ChevronDown, X } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -21,14 +21,6 @@ interface Workflow {
   name: string;
   description: string;
   steps: number;
-}
-
-interface WorkflowRun {
-  id: string;
-  recordName: string;
-  workflowName: string;
-  completedSteps: number;
-  totalSteps: number;
 }
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
@@ -57,15 +49,11 @@ const workflows: Workflow[] = [
   },
 ];
 
-const activeRuns: WorkflowRun[] = [
-  { id: 'r1', recordName: 'GH3 Cler SNU', workflowName: 'Deal QA', completedSteps: 4, totalSteps: 7 },
-];
-
 // ─── Suggested questions ──────────────────────────────────────────────────────
 
 const globalSuggestions = [
   'Which loans have maturities in the next 90 days?',
-  'Show borrowers with risk rating 4 or 5',
+  'Show borrowers with upcoming renewals',
   'What is the total Data Center exposure?',
 ];
 
@@ -376,69 +364,6 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
           </p>
 
           {inputBox}
-
-          {/* In-progress runs */}
-          {activeRuns.length > 0 && (
-            <div className="mt-8">
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-3.5 h-3.5 text-amber-500" />
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">In progress</span>
-              </div>
-              {activeRuns.map(run => (
-                <button
-                  key={run.id}
-                  className="w-full flex items-center gap-4 px-4 py-3 bg-white border border-gray-200 rounded-xl hover:border-[#455a4f] hover:bg-[#f8faf9] transition-all mb-2 text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
-                    <Clock className="w-4 h-4 text-amber-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900">
-                      {run.recordName} — {run.workflowName}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <div className="h-1 w-24 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-400 rounded-full"
-                          style={{ width: `${(run.completedSteps / run.totalSteps) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-[11px] text-gray-400">
-                        Step {run.completedSteps} of {run.totalSteps}
-                      </span>
-                    </div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f] transition-colors" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Workflow cards */}
-          <div className="mt-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pick a workflow</span>
-            </div>
-            <div className="space-y-2">
-              {workflows.map(wf => (
-                <button
-                  key={wf.id}
-                  onClick={() => handleStartWorkflow(wf)}
-                  className="w-full flex items-center gap-4 px-4 py-3.5 bg-white border border-gray-200 rounded-xl hover:border-[#455a4f] hover:bg-[#f8faf9] transition-all text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#f0f4f2] flex items-center justify-center flex-shrink-0">
-                    <FileText className="w-4 h-4 text-[#455a4f]" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900">{wf.name}</div>
-                    <div className="text-xs text-gray-500 mt-0.5">{wf.description}</div>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f] transition-colors flex-shrink-0" />
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     );
