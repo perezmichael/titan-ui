@@ -281,6 +281,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
 
   // Records workspace
   const [selectedRecordsForChat, setSelectedRecordsForChat] = useState<Borrower[]>([]);
+  const [recordsChatOpen, setRecordsChatOpen] = useState(false);
   const [recordsChatMessages, setRecordsChatMessages] = useState<{id: string; role: 'user'|'assistant'; content: string}[]>([]);
   const [recordsChatInput, setRecordsChatInput] = useState('');
   const [activeDossierTab, setActiveDossierTab] = useState<string | null>(null);
@@ -468,13 +469,20 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
         </div>
       )}
 
-      {/* Records split-pane workspace — visible when records selected */}
-      {activeTab === 'records' && selectedRecordsForChat.length > 0 && (
+      {/* Records split-pane workspace — visible when chat opened */}
+      {activeTab === 'records' && recordsChatOpen && (
         <div className="flex-1 flex overflow-hidden">
           {/* Left chat panel */}
           <div className="w-[380px] flex-shrink-0 flex flex-col border-r border-gray-200 bg-white">
-            {/* Selected record pills + Clear */}
+            {/* Back + selected record pills + Clear */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setRecordsChatOpen(false)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors flex-shrink-0 mr-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Records
+              </button>
               <div className="flex items-center gap-2 flex-wrap flex-1">
                 {selectedRecordsForChat.map(r => (
                   <span key={r.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eef2f0] text-[#455a4f] text-xs rounded-full">
@@ -487,7 +495,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                 ))}
               </div>
               <button
-                onClick={() => { setSelectedRecordsForChat([]); setRecordsChatMessages([]); setActiveDossierTab(null); }}
+                onClick={() => { setSelectedRecordsForChat([]); setRecordsChatMessages([]); setActiveDossierTab(null); setRecordsChatOpen(false); }}
                 className="text-xs text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
               >
                 Clear
@@ -582,24 +590,22 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
 
           {/* Right dossier panel */}
           <div className="flex-1 overflow-y-auto bg-[#f5f5f3]">
-            {/* Tabs if multiple records */}
-            {selectedRecordsForChat.length > 1 && (
-              <div className="bg-white border-b border-gray-200 px-6 flex gap-0">
-                {selectedRecordsForChat.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => setActiveDossierTab(r.id)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                      activeDossierTab === r.id
-                        ? 'border-[#455a4f] text-gray-900'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    {r.name}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Dossier tabs — always shown */}
+            <div className="bg-white border-b border-gray-200 px-6 flex gap-0">
+              {selectedRecordsForChat.map(r => (
+                <button
+                  key={r.id}
+                  onClick={() => setActiveDossierTab(r.id)}
+                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                    activeDossierTab === r.id
+                      ? 'border-[#455a4f] text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {r.name}
+                </button>
+              ))}
+            </div>
 
             {/* Dossier content */}
             {(() => {
@@ -703,7 +709,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       )}
 
       {/* Records default list + Workflows tab */}
-      {(activeTab === 'workflows' || (activeTab === 'records' && selectedRecordsForChat.length === 0)) && (
+      {(activeTab === 'workflows' || (activeTab === 'records' && !recordsChatOpen)) && (
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
           {/* Processing Indicator */}
           {isProcessingRecord && (
@@ -750,6 +756,35 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
           {/* Records Tab Content */}
           {activeTab === 'records' && (
             <>
+              {/* Action bar — appears when records are selected */}
+              {selectedRecordsForChat.length > 0 && (
+                <div className="flex items-center justify-between bg-[#f0f4f2] border border-[#c8d8d2] rounded-lg px-4 py-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#455a4f]" />
+                    <span className="text-sm text-[#455a4f] font-medium">
+                      {selectedRecordsForChat.length === 1
+                        ? `${selectedRecordsForChat[0].name} selected`
+                        : `${selectedRecordsForChat.length} records selected`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { setSelectedRecordsForChat([]); setActiveDossierTab(null); }}
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setRecordsChatOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Controls Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <h2 className="text-lg text-gray-900">Records</h2>
