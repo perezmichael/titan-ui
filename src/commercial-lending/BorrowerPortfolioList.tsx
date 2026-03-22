@@ -3,6 +3,7 @@ import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
 import { WorkflowPanel } from './WorkflowPanel';
 import { WorkflowDetailInline } from './WorkflowDetailInline';
+import { CommercialLendingChat } from './CommercialLendingChat';
 
 interface BorrowerPortfolioListProps {
   onBorrowerSelect: (borrower: SelectedBorrower) => void;
@@ -291,7 +292,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
   // Tab state
-  const [activeTab, setActiveTab] = useState<'records' | 'workflows'>('records');
+  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('records');
 
   // Workflow detail state
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
@@ -499,8 +500,15 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+      {/* Chat Tab — full-height, manages its own scroll */}
+      {activeTab === 'chat' && (
+        <div className="flex-1 overflow-hidden">
+          <CommercialLendingChat />
+        </div>
+      )}
+
+      {/* Main Content — Records & Workflows tabs */}
+      <div className={`flex-1 overflow-y-auto px-4 sm:px-6 py-6 ${activeTab === 'chat' ? 'hidden' : ''}`}>
         {/* Processing Indicator */}
         {isProcessingRecord && (
           <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
@@ -542,8 +550,20 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
             }`}
           >
             Workflows
-            
             {activeTab === 'workflows' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-4 py-2 text-sm font-medium transition-colors relative flex items-center gap-2 ${
+              activeTab === 'chat'
+                ? 'text-gray-900'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            Chat
+            {activeTab === 'chat' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
             )}
           </button>
