@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, FileText, Zap, ChevronDown, X } from 'lucide-react';
+import { Sparkles, FileText, Zap, ChevronDown, X, ChevronRight } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -364,6 +364,32 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
           </p>
 
           {inputBox}
+
+          {/* Workflow cards */}
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Pick a workflow</span>
+            </div>
+            <div className="space-y-2">
+              {workflows.map(wf => (
+                <button
+                  key={wf.id}
+                  onClick={() => handleStartWorkflow(wf)}
+                  className="w-full flex items-center gap-4 px-4 py-3.5 bg-white border border-gray-200 rounded-xl hover:border-[#455a4f] hover:bg-[#f8faf9] transition-all text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#f0f4f2] flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-4 h-4 text-[#455a4f]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-gray-900">{wf.name}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{wf.description}</div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f] transition-colors flex-shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
