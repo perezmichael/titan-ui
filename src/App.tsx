@@ -5,7 +5,7 @@ import { ConnectorsView } from './ConnectorsView';
 import { UploadsView } from './UploadsView';
 import { AgentsView } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
-import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
+import { CommercialLendingWorkspace, type AgentSession } from './CommercialLendingWorkspace';
 import { ChevronRight, Menu } from 'lucide-react';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -26,6 +26,7 @@ export default function App() {
   const [uploadCompleted, setUploadCompleted] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStarted, setUploadStarted] = useState<boolean>(false);
+  const [agentSessions, setAgentSessions] = useState<AgentSession[]>([]);
   const hasStartedUploadRef = useRef<boolean>(false);
   const progressRef = useRef<number>(0);
   const isMobile = useIsMobile();
@@ -118,6 +119,7 @@ export default function App() {
         uploadProgress={uploadProgress}
         uploadStarted={uploadStarted}
         agentContext={activeView === 'commercial-lending' ? 'commercial-lending' : activeView === 'tprm' ? 'tprm' : null}
+        agentSessions={agentSessions}
       />
       {activeView === 'chat' && (
         <ChatArea 
@@ -158,8 +160,9 @@ export default function App() {
         />
       )}
       {activeView === 'commercial-lending' && (
-        <CommercialLendingWorkspace 
+        <CommercialLendingWorkspace
           onBack={() => setActiveView('agents')}
+          onSessionCreated={session => setAgentSessions(prev => [session, ...prev])}
         />
       )}
       {activeView === 'knowledge-base' && (

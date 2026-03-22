@@ -5,11 +5,19 @@ import { WorkflowPanel } from './WorkflowPanel';
 import { WorkflowDetailInline } from './WorkflowDetailInline';
 import { CommercialLendingChat } from './CommercialLendingChat';
 
+interface AgentSession {
+  id: string;
+  title: string;
+  preview: string;
+  timestamp: string;
+}
+
 interface BorrowerPortfolioListProps {
   onBorrowerSelect: (borrower: SelectedBorrower) => void;
   onBack: () => void;
   onWorkflowOpen?: (workflowId: string, workflowName: string) => void;
   onSettingsOpen?: () => void;
+  onSessionCreated?: (session: AgentSession) => void;
 }
 
 interface ChatMessage {
@@ -283,7 +291,7 @@ const mockBorrowers: Borrower[] = [
   }
 ];
 
-export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen }: BorrowerPortfolioListProps) {
+export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
   
@@ -480,17 +488,40 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          {/* Left: back + title */}
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 sm:gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Agents</span>
-            </button>
-            <div className="h-4 w-px bg-gray-300 hidden sm:block flex-shrink-0"></div>
-            <h1 className="text-base sm:text-lg text-gray-900 truncate hidden sm:block">Commercial Lending Agent</h1>
+          {/* Left: back + breadcrumb */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {chatStarted ? (
+              // Inside active chat: back exits to workspace landing
+              <>
+                <button
+                  onClick={() => setChatStarted(false)}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Commercial Lending</span>
+                </button>
+                <span className="text-gray-300 hidden sm:inline">/</span>
+                <button
+                  onClick={onBack}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors hidden sm:block flex-shrink-0"
+                >
+                  Agents
+                </button>
+              </>
+            ) : (
+              // On landing: back goes to agents list
+              <>
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Agents</span>
+                </button>
+                <span className="text-gray-300 hidden sm:inline">/</span>
+                <h1 className="text-sm text-gray-900 truncate hidden sm:block flex-shrink-0">Commercial Lending</h1>
+              </>
+            )}
           </div>
 
           {/* Center: pill toggle — hidden once chat is started */}
@@ -528,7 +559,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Chat Tab — full-height, manages its own scroll */}
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
-          <CommercialLendingChat onChatStarted={() => setChatStarted(true)} />
+          <CommercialLendingChat onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
         </div>
       )}
 

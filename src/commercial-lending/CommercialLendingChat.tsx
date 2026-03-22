@@ -131,11 +131,19 @@ function RRBadge({ rating }: { rating: number }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface CommercialLendingChatProps {
-  onChatStarted?: () => void;
+interface AgentSession {
+  id: string;
+  title: string;
+  preview: string;
+  timestamp: string;
 }
 
-export function CommercialLendingChat({ onChatStarted }: CommercialLendingChatProps) {
+interface CommercialLendingChatProps {
+  onChatStarted?: () => void;
+  onSessionCreated?: (session: AgentSession) => void;
+}
+
+export function CommercialLendingChat({ onChatStarted, onSessionCreated }: CommercialLendingChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedRecord, setSelectedRecord] = useState<Borrower | null>(null);
@@ -187,7 +195,15 @@ export function CommercialLendingChat({ onChatStarted }: CommercialLendingChatPr
     };
 
     setMessages(prev => {
-      if (prev.length === 0) onChatStarted?.();
+      if (prev.length === 0) {
+        onChatStarted?.();
+        onSessionCreated?.({
+          id: userMsg.id,
+          title: userContent.length > 40 ? userContent.slice(0, 40) + '…' : userContent,
+          preview: selectedRecord ? `In ${selectedRecord.name}` : 'Portfolio chat',
+          timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        });
+      }
       return [...prev, userMsg];
     });
     setInput('');

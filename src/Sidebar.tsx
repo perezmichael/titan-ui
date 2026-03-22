@@ -25,9 +25,10 @@ interface SidebarProps {
   uploadProgress?: number;
   uploadStarted?: boolean;
   agentContext?: 'commercial-lending' | 'tprm' | null;
+  agentSessions?: Array<{ id: string; title: string; preview: string; timestamp: string }>;
 }
 
-export function Sidebar({ activeConversationId, onConversationSelect, activeView, onViewChange, collapsed, onToggleCollapse, uploadCompleted, uploadProgress, uploadStarted, agentContext }: SidebarProps) {
+export function Sidebar({ activeConversationId, onConversationSelect, activeView, onViewChange, collapsed, onToggleCollapse, uploadCompleted, uploadProgress, uploadStarted, agentContext, agentSessions }: SidebarProps) {
   const isMobile = useIsMobile();
   const conversationGroups: ConversationGroup[] = [
     {
@@ -259,6 +260,21 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
                 {agentContext === 'commercial-lending' ? 'Commercial Lending Agent' : 'TPRM Agent'}
               </div>
               <div className="text-[10px] text-orange-700 mt-0.5">Agent Activity History</div>
+            </div>
+          )}
+          {agentContext && agentSessions && agentSessions.length > 0 && (
+            <div className="mb-1">
+              <div className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wide">This session</div>
+              {agentSessions.map(session => (
+                <div key={session.id} className="w-full px-3 py-2 text-left hover:bg-gray-200/50">
+                  <div className="flex items-start justify-between gap-2 mb-0.5">
+                    <div className="text-xs text-gray-900 truncate">{session.title}</div>
+                    <div className="text-[10px] text-gray-500 whitespace-nowrap flex-shrink-0">{session.timestamp}</div>
+                  </div>
+                  <div className="text-[11px] text-gray-500 truncate">{session.preview}</div>
+                </div>
+              ))}
+              <div className="mx-3 my-1 border-t border-orange-200" />
             </div>
           )}
           {(() => {
