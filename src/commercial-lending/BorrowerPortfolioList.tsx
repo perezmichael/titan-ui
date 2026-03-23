@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings } from 'lucide-react';
+import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings, Play, CheckCircle2, XCircle, Clock } from 'lucide-react';
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
-import { WorkflowPanel } from './WorkflowPanel';
-import { WorkflowDetailInline } from './WorkflowDetailInline';
 import { CommercialLendingChat } from './CommercialLendingChat';
 
 interface AgentSession {
@@ -264,6 +262,75 @@ const mockBorrowers: Borrower[] = [
   }
 ];
 
+interface WorkflowType {
+  id: string;
+  name: string;
+  description: string;
+  totalSteps: number;
+}
+
+interface WorkflowJob {
+  id: string;
+  workflowType: WorkflowType;
+  borrowerName: string;
+  status: 'in-progress' | 'completed' | 'failed';
+  progress: number;
+  currentStep?: string;
+  completedSteps: number;
+  startedAt: string;
+  completedAt?: string;
+}
+
+const workflowTypes: WorkflowType[] = [
+  { id: 'deal-qa', name: 'Deal QA', description: 'Full document review and quality assurance check', totalSteps: 4 },
+  { id: 'annual-review', name: 'Annual Review', description: 'Comprehensive annual borrower assessment', totalSteps: 6 },
+  { id: 'covenant-monitoring', name: 'Covenant Monitoring', description: 'Track and review all covenant compliance', totalSteps: 3 },
+  { id: 'dscr-analysis', name: 'DSCR Analysis', description: 'Debt service coverage ratio calculation and trending', totalSteps: 5 },
+];
+
+const initialWorkflowJobs: WorkflowJob[] = [
+  {
+    id: 'job-1',
+    workflowType: workflowTypes[0],
+    borrowerName: 'VFN Holdings Inc',
+    status: 'in-progress',
+    progress: 65,
+    currentStep: 'Analyzing financial statements',
+    completedSteps: 2,
+    startedAt: '2026-03-22',
+  },
+  {
+    id: 'job-2',
+    workflowType: workflowTypes[1],
+    borrowerName: 'GH3 Cler SNU',
+    status: 'completed',
+    progress: 100,
+    completedSteps: 6,
+    startedAt: '2026-03-20',
+    completedAt: '2026-03-21',
+  },
+  {
+    id: 'job-3',
+    workflowType: workflowTypes[2],
+    borrowerName: 'Fibernet Solutions LLC',
+    status: 'completed',
+    progress: 100,
+    completedSteps: 3,
+    startedAt: '2026-03-19',
+    completedAt: '2026-03-20',
+  },
+  {
+    id: 'job-4',
+    workflowType: workflowTypes[3],
+    borrowerName: 'Retail Plaza Holdings',
+    status: 'failed',
+    progress: 40,
+    completedSteps: 2,
+    startedAt: '2026-03-18',
+    completedAt: '2026-03-18',
+  },
+];
+
 export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
@@ -272,9 +339,11 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('chat');
   const [chatStarted, setChatStarted] = useState(false);
 
-  // Workflow detail state
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
-  const [selectedWorkflowName, setSelectedWorkflowName] = useState<string>('');
+  // Workflow jobs + run modal
+  const [workflowJobs, setWorkflowJobs] = useState<WorkflowJob[]>(initialWorkflowJobs);
+  const [showRunWorkflowModal, setShowRunWorkflowModal] = useState(false);
+  const [runWorkflowStep, setRunWorkflowStep] = useState<'type' | 'record'>('type');
+  const [pendingWorkflowType, setPendingWorkflowType] = useState<WorkflowType | null>(null);
 
   // New record modal states
   const [showNewRecordModal, setShowNewRecordModal] = useState(false);
@@ -347,10 +416,21 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     }, 900);
   };
 
-  const handleStartWorkflow = (workflowId: string) => {
-    const name = workflowId === 'deal-qa' ? 'Deal QA' : 'Annual Review';
-    setSelectedWorkflowId(workflowId);
-    setSelectedWorkflowName(name);
+  const launchWorkflowJob = (wfType: WorkflowType, borrower: Borrower) => {
+    const newJob: WorkflowJob = {
+      id: `job-${Date.now()}`,
+      workflowType: wfType,
+      borrowerName: borrower.name,
+      status: 'in-progress',
+      progress: 0,
+      currentStep: 'Initializing workflow',
+      completedSteps: 0,
+      startedAt: new Date().toISOString().slice(0, 10),
+    };
+    setWorkflowJobs(prev => [newJob, ...prev]);
+    setShowRunWorkflowModal(false);
+    setRunWorkflowStep('type');
+    setPendingWorkflowType(null);
   };
 
   const toggleBorrowerExpansion = (borrowerId: string) => {
@@ -731,24 +811,111 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
           {/* Workflows Tab Content */}
           {activeTab === 'workflows' && (
             <>
-              {!selectedWorkflowId ? (
-                <WorkflowPanel
-                  borrowerName="Portfolio"
-                  onStartWorkflow={handleStartWorkflow}
-                  onWorkflowOpen={(workflowId, workflowName) => {
-                    setSelectedWorkflowId(workflowId);
-                    setSelectedWorkflowName(workflowName);
-                  }}
-                />
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg text-gray-900">Workflow Jobs</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Track the status of running and completed workflows</p>
+                </div>
+                <button
+                  onClick={() => { setShowRunWorkflowModal(true); setRunWorkflowStep('type'); setPendingWorkflowType(null); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors flex-shrink-0"
+                >
+                  <Play className="w-4 h-4" />
+                  Run a workflow
+                </button>
+              </div>
+
+              {/* Job list */}
+              {workflowJobs.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <Play className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">No workflow jobs yet.</p>
+                  <p className="text-xs mt-1">Click "Run a workflow" to get started.</p>
+                </div>
               ) : (
-                <WorkflowDetailInline
-                  workflowId={selectedWorkflowId}
-                  workflowName={selectedWorkflowName}
-                  onBack={() => {
-                    setSelectedWorkflowId(null);
-                    setSelectedWorkflowName('');
-                  }}
-                />
+                <div className="space-y-3">
+                  {workflowJobs.map(job => {
+                    const isInProgress = job.status === 'in-progress';
+                    const isCompleted = job.status === 'completed';
+                    return (
+                      <div key={job.id} className="bg-white rounded-lg border border-gray-200 px-5 py-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-start gap-3 min-w-0">
+                            {/* Status icon */}
+                            <div className={`mt-0.5 flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                              isInProgress ? 'bg-blue-50' : isCompleted ? 'bg-green-50' : 'bg-red-50'
+                            }`}>
+                              {isInProgress && <Clock className="w-4 h-4 text-blue-500" />}
+                              {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                              {job.status === 'failed' && <XCircle className="w-4 h-4 text-red-500" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-sm font-medium text-gray-900">{job.workflowType.name}</span>
+                                <span className="text-gray-300">·</span>
+                                <span className="text-sm text-gray-600">{job.borrowerName}</span>
+                              </div>
+                              {isInProgress && job.currentStep && (
+                                <p className="text-xs text-gray-500 mt-0.5">{job.currentStep}</p>
+                              )}
+                              {!isInProgress && (
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  {isCompleted ? `Completed ${formatDate(job.completedAt!)}` : `Failed ${formatDate(job.completedAt!)}`}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Status badge */}
+                          <span className={`flex-shrink-0 px-2.5 py-1 text-xs font-medium rounded-full ${
+                            isInProgress
+                              ? 'bg-blue-50 text-blue-700'
+                              : isCompleted
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-red-50 text-red-600'
+                          }`}>
+                            {isInProgress ? 'In Progress' : isCompleted ? 'Completed' : 'Failed'}
+                          </span>
+                        </div>
+
+                        {/* Progress bar for in-progress jobs */}
+                        {isInProgress && (
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-gray-500">
+                                Step {job.completedSteps + 1} of {job.workflowType.totalSteps}
+                              </span>
+                              <span className="text-xs text-gray-500">{job.progress}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-400 rounded-full transition-all"
+                                style={{ width: `${job.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Step summary for completed/failed */}
+                        {!isInProgress && (
+                          <div className="mt-3 flex items-center gap-1">
+                            {Array.from({ length: job.workflowType.totalSteps }).map((_, i) => (
+                              <div
+                                key={i}
+                                className={`h-1.5 flex-1 rounded-full ${
+                                  i < job.completedSteps
+                                    ? isCompleted ? 'bg-green-400' : 'bg-red-300'
+                                    : 'bg-gray-100'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
@@ -877,6 +1044,88 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
             </>
           )}
         </div>
+      )}
+
+      {/* Run a Workflow Modal */}
+      {showRunWorkflowModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowRunWorkflowModal(false); setRunWorkflowStep('type'); setPendingWorkflowType(null); }} />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+              {/* Modal header */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {runWorkflowStep === 'record' && (
+                    <button onClick={() => { setRunWorkflowStep('type'); setPendingWorkflowType(null); }} className="text-gray-400 hover:text-gray-600 mr-1">
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div>
+                    <h2 className="text-base font-medium text-gray-900">
+                      {runWorkflowStep === 'type' ? 'Select a workflow' : `Select a record — ${pendingWorkflowType?.name}`}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {runWorkflowStep === 'type' ? 'Choose the workflow type to run' : 'Choose which record to run this workflow on'}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => { setShowRunWorkflowModal(false); setRunWorkflowStep('type'); setPendingWorkflowType(null); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Step 1: Pick workflow type */}
+              {runWorkflowStep === 'type' && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {workflowTypes.map(wf => (
+                    <button
+                      key={wf.id}
+                      onClick={() => { setPendingWorkflowType(wf); setRunWorkflowStep('record'); }}
+                      className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:border-[#455a4f] hover:bg-[#f8faf9] transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{wf.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{wf.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className="text-xs text-gray-400">{wf.totalSteps} steps</span>
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f]" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Step 2: Pick record */}
+              {runWorkflowStep === 'record' && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {mockBorrowers.map(borrower => (
+                    <button
+                      key={borrower.id}
+                      onClick={() => pendingWorkflowType && launchWorkflowJob(pendingWorkflowType, borrower)}
+                      className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:border-[#455a4f] hover:bg-[#f8faf9] transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{borrower.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{borrower.assetClass} · {borrower.noteNumber}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            borrower.status === 'Active' ? 'bg-green-100 text-green-700' : borrower.status === 'Renewal' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                          }`}>{borrower.status}</span>
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f]" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* New Record Modal */}
