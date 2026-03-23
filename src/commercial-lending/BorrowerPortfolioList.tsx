@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
-import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings, Play, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings, Play, CheckCircle2, XCircle, Clock, MessageSquare, Layers } from 'lucide-react';
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
 import { CommercialLendingChat } from './CommercialLendingChat';
 
@@ -331,12 +331,41 @@ const initialWorkflowJobs: WorkflowJob[] = [
   },
 ];
 
+type HistoryEntryType = 'chat' | 'workflow' | 'records' | 'document';
+
+interface HistoryEntry {
+  id: string;
+  type: HistoryEntryType;
+  title: string;
+  meta: string;
+  status: 'completed' | 'in-progress' | 'failed';
+  timestamp: string;
+  group: 'today' | 'this-week' | 'last-week';
+}
+
+const historyEntries: HistoryEntry[] = [
+  // Today
+  { id: 'h1', type: 'workflow',  title: 'Deal QA',              meta: 'VFN Holdings Inc',                          status: 'in-progress', timestamp: '2:30 PM',          group: 'today' },
+  { id: 'h2', type: 'chat',     title: 'Portfolio Q&A',         meta: 'Asked about maturities in next 90 days',    status: 'completed',   timestamp: '11:15 AM',         group: 'today' },
+  { id: 'h3', type: 'records',  title: 'Records Session',       meta: 'VFN Holdings · Fibernet Solutions',          status: 'completed',   timestamp: '9:20 AM',          group: 'today' },
+  // This week
+  { id: 'h4', type: 'workflow',  title: 'Annual Review',        meta: 'GH3 Cler SNU',                              status: 'completed',   timestamp: 'Tue 3:45 PM',      group: 'this-week' },
+  { id: 'h5', type: 'document', title: 'New Record Created',    meta: 'Q4 2025 Financials — VFN Holdings Inc',     status: 'completed',   timestamp: 'Tue 10:00 AM',     group: 'this-week' },
+  { id: 'h6', type: 'chat',     title: 'Portfolio Q&A',         meta: 'Reviewed total Data Center exposure',        status: 'completed',   timestamp: 'Mon 2:15 PM',      group: 'this-week' },
+  { id: 'h7', type: 'workflow',  title: 'Covenant Monitoring',  meta: 'Fibernet Solutions LLC',                    status: 'completed',   timestamp: 'Mon 9:30 AM',      group: 'this-week' },
+  // Last week
+  { id: 'h8', type: 'workflow',  title: 'DSCR Analysis',        meta: 'Retail Plaza Holdings',                     status: 'failed',      timestamp: 'Mar 17, 4:10 PM',  group: 'last-week' },
+  { id: 'h9', type: 'records',  title: 'Records Session',       meta: 'GH3 Cler · Fibernet · Healthcare Properties', status: 'completed', timestamp: 'Mar 17, 1:45 PM', group: 'last-week' },
+  { id: 'h10', type: 'chat',    title: 'Portfolio Q&A',         meta: 'Covenant compliance overview',               status: 'completed',   timestamp: 'Mar 16, 11:00 AM', group: 'last-week' },
+  { id: 'h11', type: 'document', title: 'New Record Created',   meta: 'Credit Agreement — Healthcare Properties',  status: 'completed',   timestamp: 'Mar 15, 3:00 PM',  group: 'last-week' },
+];
+
 export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat'>('chat');
+  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat' | 'history'>('chat');
   const [chatStarted, setChatStarted] = useState(false);
 
   // Workflow jobs + run modal
@@ -513,7 +542,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
           {/* Center: pill toggle — hidden once chat is started */}
           {!(activeTab === 'chat' && chatStarted) && (
             <div className="flex items-center bg-gray-100 rounded-full p-1 gap-0.5 flex-shrink-0">
-              {(['chat', 'records', 'workflows'] as const).map(tab => (
+              {(['chat', 'records', 'workflows', 'history'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -546,6 +575,72 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
           <CommercialLendingChat onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
+        </div>
+      )}
+
+      {/* History tab */}
+      {activeTab === 'history' && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+          <div className="mb-6">
+            <h2 className="text-lg text-gray-900">Activity History</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Every chat, workflow run, records session, and document processed in this workspace</p>
+          </div>
+
+          {(['today', 'this-week', 'last-week'] as const).map(group => {
+            const entries = historyEntries.filter(e => e.group === group);
+            if (entries.length === 0) return null;
+            const groupLabel = group === 'today' ? 'Today' : group === 'this-week' ? 'This Week' : 'Last Week';
+
+            const typeConfig: Record<HistoryEntryType, { icon: ReactNode; bg: string; label: string }> = {
+              chat:     { icon: <MessageSquare className="w-3.5 h-3.5 text-gray-500" />,   bg: 'bg-gray-100',   label: 'Portfolio Q&A' },
+              workflow: { icon: <Play className="w-3.5 h-3.5 text-[#455a4f]" />,          bg: 'bg-[#eef2f0]',  label: 'Workflow' },
+              records:  { icon: <Layers className="w-3.5 h-3.5 text-blue-500" />,         bg: 'bg-blue-50',    label: 'Records Session' },
+              document: { icon: <FileText className="w-3.5 h-3.5 text-amber-500" />,      bg: 'bg-amber-50',   label: 'Document' },
+            };
+
+            return (
+              <div key={group} className="mb-8">
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{groupLabel}</div>
+                <div className="space-y-2">
+                  {entries.map(entry => {
+                    const cfg = typeConfig[entry.type];
+                    return (
+                      <div key={entry.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-default">
+                        {/* Type icon */}
+                        <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
+                          {cfg.icon}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-900">{entry.title}</span>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-xs text-gray-500 truncate">{entry.meta}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-gray-400">{cfg.label}</span>
+                          </div>
+                        </div>
+
+                        {/* Right: status + timestamp */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                            entry.status === 'completed'  ? 'bg-green-50 text-green-700'
+                            : entry.status === 'in-progress' ? 'bg-blue-50 text-blue-700'
+                            : 'bg-red-50 text-red-600'
+                          }`}>
+                            {entry.status === 'in-progress' ? 'In Progress' : entry.status === 'completed' ? 'Completed' : 'Failed'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">{entry.timestamp}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 

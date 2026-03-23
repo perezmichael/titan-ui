@@ -1,12 +1,15 @@
-import { Search, Plus, Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight, Play, FileText, Layers, Zap } from 'lucide-react';
 import { TitanLogo } from './TitanLogo';
 import { useIsMobile } from './ui/use-mobile';
+
+type ConvType = 'chat' | 'workflow' | 'records' | 'document';
 
 interface Conversation {
   id: string;
   title: string;
   preview: string;
   timestamp: string;
+  type?: ConvType;
 }
 
 interface ConversationGroup {
@@ -34,137 +37,36 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
     {
       title: 'TODAY',
       conversations: [
-        {
-          id: 'upload-processing',
-          title: 'Regulatory Filing Analysis',
-          preview: '6 regulatory filing documents',
-          timestamp: '10:24 AM'
-        },
-        {
-          id: '4',
-          title: 'Current Fed Interest Rate',
-          preview: 'What is the current federal funds rate and when was it last changed?',
-          timestamp: '9:42 AM'
-        },
-        {
-          id: '3',
-          title: 'AI Assistant Core Capabilities',
-          preview: 'AI there! How can I assist you today?',
-          timestamp: '10:08 AM'
-        },
-        {
-          id: '1',
-          title: 'BSA AML Procedure Review',
-          preview: 'Can you help me review this procedure? 2026 BSA AML Procedure - Final.docx',
-          timestamp: '8:53 AM'
-        }
+        { id: 'upload-processing', title: 'Regulatory Filing Analysis', preview: 'Processed 6 regulatory filing documents', timestamp: '10:24 AM', type: 'document' },
+        { id: '4',                 title: 'Current Fed Interest Rate',  preview: 'What is the current federal funds rate and when was it last changed?', timestamp: '9:42 AM', type: 'chat' },
+        { id: '1',                 title: 'BSA AML Procedure Review',   preview: 'Reviewing 2026 BSA AML Procedure — Final.docx for compliance gaps', timestamp: '8:53 AM', type: 'chat' },
       ]
     },
     {
       title: 'THIS WEEK',
       conversations: [
-        {
-          id: '2',
-          title: 'Training Announcement Email',
-          preview: 'Can you help me write an email about the upcoming...',
-          timestamp: '2d ago'
-        }
+        { id: '2', title: 'Training Announcement Email', preview: 'Drafted all-staff email for March compliance training rollout', timestamp: '2d ago', type: 'chat' },
+        { id: '3', title: 'Loan Policy Q&A',             preview: 'Summarized key changes in the updated lending policy manual', timestamp: '3d ago', type: 'chat' },
       ]
     },
-    {
-      title: 'LAST WEEK',
-      conversations: [
-        {
-          id: '5',
-          title: 'AI Assistant Core Capabilities Overvi...',
-          preview: 'I my browse windows',
-          timestamp: '2w ago'
-        },
-        {
-          id: '6',
-          title: 'Handling Sensitive Information',
-          preview: 'Good! I\'ll exercise caution',
-          timestamp: '2w ago'
-        }
-      ]
-    },
-    {
-      title: 'LAST MONTH',
-      conversations: [
-        {
-          id: '7',
-          title: 'Handling Personal Information ...',
-          preview: 'If person mentions a bank',
-          timestamp: '2w ago'
-        },
-        {
-          id: '8',
-          title: 'New Chat',
-          preview: 'my vin is 123-123-2234',
-          timestamp: '2w ago'
-        },
-        {
-          id: '9',
-          title: 'Requesting Information or Details',
-          preview: 'not you sure are single customer',
-          timestamp: '3w ago'
-        }
-      ]
-    }
   ];
 
   const commercialLendingConversations: ConversationGroup[] = [
     {
       title: 'TODAY',
       conversations: [
-        {
-          id: 'cl-1',
-          title: 'VFN Holdings Inc - Deal QA',
-          preview: 'Completed Deal QA workflow for note 12345678-001',
-          timestamp: '2:30 PM'
-        },
-        {
-          id: 'cl-2',
-          title: 'Credit Memo Analysis',
-          preview: 'Analyze the key risk factors in the VFN Holdings credit memo...',
-          timestamp: '11:15 AM'
-        },
-        {
-          id: 'cl-3',
-          title: 'Annual Review - VFN Holdings',
-          preview: 'Started Annual Review workflow for relationship 87654321-002',
-          timestamp: '9:20 AM'
-        }
+        { id: 'cl-1', title: 'Deal QA — VFN Holdings',   preview: 'Step 3 of 4 · Analyzing financial statements', timestamp: '2:30 PM',  type: 'workflow' },
+        { id: 'cl-2', title: 'Portfolio Q&A',             preview: 'Which loans have maturities in the next 90 days?', timestamp: '11:15 AM', type: 'chat' },
+        { id: 'cl-3', title: 'VFN Holdings · Fibernet',  preview: 'Comparing DSCR and covenant status across 2 records', timestamp: '9:20 AM',  type: 'records' },
       ]
     },
     {
       title: 'THIS WEEK',
       conversations: [
-        {
-          id: 'cl-4',
-          title: 'Financial Statement Upload',
-          preview: 'Processed Q4 2025 financials for VFN Holdings Inc',
-          timestamp: '2d ago'
-        }
+        { id: 'cl-4', title: 'Annual Review — GH3 Cler', preview: 'Completed · 6 of 6 steps · No exceptions found', timestamp: '2d ago', type: 'workflow' },
+        { id: 'cl-5', title: 'New Record — Q4 Financials', preview: 'VFN Holdings Inc · AI extracted 14 data points', timestamp: '2d ago', type: 'document' },
       ]
     },
-    {
-      title: 'LAST WEEK',
-      conversations: [
-        {
-          id: 'cl-5',
-          title: 'Covenant Compliance Check',
-          preview: 'Review debt service coverage ratio calculations...',
-          timestamp: '5d ago'
-        },
-        {
-          id: 'cl-6',
-          title: 'Loan Modification Request',
-          preview: 'Started workflow for note 23456789-003 modification',
-          timestamp: '6d ago'
-        }
-      ]
-    }
   ];
 
   const activeConversations = agentContext === 'commercial-lending' ? commercialLendingConversations : conversationGroups;
@@ -253,99 +155,96 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
 
       {/* Conversations */}
       {!collapsed && (
-        <div className={`flex-1 overflow-y-auto ${agentContext ? 'bg-[#fef6ed] border-l-4 border-orange-400' : ''}`}>
+        <div className="flex-1 overflow-y-auto">
+          {/* Agent context pill */}
           {agentContext && (
-            <div className="px-3 py-3 border-b border-orange-200 bg-orange-50/50">
-              <div className="text-xs font-medium text-gray-900">
-                {agentContext === 'commercial-lending' ? 'Commercial Lending Agent' : 'TPRM Agent'}
+            <div className="px-3 pt-3 pb-2">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#eef2f0] rounded-lg">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#455a4f] flex-shrink-0" />
+                <span className="text-xs font-medium text-[#455a4f]">
+                  {agentContext === 'commercial-lending' ? 'Commercial Lending' : 'TPRM'} — Recents
+                </span>
               </div>
-              <div className="text-[10px] text-orange-700 mt-0.5">Agent Activity History</div>
             </div>
           )}
+
+          {/* Live sessions from this visit */}
           {agentContext && agentSessions && agentSessions.length > 0 && (
             <div className="mb-1">
-              <div className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wide">This session</div>
+              <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wide">Just now</div>
               {agentSessions.map(session => (
-                <div key={session.id} className="w-full px-3 py-2 text-left hover:bg-gray-200/50">
-                  <div className="flex items-start justify-between gap-2 mb-0.5">
-                    <div className="text-xs text-gray-900 truncate">{session.title}</div>
-                    <div className="text-[10px] text-gray-500 whitespace-nowrap flex-shrink-0">{session.timestamp}</div>
+                <div key={session.id} className="w-full px-3 py-2 text-left hover:bg-gray-200/50 flex items-start gap-2">
+                  <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#455a4f] flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2 mb-0.5">
+                      <div className="text-xs text-gray-900 truncate">{session.title}</div>
+                      <div className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">{session.timestamp}</div>
+                    </div>
+                    <div className="text-[11px] text-gray-500 truncate">{session.preview}</div>
                   </div>
-                  <div className="text-[11px] text-gray-500 truncate">{session.preview}</div>
                 </div>
               ))}
-              <div className="mx-3 my-1 border-t border-orange-200" />
+              <div className="mx-3 my-1 border-t border-gray-200" />
             </div>
           )}
-          {(() => {
-            // Get first 3 conversations across all groups
-            const allConversations = activeConversations.flatMap(g => g.conversations);
-            const first3Ids = allConversations.slice(0, 3).map(c => c.id);
-            
-            return activeConversations.map((group) => {
-              const visibleConversations = group.conversations.filter(conv => first3Ids.includes(conv.id));
-              if (visibleConversations.length === 0) return null;
-              
-              return (
-                <div key={group.title} className="mb-3">
-                  <div className="px-3 py-1 text-[10px] text-gray-500 uppercase tracking-wide">
-                    {group.title}
-                  </div>
-                  {visibleConversations.map((conv) => (
-                    <button
-                      key={conv.id}
-                      onClick={() => {
-                        onConversationSelect(conv.id);
-                        onViewChange('chat');
-                      }}
-                      className={`w-full px-3 py-2 text-left relative ${ 
-                        conv.id === activeConversationId 
-                          ? agentContext 
-                            ? 'bg-gray-300/70' 
-                            : 'bg-gray-200/70' 
-                          : agentContext 
-                            ? 'hover:bg-gray-300/50' 
-                            : 'hover:bg-gray-200/50'
-                      }`}
-                    >
+
+          {/* Conversation groups (Today + This Week only) */}
+          {activeConversations.map((group) => {
+            if (group.conversations.length === 0) return null;
+            const typeDot: Record<ConvType, string> = {
+              chat:     'bg-gray-400',
+              workflow: 'bg-[#455a4f]',
+              records:  'bg-blue-400',
+              document: 'bg-amber-400',
+            };
+            return (
+              <div key={group.title} className="mb-3">
+                <div className="px-3 py-1 text-[10px] text-gray-400 uppercase tracking-wide">
+                  {group.title}
+                </div>
+                {group.conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => {
+                      onConversationSelect(conv.id);
+                      if (!agentContext) onViewChange('chat');
+                    }}
+                    className={`w-full px-3 py-2 text-left flex items-start gap-2 ${
+                      conv.id === activeConversationId ? 'bg-gray-200/70' : 'hover:bg-gray-200/50'
+                    }`}
+                  >
+                    {/* Type dot */}
+                    <div className={`mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${typeDot[conv.type ?? 'chat']}`} />
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2 mb-0.5">
-                        <div className="flex items-center gap-2">
-                          <div className="text-xs text-gray-900 truncate">{conv.title}</div>
-                          {conv.id === 'upload-processing' && uploadProgress === 100 && conv.id !== activeConversationId && (
-                            <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></div>
-                          )}
+                        <div className="text-xs text-gray-900 truncate">{conv.title}</div>
+                        <div className="text-[10px] text-gray-400 whitespace-nowrap flex-shrink-0">
+                          {conv.id === 'upload-processing' && uploadStarted && uploadProgress < 100 ? '' : conv.timestamp}
                         </div>
-                        <div className="text-[10px] text-gray-500 whitespace-nowrap">{conv.timestamp}</div>
                       </div>
                       <div className="text-[11px] text-gray-500">
-                        {conv.id === 'upload-processing' ? (
-                          uploadStarted ? (
-                            uploadProgress >= 100 ? (
-                              <div className="space-y-1.5">
-                                <div className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[10px]">
-                                  <div className="w-1 h-1 bg-green-500 rounded-full"></div>
-                                  Upload complete
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin flex-shrink-0"></div>
-                                <span>Step {Math.max(1, Math.min(Math.ceil(uploadProgress * 7 / 100), 7))} of 7 complete</span>
-                              </div>
-                            )
+                        {conv.id === 'upload-processing' && uploadStarted ? (
+                          uploadProgress >= 100 ? (
+                            <span className="inline-flex items-center gap-1 text-green-600">
+                              <span className="w-1 h-1 rounded-full bg-green-500" />
+                              Upload complete
+                            </span>
                           ) : (
-                            <div className="line-clamp-2">{conv.preview}</div>
+                            <span className="flex items-center gap-1.5">
+                              <span className="w-2.5 h-2.5 border border-gray-400 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                              Step {Math.max(1, Math.min(Math.ceil(uploadProgress * 7 / 100), 7))} of 7
+                            </span>
                           )
                         ) : (
-                          <div className="line-clamp-2">{conv.preview}</div>
+                          <span className="line-clamp-2">{conv.preview}</span>
                         )}
                       </div>
-                    </button>
-                  ))}
-                </div>
-              );
-            });
-          })()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
