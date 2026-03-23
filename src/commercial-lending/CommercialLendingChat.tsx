@@ -203,7 +203,6 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   };
 
   const handleStartWorkflow = (wf: Workflow) => {
-    setShowWorkflowDropdown(false);
     setPendingWorkflow(wf);
   };
 
@@ -272,7 +271,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         {/* Record selector */}
         <div className="relative" ref={recordDropdownRef}>
           <button
-            onClick={() => { setShowRecordDropdown(o => !o); setShowWorkflowDropdown(false); }}
+            onClick={() => setShowRecordDropdown(o => !o)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs transition-colors border ${
               selectedRecords.length > 0
                 ? 'bg-[#f0f4f2] text-[#455a4f] border-[#c8d8d2]'
