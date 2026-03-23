@@ -55,7 +55,7 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
     {
       title: 'TODAY',
       conversations: [
-        { id: 'cl-1', title: 'Deal QA — VFN Holdings',   preview: 'Step 3 of 4 · Analyzing financial statements', timestamp: '2:30 PM',  type: 'workflow' },
+        { id: 'cl-1', title: 'Deal QA — VFN Holdings',   preview: 'In progress · Analyzing financial statements', timestamp: '2:30 PM',  type: 'workflow' },
         { id: 'cl-2', title: 'Portfolio Q&A',             preview: 'Which loans have maturities in the next 90 days?', timestamp: '11:15 AM', type: 'chat' },
         { id: 'cl-3', title: 'VFN Holdings · Fibernet',  preview: 'Comparing DSCR and covenant status across 2 records', timestamp: '9:20 AM',  type: 'records' },
       ]
@@ -63,7 +63,7 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
     {
       title: 'THIS WEEK',
       conversations: [
-        { id: 'cl-4', title: 'Annual Review — GH3 Cler', preview: 'Completed · 6 of 6 steps · No exceptions found', timestamp: '2d ago', type: 'workflow' },
+        { id: 'cl-4', title: 'Annual Review — GH3 Cler', preview: 'Completed · No exceptions found', timestamp: '2d ago', type: 'workflow' },
         { id: 'cl-5', title: 'New Record — Q4 Financials', preview: 'VFN Holdings Inc · AI extracted 14 data points', timestamp: '2d ago', type: 'document' },
       ]
     },
