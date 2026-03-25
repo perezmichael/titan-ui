@@ -321,6 +321,229 @@ const historyEntries: HistoryEntry[] = [
   { id: 'h11', type: 'document', title: 'New Record Created',   meta: 'Credit Agreement — Healthcare Properties',  status: 'completed',   timestamp: 'Mar 15, 3:00 PM',  group: 'last-week' },
 ];
 
+// ─── Dossier data ─────────────────────────────────────────────────────────────
+
+interface BorrowerDossier {
+  description: string;
+  dealDetails: Array<{ label: string; value: string }>;
+  documents: Array<{ name: string; date: string }>;
+  kbDocuments: string[];
+}
+
+const borrowerDossiers: Record<string, BorrowerDossier> = {
+  '1': {
+    description: 'VFN Holdings Inc (Vero Fiber Networks, LLC) is a leading provider of fiber-optic communications services to the enterprise and wholesale markets. The company provides fiber-optic connectivity, network design and implementation, and network management.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Modification/Extension' },
+      { label: 'NAICS Code',               value: '517110' },
+      { label: 'Sponsor Name',             value: 'None' },
+      { label: 'Facility Type',            value: 'Development Line of Credit (DLOC), Revolving Line of Credit (Revolver), Delayed Draw Term Loan (DDTL)' },
+      { label: 'Loan Term',                value: '60 months' },
+      { label: 'Loan Maturity Date',       value: '9/20/2026' },
+      { label: 'Amortization Structure',   value: 'I/O then 25-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Arranger Name',            value: 'Hancock Whitney' },
+      { label: 'Interest Rate',            value: 'SOFR + 3750 bps' },
+      { label: 'Pricing Grid Present',     value: 'Yes' },
+      { label: 'Revenue (Most Recent)',    value: '$32,021,500,000' },
+      { label: 'EBITDA (Most Recent)',     value: '$1,136,500,000' },
+      { label: 'Total Funded Debt',        value: '$62,500,000' },
+      { label: 'Tangible Net Worth',       value: '$1,000,000,000' },
+      { label: 'Leverage Ratio',           value: '5.5' },
+      { label: 'Coverage Ratio (Actual)',  value: '1.43' },
+      { label: 'Financial Statement Quality', value: 'CPA Audited' },
+      { label: 'Revenue Model Type',       value: 'C&I General' },
+      { label: 'RAROC',                    value: '0.688%' },
+      { label: 'HLT Exception',            value: 'No' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on all assets of borrower and guarantors' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'Vero Fiber Networks, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Critical Exception Summary', value: 'None' },
+      { label: 'Transaction Purpose',      value: 'Construction / Development' },
+      { label: 'Primary Repayment Source', value: 'Operating Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 4 (Satisfactory)' },
+    ],
+    documents: [
+      { name: 'Credit Agreement.pdf',              date: '12/15/2024' },
+      { name: 'Loan Approval Form.pdf',            date: '12/10/2024' },
+      { name: 'Appraisal Report.pdf',              date: '11/20/2024' },
+      { name: 'Financial Statements Q4 2024.pdf',  date: '01/15/2025' },
+      { name: 'Annual Review 2024.pdf',            date: '12/31/2024' },
+      { name: 'Insurance Certificate.pdf',         date: '01/01/2025' },
+      { name: 'Environmental Report.pdf',          date: '11/15/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Data Center Asset Class Guidelines',
+      'CRE Underwriting Standards',
+    ],
+  },
+  '2': {
+    description: 'GH3 Cler SNU operates a portfolio of Class A office properties in suburban markets across the Southeast. The company focuses on long-term leases with investment-grade tenants and maintains active asset management.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Renewal' },
+      { label: 'NAICS Code',               value: '531120' },
+      { label: 'Property Type',            value: 'Class A Office' },
+      { label: 'Facility Type',            value: 'Senior Loan, Revolving Line of Credit (RLOC)' },
+      { label: 'Loan Term',                value: '36 months' },
+      { label: 'Loan Maturity Date',       value: '8/30/2026' },
+      { label: 'Interest Rate',            value: '5.68% Fixed' },
+      { label: 'Amortization Structure',   value: 'Interest Only' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'GH3 Capital Partners' },
+      { label: 'LTV (As-Is)',              value: '68%' },
+      { label: 'DSCR (Underwritten)',      value: '1.38x' },
+      { label: 'NOI (Most Recent)',        value: '$2,100,000' },
+      { label: 'Appraised Value',          value: '$7,750,000' },
+      { label: 'Occupancy Rate',           value: '91%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.20' },
+      { label: 'Collateral Description',   value: 'First lien on commercial real estate and assignment of rents' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Critical Exception Present', value: 'Yes' },
+      { label: 'Critical Exception Summary', value: 'Appraisal approaching 18-month staleness — renewal required by May 2026' },
+      { label: 'Primary Repayment Source', value: 'Property Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Loan Agreement.pdf',                date: '10/20/2023' },
+      { name: 'Financial Statements Q3 2025.pdf',  date: '11/01/2025' },
+      { name: 'Property Appraisal.pdf',            date: '09/15/2023' },
+      { name: 'Rent Roll Q4 2025.pdf',             date: '01/10/2026' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'CRE Underwriting Standards',
+      'Office Asset Class Guidelines',
+    ],
+  },
+  '3': {
+    description: 'Fibernet Solutions LLC builds and operates last-mile fiber networks serving residential and small business customers across rural and suburban markets in the mid-Atlantic region. The company is backed by Meridian Infrastructure Fund III.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'New Origination' },
+      { label: 'NAICS Code',               value: '517311' },
+      { label: 'Sponsor Name',             value: 'Meridian Infrastructure Fund III' },
+      { label: 'Facility Type',            value: 'Senior Loan, Delayed Draw Term Loan (DDTL), CapEx Loan' },
+      { label: 'Loan Term',                value: '48 months' },
+      { label: 'Loan Maturity Date',       value: '6/1/2028' },
+      { label: 'Interest Rate',            value: 'SOFR + 4250 bps' },
+      { label: 'Amortization Structure',   value: 'I/O then 20-year amortization' },
+      { label: 'Syndicated',               value: 'Yes' },
+      { label: 'Arranger Name',            value: 'First National Bank' },
+      { label: 'Revenue (Most Recent)',    value: '$8,450,000' },
+      { label: 'EBITDA (Most Recent)',     value: '$2,980,000' },
+      { label: 'Total Funded Debt',        value: '$15,000,000' },
+      { label: 'Leverage Ratio',           value: '5.0x' },
+      { label: 'Coverage Ratio (Actual)',  value: '1.51x' },
+      { label: 'Financial Statement Quality', value: 'CPA Reviewed' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on all network assets and fiber infrastructure' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'Meridian Infrastructure Fund III GP, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Network Buildout / Capital Expenditure' },
+      { label: 'Primary Repayment Source', value: 'Subscriber Revenue' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Credit Agreement.pdf',        date: '02/28/2024' },
+      { name: 'Financial Model.xlsx',        date: '02/15/2024' },
+      { name: 'Network Build Plan.pdf',      date: '02/01/2024' },
+      { name: 'Syndication Agreement.pdf',   date: '03/01/2024' },
+      { name: 'Insurance Certificate.pdf',   date: '03/15/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Fiber & Telecom Asset Class Guidelines',
+      'Syndicated Loan Underwriting Policy',
+    ],
+  },
+  '4': {
+    description: 'Retail Plaza Holdings owns and manages a portfolio of necessity-based retail centers anchored by grocery and pharmacy tenants. Properties are located in high-traffic suburban corridors with strong demographic profiles.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Refinance' },
+      { label: 'NAICS Code',               value: '531120' },
+      { label: 'Property Type',            value: 'Anchored Retail / Shopping Center' },
+      { label: 'Facility Type',            value: 'Term Loan' },
+      { label: 'Loan Term',                value: '48 months' },
+      { label: 'Loan Maturity Date',       value: '3/31/2027' },
+      { label: 'Interest Rate',            value: '6.25% Fixed' },
+      { label: 'Amortization Structure',   value: '30-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'Retail Plaza Management LLC' },
+      { label: 'LTV (As-Is)',              value: '72%' },
+      { label: 'DSCR (Underwritten)',      value: '1.29x' },
+      { label: 'NOI (Most Recent)',        value: '$1,840,000' },
+      { label: 'Appraised Value',          value: '$11,400,000' },
+      { label: 'Occupancy Rate',           value: '96%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.20' },
+      { label: 'Collateral Description',   value: 'First lien on commercial real estate and assignment of rents' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Refinance of Existing Debt' },
+      { label: 'Primary Repayment Source', value: 'Property Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Term Loan Agreement.pdf',   date: '11/10/2023' },
+      { name: 'Rent Roll Q4 2025.pdf',     date: '01/10/2026' },
+      { name: 'Environmental Report.pdf',  date: '10/20/2023' },
+      { name: 'Appraisal Report.pdf',      date: '10/15/2023' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'CRE Underwriting Standards',
+      'Retail Asset Class Guidelines',
+    ],
+  },
+  '5': {
+    description: 'Healthcare Properties Inc acquires and leases medical office buildings and outpatient facilities to healthcare systems and physician groups under long-term net leases. The company is sponsored by HPI Capital Group with a focus on essential healthcare infrastructure.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'New Origination' },
+      { label: 'NAICS Code',               value: '531190' },
+      { label: 'Property Type',            value: 'Medical Office / Outpatient Facility' },
+      { label: 'Facility Type',            value: 'Term Loan' },
+      { label: 'Loan Term',                value: '54 months' },
+      { label: 'Loan Maturity Date',       value: '9/15/2028' },
+      { label: 'Interest Rate',            value: 'SOFR + 2750 bps' },
+      { label: 'Amortization Structure',   value: 'I/O then 25-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'HPI Capital Group' },
+      { label: 'LTV (As-Is)',              value: '65%' },
+      { label: 'DSCR (Underwritten)',      value: '1.52x' },
+      { label: 'NOI (Most Recent)',        value: '$1,620,000' },
+      { label: 'Appraised Value',          value: '$10,800,000' },
+      { label: 'Occupancy Rate',           value: '100%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on medical office real estate and assignment of leases' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'HPI Capital Group, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Acquisition' },
+      { label: 'Primary Repayment Source', value: 'Net Lease Income' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 2 (Pass)' },
+    ],
+    documents: [
+      { name: 'Loan Agreement.pdf',                date: '03/15/2024' },
+      { name: 'Financial Statements Q4 2025.pdf',  date: '01/20/2026' },
+      { name: 'Facility Appraisal.pdf',            date: '02/28/2024' },
+      { name: 'Lease Abstracts.pdf',               date: '03/01/2024' },
+      { name: 'Environmental Report.pdf',          date: '02/20/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Healthcare Real Estate Asset Class Guidelines',
+      'Net Lease Underwriting Standards',
+    ],
+  },
+};
+
 export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
@@ -605,8 +828,8 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Records split-pane workspace — visible when chat opened */}
       {activeTab === 'records' && recordsChatOpen && (
         <div className="flex-1 flex overflow-hidden">
-          {/* Left chat panel */}
-          <div className="w-[380px] flex-shrink-0 flex flex-col border-r border-gray-200 bg-white">
+          {/* Left chat panel — gets majority of the space */}
+          <div className="flex-1 min-w-0 flex flex-col border-r border-gray-200 bg-white">
             {/* Back + selected record pills + Clear */}
             <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 flex-wrap">
               <button
@@ -721,118 +944,103 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
             </div>
           </div>
 
-          {/* Right dossier panel */}
-          <div className="flex-1 overflow-y-auto bg-[#f5f5f3]">
-            {/* Dossier tabs — always shown */}
-            <div className="bg-white border-b border-gray-200 px-6 flex gap-0">
-              {selectedRecordsForChat.map(r => (
-                <button
-                  key={r.id}
-                  onClick={() => setActiveDossierTab(r.id)}
-                  className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                    activeDossierTab === r.id
-                      ? 'border-[#455a4f] text-gray-900'
-                      : 'border-transparent text-gray-500 hover:text-gray-700'
-                  }`}
-                >
-                  {r.name}
-                </button>
-              ))}
-            </div>
+          {/* Right dossier panel — fixed width */}
+          <div className="w-[460px] flex-shrink-0 flex flex-col bg-[#f5f5f3]">
+            {/* Record switcher tabs */}
+            {selectedRecordsForChat.length > 1 && (
+              <div className="bg-white border-b border-gray-200 px-4 flex gap-0 flex-shrink-0">
+                {selectedRecordsForChat.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => setActiveDossierTab(r.id)}
+                    className={`px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      activeDossierTab === r.id
+                        ? 'border-[#455a4f] text-gray-900'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
-            {/* Dossier content */}
+            {/* Dossier content — scrollable */}
             {(() => {
               const active = selectedRecordsForChat.find(r => r.id === activeDossierTab) ?? selectedRecordsForChat[0];
               if (!active) return null;
-              const statusColor = active.status === 'Active'
-                ? 'bg-green-100 text-green-800'
-                : active.status === 'Renewal'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-red-100 text-red-800';
+              const dossier = borrowerDossiers[active.id];
               return (
-                <div className="p-6 max-w-3xl">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-6">
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6 space-y-6">
+
+                    {/* Company header */}
                     <div>
-                      <h2 className="text-xl font-medium text-gray-900">{active.name}</h2>
-                      <p className="text-sm text-gray-500 mt-1">
-                        CIP: {active.cipCode} &nbsp;·&nbsp; Rel ID: {active.relationshipId} &nbsp;·&nbsp; {active.assetClass}
-                      </p>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">{active.name}</h2>
+                      {dossier && (
+                        <p className="text-sm text-gray-500 leading-relaxed">{dossier.description}</p>
+                      )}
                     </div>
-                    <span className={`px-2.5 py-1 text-xs font-medium rounded-full flex-shrink-0 ${statusColor}`}>
-                      {active.status}
-                    </span>
-                  </div>
 
-                  {/* Key metrics grid */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    {[
-                      { label: 'Total Exposure', value: formatCurrency(active.totalCreditExposure) },
-                      { label: 'Commitment', value: formatCurrency(active.commitment) },
-                      { label: 'Deposit Balance', value: formatCurrency(active.totalDepositBalance) },
-                    ].map(m => (
-                      <div key={m.label} className="bg-white rounded-lg border border-gray-200 p-4">
-                        <p className="text-xs text-gray-500 mb-1">{m.label}</p>
-                        <p className="text-lg font-medium text-gray-900">{m.value}</p>
+                    {/* Deal Details card */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200">
+                          <h3 className="text-sm font-semibold text-gray-900">Deal Details</h3>
+                        </div>
+                        <div>
+                          {dossier.dealDetails.map((row, i) => (
+                            <div key={i} className={`flex gap-4 px-5 py-3 ${i < dossier.dealDetails.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <span className="w-44 flex-shrink-0 text-sm text-gray-400">{row.label}</span>
+                              <span className="flex-1 text-sm text-gray-900">{row.value}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    )}
 
-                  {/* Team */}
-                  <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Team</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500">Loan Officer</p>
-                        <p className="text-sm text-gray-900">{active.loanOfficer}</p>
+                    {/* Documents card */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900">Documents ({dossier.documents.length})</h3>
+                          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors">
+                            <Upload className="w-3.5 h-3.5" />
+                            Upload
+                          </button>
+                        </div>
+                        <div>
+                          {dossier.documents.map((doc, i) => (
+                            <div key={i} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors ${i < dossier.documents.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm text-gray-900 truncate">{doc.name}</p>
+                                <p className="text-xs text-gray-400">{doc.date}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500">Underwriter</p>
-                        <p className="text-sm text-gray-900">{active.underwriter}</p>
-                      </div>
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Facilities */}
-                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-gray-200">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Facilities</p>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                          <tr>
-                            <th className="px-4 py-2 text-left text-xs text-gray-500">Note #</th>
-                            <th className="px-4 py-2 text-left text-xs text-gray-500">Type</th>
-                            <th className="px-4 py-2 text-right text-xs text-gray-500">Balance</th>
-                            <th className="px-4 py-2 text-left text-xs text-gray-500">Rate</th>
-                            <th className="px-4 py-2 text-left text-xs text-gray-500">Maturity</th>
-                            <th className="px-4 py-2 text-left text-xs text-gray-500">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {active.facilities.map(f => {
-                            const fStatusColor = f.status === 'Active'
-                              ? 'bg-green-100 text-green-800'
-                              : f.status === 'Renewal'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-800';
-                            return (
-                              <tr key={f.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                                <td className="px-4 py-3 text-xs text-gray-900 font-mono">{f.noteNumber}</td>
-                                <td className="px-4 py-3 text-xs text-gray-700">{f.loanType}</td>
-                                <td className="px-4 py-3 text-xs text-gray-900 text-right">{formatCurrency(f.balance)}</td>
-                                <td className="px-4 py-3 text-xs text-gray-700">{f.interestRate}</td>
-                                <td className="px-4 py-3 text-xs text-gray-700">{formatDate(f.maturityDate)}</td>
-                                <td className="px-4 py-3">
-                                  <span className={`px-2 py-0.5 text-xs rounded-full ${fStatusColor}`}>{f.status}</span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
+                    {/* Relevant Knowledge Base Documents */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900">Relevant Knowledge Base Documents</h3>
+                          <button className="text-xs text-[#455a4f] hover:underline transition-colors">+ Add More</button>
+                        </div>
+                        <div>
+                          {dossier.kbDocuments.map((doc, i) => (
+                            <div key={i} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors ${i < dossier.kbDocuments.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm text-gray-900">{doc}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 </div>
               );
