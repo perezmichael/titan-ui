@@ -20,7 +20,7 @@ interface SelectedDocument {
 
 export default function App() {
   const [activeConversationId, setActiveConversationId] = useState('new-chat');
-  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('agents');
   const [previousView, setPreviousView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'knowledge-base' | 'tprm' | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
