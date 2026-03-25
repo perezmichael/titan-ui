@@ -36,6 +36,8 @@ const mockBorrowers: Borrower[] = [
   { id: '4', name: 'Retail Plaza Holdings',     noteNumber: '20230122-001', assetClass: 'CRE — Retail',     status: 'Active'  },
   { id: '5', name: 'Healthcare Properties Inc', noteNumber: '20240055-001', assetClass: 'CRE — Healthcare', status: 'Active'  },
   { id: '6', name: 'Meridian Office Partners',  noteNumber: '20230198-001', assetClass: 'CRE — Office',     status: 'Active'  },
+  { id: '7', name: 'Mesa Data Solutions LLC',   noteNumber: '20240112-001', assetClass: 'Data Center',      status: 'Active'  },
+  { id: '8', name: 'Desert Edge Colocation',    noteNumber: '20230287-001', assetClass: 'Data Center',      status: 'Renewal' },
 ];
 
 const workflows: Workflow[] = [
@@ -48,7 +50,7 @@ const workflows: Workflow[] = [
 const globalSuggestions = [
   'Which loans have maturities in the next 90 days?',
   'Show borrowers with upcoming renewals',
-  'What is the total Data Center exposure?',
+  'How many deals are for data centers in Arizona?',
 ];
 
 const recordSuggestions = [
@@ -88,9 +90,12 @@ function getMockResponse(query: string, recordName?: string, workflowId?: string
     };
   }
   if (q.includes('data center')) {
+    const isArizona = q.includes('arizona') || q.includes('az');
     return {
-      text: 'Found **1 Data Center deal** in your portfolio with total credit exposure of **$9.8M**:',
-      records: [mockBorrowers[0]],
+      text: isArizona
+        ? 'Found **3 Data Center deals** in Arizona with total credit exposure of **$28.4M**:'
+        : 'Found **3 Data Center deals** in your portfolio with total credit exposure of **$28.4M**:',
+      records: [mockBorrowers[0], mockBorrowers[6], mockBorrowers[7]],
     };
   }
   if (q.includes('dscr') || q.includes('debt service')) {
