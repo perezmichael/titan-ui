@@ -1236,25 +1236,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                               </button>
                             </td>
                             <td className="px-4 py-3">
-                              {borrower.id === '1' ? (
-                                <button
-                                  onClick={() => onBorrowerSelect({
-                                    id: borrower.id,
-                                    name: borrower.name,
-                                    cipCode: borrower.cipCode,
-                                    relationshipId: borrower.relationshipId,
-                                    noteNumber: borrower.noteNumber,
-                                    loanOfficer: borrower.loanOfficer,
-                                    underwriter: borrower.underwriter,
-                                    facilities: borrower.facilities
-                                  })}
-                                  className="text-sm text-[#455a4f] hover:underline cursor-pointer"
-                                >
-                                  {borrower.name}
-                                </button>
-                              ) : (
-                                <span className="text-sm text-gray-900">{borrower.name}</span>
-                              )}
+                              <span className="text-sm text-gray-900">{borrower.name}</span>
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-900">{formatDate(borrower.dateAdded)}</td>
                           </tr>
