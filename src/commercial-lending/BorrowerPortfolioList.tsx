@@ -551,6 +551,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   // Tab state
   const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat' | 'history'>('chat');
   const [chatStarted, setChatStarted] = useState(false);
+  const [chatKey, setChatKey] = useState(0);
 
   // Workflow jobs + run modal
   const [workflowJobs, setWorkflowJobs] = useState<WorkflowJob[]>(initialWorkflowJobs);
@@ -690,7 +691,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
               // Inside active chat: back exits to workspace landing
               <>
                 <button
-                  onClick={() => setChatStarted(false)}
+                  onClick={() => { setChatStarted(false); setChatKey(k => k + 1); }}
                   className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -755,7 +756,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Chat Tab — full-height, manages its own scroll */}
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
-          <CommercialLendingChat onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
+          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
         </div>
       )}
 
