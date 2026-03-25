@@ -1212,13 +1212,14 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                         <th className="px-4 py-3 w-8" />
                         <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
                         <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
+                        <th className="px-4 py-3 w-20" />
                       </tr>
                     </thead>
                     <tbody>
                       {filteredBorrowers.map((borrower) => {
                         const isChecked = selectedRecordsForChat.some(r => r.id === borrower.id);
                         return (
-                          <tr key={borrower.id} className="border-b border-gray-200 hover:bg-gray-50">
+                          <tr key={borrower.id} className="group border-b border-gray-200 hover:bg-gray-50">
                             <td className="px-4 py-3 w-8">
                               <button
                                 onClick={() => toggleRecordForChat(borrower)}
@@ -1238,7 +1239,20 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                             <td className="px-4 py-3">
                               <span className="text-sm text-gray-900">{borrower.name}</span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-900">{formatDate(borrower.dateAdded)}</td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{formatDate(borrower.dateAdded)}</td>
+                            <td className="px-4 py-3 w-20 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedRecordsForChat([borrower]);
+                                  setActiveDossierTab(borrower.id);
+                                  setRecordsChatOpen(true);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-[#455a4f] font-medium hover:underline flex items-center gap-1 ml-auto"
+                              >
+                                Chat
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </td>
                           </tr>
                         );
                       })}
