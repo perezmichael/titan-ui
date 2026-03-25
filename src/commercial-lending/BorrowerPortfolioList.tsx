@@ -321,16 +321,16 @@ const historyEntries: HistoryEntry[] = [
   { id: 'h11', type: 'document', title: 'New Record Created',   meta: 'Credit Agreement — Healthcare Properties',  status: 'completed',   timestamp: 'Mar 15, 3:00 PM',  group: 'last-week' },
 ];
 
-// ─── Dossier data ─────────────────────────────────────────────────────────────
+// ─── Dossier data (exported for use in CommercialLendingChat) ─────────────────
 
-interface BorrowerDossier {
+export interface BorrowerDossier {
   description: string;
   dealDetails: Array<{ label: string; value: string }>;
   documents: Array<{ name: string; date: string }>;
   kbDocuments: string[];
 }
 
-const borrowerDossiers: Record<string, BorrowerDossier> = {
+export const borrowerDossiers: Record<string, BorrowerDossier> = {
   '1': {
     description: 'VFN Holdings Inc (Vero Fiber Networks, LLC) is a leading provider of fiber-optic communications services to the enterprise and wholesale markets. The company provides fiber-optic connectivity, network design and implementation, and network management.',
     dealDetails: [
