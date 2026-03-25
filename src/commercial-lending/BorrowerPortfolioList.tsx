@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings, Play, CheckCircle2, XCircle, MessageSquare, Layers } from 'lucide-react';
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
+import type { AgentAction } from '../AgentsView';
 import { CommercialLendingChat } from './CommercialLendingChat';
 
 interface AgentSession {
@@ -16,6 +17,7 @@ interface BorrowerPortfolioListProps {
   onWorkflowOpen?: (workflowId: string, workflowName: string) => void;
   onSettingsOpen?: () => void;
   onSessionCreated?: (session: AgentSession) => void;
+  initialAction?: AgentAction;
 }
 
 interface BorrowerFacility {
@@ -544,23 +546,26 @@ export const borrowerDossiers: Record<string, BorrowerDossier> = {
   },
 };
 
-export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated }: BorrowerPortfolioListProps) {
+export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated, initialAction }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
 
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat' | 'history'>('chat');
+  // Tab state — derive initial tab from action
+  const initialTab = initialAction === 'workflow' ? 'workflows'
+    : initialAction === 'records' || initialAction === 'new-record' ? 'records'
+    : 'chat';
+  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat' | 'history'>(initialTab);
   const [chatStarted, setChatStarted] = useState(false);
   const [chatKey, setChatKey] = useState(0);
 
   // Workflow jobs + run modal
   const [workflowJobs, setWorkflowJobs] = useState<WorkflowJob[]>(initialWorkflowJobs);
-  const [showRunWorkflowModal, setShowRunWorkflowModal] = useState(false);
+  const [showRunWorkflowModal, setShowRunWorkflowModal] = useState(initialAction === 'workflow');
   const [runWorkflowStep, setRunWorkflowStep] = useState<'type' | 'record'>('type');
   const [pendingWorkflowType, setPendingWorkflowType] = useState<WorkflowType | null>(null);
 
   // New record modal states
-  const [showNewRecordModal, setShowNewRecordModal] = useState(false);
+  const [showNewRecordModal, setShowNewRecordModal] = useState(initialAction === 'new-record');
 
   // Records workspace
   const [selectedRecordsForChat, setSelectedRecordsForChat] = useState<Borrower[]>([]);

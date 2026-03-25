@@ -4,6 +4,7 @@ import { BorrowerPortfolioList } from './commercial-lending/BorrowerPortfolioLis
 import { BorrowerDealView } from './commercial-lending/BorrowerDealView';
 import { WorkflowDetailView } from './commercial-lending/WorkflowDetailView';
 import { CommercialLendingSettings } from './commercial-lending/CommercialLendingSettings';
+import type { AgentAction } from './AgentsView';
 
 export interface AgentSession {
   id: string;
@@ -15,6 +16,7 @@ export interface AgentSession {
 interface CommercialLendingWorkspaceProps {
   onBack: () => void;
   onSessionCreated?: (session: AgentSession) => void;
+  initialAction?: AgentAction;
 }
 
 export type CLView = 'portfolio' | 'deal-view' | 'workflow-detail' | 'settings';
@@ -42,7 +44,7 @@ export interface SelectedBorrower {
   facilities?: Facility[];
 }
 
-export function CommercialLendingWorkspace({ onBack, onSessionCreated }: CommercialLendingWorkspaceProps) {
+export function CommercialLendingWorkspace({ onBack, onSessionCreated, initialAction }: CommercialLendingWorkspaceProps) {
   const [currentView, setCurrentView] = useState<CLView>('portfolio');
   const [selectedBorrower, setSelectedBorrower] = useState<SelectedBorrower | null>(null);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
@@ -92,6 +94,7 @@ export function CommercialLendingWorkspace({ onBack, onSessionCreated }: Commerc
           onWorkflowOpen={handleWorkflowOpen}
           onSettingsOpen={handleSettingsOpen}
           onSessionCreated={onSessionCreated}
+          initialAction={initialAction}
         />
       )}
       {currentView === 'deal-view' && selectedBorrower && (

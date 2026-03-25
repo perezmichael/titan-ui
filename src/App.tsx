@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
 import { ConnectorsView } from './ConnectorsView';
 import { UploadsView } from './UploadsView';
-import { AgentsView } from './AgentsView';
+import { AgentsView, type AgentAction } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
 import { CommercialLendingWorkspace, type AgentSession } from './CommercialLendingWorkspace';
 import { ChevronRight, Menu } from 'lucide-react';
@@ -28,6 +28,7 @@ export default function App() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStarted, setUploadStarted] = useState<boolean>(false);
   const [agentSessions, setAgentSessions] = useState<AgentSession[]>([]);
+  const [initialCLAction, setInitialCLAction] = useState<AgentAction | undefined>(undefined);
   const hasStartedUploadRef = useRef<boolean>(false);
   const progressRef = useRef<number>(0);
   const isMobile = useIsMobile();
@@ -149,9 +150,10 @@ export default function App() {
         <AgentsView 
           onDocumentSelect={handleDocumentSelect}
           onChatNavigate={handleChatNavigate}
-          onAgentLaunch={(agentId) => {
+          onAgentLaunch={(agentId, action) => {
             setPreviousView(activeView as any);
             if (agentId === 'commercial-lending') {
+              setInitialCLAction(action);
               setActiveView('commercial-lending');
             } else if (agentId === 'knowledge-base') {
               setActiveView('knowledge-base');
@@ -165,6 +167,7 @@ export default function App() {
         <CommercialLendingWorkspace
           onBack={() => setActiveView(previousView ?? 'agents')}
           onSessionCreated={session => setAgentSessions(prev => [session, ...prev])}
+          initialAction={initialCLAction}
         />
       )}
       {activeView === 'knowledge-base' && (

@@ -1,4 +1,4 @@
-import { FileText, BookOpen, Plus, Settings, X, Trash2, UserPlus, ArrowLeft } from 'lucide-react';
+import { FileText, Plus, Settings, X, Trash2, UserPlus, ArrowLeft, MessageSquare, Zap, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -16,10 +16,12 @@ interface SelectedDocument {
   size: string;
 }
 
+export type AgentAction = 'chat' | 'workflow' | 'records' | 'new-record';
+
 interface AgentsViewProps {
   onDocumentSelect?: (document: SelectedDocument) => void;
   onChatNavigate?: (chatId: string) => void;
-  onAgentLaunch?: (agentId: string) => void;
+  onAgentLaunch?: (agentId: string, action?: AgentAction) => void;
 }
 
 interface Agent {
@@ -397,11 +399,11 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-6 py-6">
         <div className="max-w-2xl">
-          {/* Dynamically render all agents */}
-          {agents.map((agent) => (
-            <div 
+          {/* Only render enabled agents (hides TPRM) */}
+          {agents.filter(a => a.enabled).map((agent) => (
+            <div
               key={agent.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors mb-4"
+              className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 transition-colors mb-4"
             >
               <div className="flex items-start gap-4">
                 {/* Icon */}
@@ -410,38 +412,45 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
                 </div>
 
                 {/* Content */}
-                <div className="flex-1">
-                  <h3 className="text-base text-gray-900 mb-2">{agent.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    {agent.description}
-                  </p>
-
-                  <div className="flex items-center gap-3">
-                    {/* Launch Button */}
-                    <button 
-                      className={`px-4 py-2 text-sm rounded-lg transition-colors ${
-                        agent.enabled
-                          ? 'bg-[#455a4f] text-white hover:bg-[#3a4a42] cursor-pointer'
-                          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      }`}
-                      onClick={() => agent.enabled && onAgentLaunch?.(agent.id)}
-                      disabled={!agent.enabled}
-                      type="button"
-                    >
-                      Launch Agent
-                    </button>
-                    
-                    {/* Enable/Disable Toggle */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3 mb-1">
+                    <h3 className="text-base font-medium text-gray-900">{agent.name}</h3>
                     <button
-                      onClick={() => handleToggleAgentEnabled(agent.id)}
-                      className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                        agent.enabled
-                          ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                          : 'border-[#455a4f] text-[#455a4f] hover:bg-[#455a4f] hover:text-white'
-                      }`}
+                      onClick={() => onAgentLaunch?.(agent.id)}
+                      className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0 mt-0.5"
                       type="button"
                     >
-                      {agent.enabled ? 'Disable' : 'Enable'}
+                      Open
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-500 mb-5">{agent.description}</p>
+
+                  {/* Quick actions */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => onAgentLaunch?.(agent.id, 'chat')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#f0f4f2] text-[#455a4f] hover:bg-[#e4ece8] transition-colors"
+                      type="button"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                    <button
+                      onClick={() => onAgentLaunch?.(agent.id, 'workflow')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#f0f4f2] text-[#455a4f] hover:bg-[#e4ece8] transition-colors"
+                      type="button"
+                    >
+                      <Zap className="w-3.5 h-3.5" />
+                      Run Workflow
+                    </button>
+                    <button
+                      onClick={() => onAgentLaunch?.(agent.id, 'new-record')}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-[#f0f4f2] text-[#455a4f] hover:bg-[#e4ece8] transition-colors"
+                      type="button"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      New Record
                     </button>
                   </div>
                 </div>
