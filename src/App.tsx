@@ -6,6 +6,7 @@ import { UploadsView } from './UploadsView';
 import { AgentsView } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
 import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
+import { ThinkingAnimationDemo } from './ThinkingAnimationDemo';
 import { ChevronRight, Menu } from 'lucide-react';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -88,6 +89,9 @@ export default function App() {
     setActiveView('chat');
     setSelectedDocument(null);
   };
+
+  // On this branch the demo is the default landing
+  if (true) return <ThinkingAnimationDemo />;
 
   return (
     <div className="flex h-screen bg-[#f5f5f3]">
