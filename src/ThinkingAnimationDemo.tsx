@@ -55,6 +55,61 @@ function renderText(text: string) {
   );
 }
 
+// ─── Titan logo + Gemini-style gradient arc ───────────────────────────────────
+
+const TITAN_PATH = "M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z";
+
+// spinning=true  → ring visible, logo at base size
+// spinning=false → ring fades out, logo springs up to scale(0.88)
+function TitanMessageIcon({ spinning }: { spinning: boolean }) {
+  return (
+    <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
+      <style>{`
+        @keyframes titan-arc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .titan-arc-ring { transform-origin: 18px 18px; animation: titan-arc-spin 1.1s linear infinite; }
+      `}</style>
+
+      {/* Ring — absolutely positioned 4px outside the 28×28 box → 36×36 total */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          inset: -4,
+          opacity: spinning ? 1 : 0,
+          transition: 'opacity 350ms ease',
+        }}
+      >
+        <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
+          <defs>
+            <linearGradient id="arcGradMsg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FF6E3C" stopOpacity="0" />
+              <stop offset="100%" stopColor="#FF6E3C" stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          <g className="titan-arc-ring">
+            <circle cx="18" cy="18" r="16" stroke="#FF6E3C" strokeOpacity="0.15" strokeWidth="2" fill="none" />
+            <circle cx="18" cy="18" r="16" stroke="url(#arcGradMsg)" strokeWidth="2.2" fill="none"
+              strokeLinecap="round" strokeDasharray="75 26" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Titan logo — scale(0.68) inside ring, scale(0.88) when settled */}
+      <div
+        className="w-full h-full"
+        style={{
+          transform: spinning ? 'scale(0.68)' : 'scale(0.88)',
+          transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transformOrigin: 'center center',
+        }}
+      >
+        <svg viewBox="0 0 106 106" fill="none" className="w-full h-full">
+          <path d={TITAN_PATH} fill="#FF6E3C" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ─── Option 8: Titan + Typewriter fade ───────────────────────────────────────
 
 function ThinkingOption8({ isComplete = false }: { isComplete?: boolean }) {
