@@ -363,23 +363,23 @@ function TitanMessageIcon({ spinning }: { spinning: boolean }) {
         <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
           <defs>
             <linearGradient id="arcGradMsg" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#455a4f" stopOpacity="0" />
-              <stop offset="100%" stopColor="#455a4f" stopOpacity="1" />
+              <stop offset="0%" stopColor="#FF6E3C" stopOpacity="0" />
+              <stop offset="100%" stopColor="#FF6E3C" stopOpacity="1" />
             </linearGradient>
           </defs>
           <g className="titan-arc-ring">
-            <circle cx="18" cy="18" r="16" stroke="#455a4f" strokeOpacity="0.12" strokeWidth="2" fill="none" />
+            <circle cx="18" cy="18" r="16" stroke="#FF6E3C" strokeOpacity="0.15" strokeWidth="2" fill="none" />
             <circle cx="18" cy="18" r="16" stroke="url(#arcGradMsg)" strokeWidth="2.2" fill="none"
               strokeLinecap="round" strokeDasharray="75 26" />
           </g>
         </svg>
       </div>
 
-      {/* Titan logo — scales to 1.18 when ring fades */}
+      {/* Titan logo — scale(0.68) inside ring, scale(0.88) when settled */}
       <div
         className="w-full h-full"
         style={{
-          transform: spinning ? 'scale(1)' : 'scale(1.18)',
+          transform: spinning ? 'scale(0.68)' : 'scale(0.88)',
           transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
           transformOrigin: 'center center',
         }}
