@@ -3,7 +3,7 @@ import { Send, Sparkles, RotateCcw } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type OptionId = 1 | 2 | 3 | 4 | 5;
+type OptionId = 1 | 2 | 3 | 4 | 5 | 6;
 
 interface Message {
   id: string;
@@ -17,6 +17,7 @@ const OPTIONS: { id: OptionId; name: string; description: string }[] = [
   { id: 3, name: 'Source Gathering',  description: 'Source chips appear one-by-one before the response' },
   { id: 4, name: 'Typing + Context',  description: 'Classic dots with a rotating context label beneath' },
   { id: 5, name: 'Minimal Pulse',     description: 'Ultra-subtle — three pulsing dots, no text' },
+  { id: 6, name: 'Morphing Logo',     description: 'Layered shapes rotating at different speeds — Claude-style' },
 ];
 
 const STEPS = [
@@ -284,12 +285,63 @@ function ThinkingOption5() {
   );
 }
 
+// ─── Option 6: Morphing Logo ──────────────────────────────────────────────────
+
+function ThinkingOption6() {
+  return (
+    <div className="flex gap-3 items-start">
+      {/* Animated logo mark */}
+      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0 mt-0.5">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <style>{`
+            @keyframes titan-spin-slow   { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+            @keyframes titan-spin-mid    { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+            @keyframes titan-spin-fast   { from { transform: rotate(45deg);  } to { transform: rotate(405deg);  } }
+            @keyframes titan-breathe     { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.4; } }
+            .titan-l1 { transform-origin: 14px 14px; animation: titan-spin-slow  4s  linear infinite; }
+            .titan-l2 { transform-origin: 14px 14px; animation: titan-spin-mid   3s  linear infinite; }
+            .titan-l3 { transform-origin: 14px 14px; animation: titan-spin-fast  2s  linear infinite; }
+            .titan-l4 { transform-origin: 14px 14px; animation: titan-breathe    1.8s ease-in-out infinite; }
+          `}</style>
+          {/* Layer 1 — outer diamond, slow clockwise */}
+          <g className="titan-l1">
+            <path d="M14 2L26 14L14 26L2 14Z" fill="#455a4f" fillOpacity="0.18" />
+          </g>
+          {/* Layer 2 — slightly smaller, counter-clockwise */}
+          <g className="titan-l2">
+            <path d="M14 5L23 14L14 23L5 14Z" fill="#455a4f" fillOpacity="0.28" />
+          </g>
+          {/* Layer 3 — smaller rotated square */}
+          <g className="titan-l3">
+            <rect x="8.5" y="8.5" width="11" height="11" rx="1.5" fill="#455a4f" fillOpacity="0.38" />
+          </g>
+          {/* Layer 4 — center dot, breathing */}
+          <g className="titan-l4">
+            <circle cx="14" cy="14" r="3.5" fill="#455a4f" fillOpacity="0.9" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Fading label */}
+      <div className="flex items-center gap-2 py-1.5">
+        <span
+          className="text-sm text-gray-500"
+          style={{ animation: 'titan-breathe 1.8s ease-in-out infinite' }}
+        >
+          Thinking…
+        </span>
+      </div>
+    </div>
+  );
+}
+
 const THINKING_COMPONENTS: Record<OptionId, () => JSX.Element> = {
   1: ThinkingOption1,
   2: ThinkingOption2,
   3: ThinkingOption3,
   4: ThinkingOption4,
   5: ThinkingOption5,
+  6: ThinkingOption6,
 };
 
 // ─── Mock Chat ────────────────────────────────────────────────────────────────
