@@ -580,17 +580,26 @@ function MockChat({ optionId }: { optionId: OptionId }) {
   const [thinkingKey, setThinkingKey] = useState(0);
   const [openDossierRecord, setOpenDossierRecord] = useState<DemoRecord | null>(null);
   const [dossierWidth, setDossierWidth] = useState(520);
+  const dossierRef = useRef<HTMLDivElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const handleDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
     const startWidth = dossierWidth;
+
+    // Kill transition during drag so it follows the mouse instantly
+    if (dossierRef.current) dossierRef.current.style.transition = 'none';
+
     const onMove = (e: MouseEvent) => {
-      const delta = startX - e.clientX;
-      setDossierWidth(Math.max(320, Math.min(900, startWidth + delta)));
+      const newWidth = Math.max(320, Math.min(900, startWidth + (startX - e.clientX)));
+      if (dossierRef.current) dossierRef.current.style.width = `${newWidth}px`;
     };
-    const onUp = () => {
+    const onUp = (e: MouseEvent) => {
+      const newWidth = Math.max(320, Math.min(900, startWidth + (startX - e.clientX)));
+      // Restore transition then sync state
+      if (dossierRef.current) dossierRef.current.style.transition = '';
+      setDossierWidth(newWidth);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
     };
@@ -730,28 +739,34 @@ function MockChat({ optionId }: { optionId: OptionId }) {
         </div>
       </div>
 
-      {/* Divider + dossier — animate in together */}
+      {/* Dossier — width animates on open/close, direct DOM update while dragging */}
       <div
-        className="flex flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out"
+        ref={dossierRef}
+        className="flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out"
         style={{ width: dossierOpen ? dossierWidth : 0 }}
       >
-        {/* Drag handle */}
-        <div
-          className="w-2 flex-shrink-0 flex items-center justify-center cursor-col-resize group relative bg-transparent hover:bg-blue-50 transition-colors"
-          onMouseDown={handleDividerMouseDown}
-        >
-          <div className="w-1 h-8 rounded-full bg-gray-300 group-hover:bg-blue-400 transition-colors" />
-        </div>
+        <div className="flex h-full w-full">
+          {/* Handle zone — 12px wide, centered on the visual 1px line */}
+          <div
+            className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group"
+            onMouseDown={handleDividerMouseDown}
+          >
+            {/* The 1px divider line */}
+            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
+            {/* Pill handle sitting on the line */}
+            <div className="relative z-10 w-[5px] h-8 rounded-full bg-gray-300 group-hover:bg-blue-200 transition-colors" />
+          </div>
 
-        {/* Dossier content */}
-        <div className="flex-1 overflow-hidden border-l border-gray-200">
-          {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
-            <DossierPanel
-              record={openDossierRecord}
-              dossier={DEMO_DOSSIERS[openDossierRecord.id]}
-              onClose={() => setOpenDossierRecord(null)}
-            />
-          )}
+          {/* Dossier content */}
+          <div className="flex-1 overflow-hidden">
+            {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
+              <DossierPanel
+                record={openDossierRecord}
+                dossier={DEMO_DOSSIERS[openDossierRecord.id]}
+                onClose={() => setOpenDossierRecord(null)}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
