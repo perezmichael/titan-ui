@@ -59,7 +59,7 @@ function renderText(text: string) {
 
 // ─── Option 1: Sequential Steps ───────────────────────────────────────────────
 
-function ThinkingOption1() {
+function ThinkingOption1(_: { isComplete?: boolean }) {
   const [visibleSteps, setVisibleSteps] = useState(0);
   const [completedSteps, setCompletedSteps] = useState(0);
 
@@ -124,7 +124,7 @@ function ThinkingOption1() {
 
 // ─── Option 2: Animated Pill ──────────────────────────────────────────────────
 
-function ThinkingOption2() {
+function ThinkingOption2(_: { isComplete?: boolean }) {
   const [labelIndex, setLabelIndex] = useState(0);
   const [fading, setFading] = useState(false);
 
@@ -164,7 +164,7 @@ function ThinkingOption2() {
 
 // ─── Option 3: Source Gathering ───────────────────────────────────────────────
 
-function ThinkingOption3() {
+function ThinkingOption3(_: { isComplete?: boolean }) {
   const [visibleSources, setVisibleSources] = useState(0);
   const [showLabel, setShowLabel] = useState(false);
 
@@ -220,7 +220,7 @@ function ThinkingOption3() {
 
 // ─── Option 4: Typing + Context ───────────────────────────────────────────────
 
-function ThinkingOption4() {
+function ThinkingOption4(_: { isComplete?: boolean }) {
   const [labelIndex, setLabelIndex] = useState(0);
   const [fading, setFading] = useState(false);
 
@@ -268,7 +268,7 @@ function ThinkingOption4() {
 
 // ─── Option 5: Minimal Pulse ──────────────────────────────────────────────────
 
-function ThinkingOption5() {
+function ThinkingOption5(_: { isComplete?: boolean }) {
   return (
     <div className="flex gap-3">
       <div className="w-7 h-7 rounded-lg bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -289,7 +289,7 @@ function ThinkingOption5() {
 
 // ─── Option 6: Morphing Logo ──────────────────────────────────────────────────
 
-function ThinkingOption6() {
+function ThinkingOption6(_: { isComplete?: boolean }) {
   return (
     <div className="flex gap-3 items-start">
       {/* Animated logo mark */}
@@ -341,38 +341,49 @@ function ThinkingOption6() {
 
 const TITAN_PATH = "M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z";
 
-function TitanSpinnerIcon() {
+// spinning=true  → ring visible, logo at base size
+// spinning=false → ring fades out, logo springs up to scale(1.18)
+function TitanMessageIcon({ spinning }: { spinning: boolean }) {
   return (
-    <div className="relative w-9 h-9 flex-shrink-0">
-      {/* Gradient spinning arc */}
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 36 36" fill="none">
-        <defs>
-          <linearGradient id="arcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#455a4f" stopOpacity="0" />
-            <stop offset="100%" stopColor="#455a4f" stopOpacity="1" />
-          </linearGradient>
-        </defs>
-        <style>{`
-          @keyframes titan-arc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-          .titan-arc { transform-origin: 18px 18px; animation: titan-arc-spin 1.1s linear infinite; }
-        `}</style>
-        <g className="titan-arc">
-          {/* Full ring base — very faint */}
-          <circle cx="18" cy="18" r="16" stroke="#455a4f" strokeOpacity="0.12" strokeWidth="2" fill="none" />
-          {/* Gradient arc — 270° sweep using stroke-dasharray */}
-          <circle
-            cx="18" cy="18" r="16"
-            stroke="url(#arcGrad)"
-            strokeWidth="2.2"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray="75 26"
-            strokeDashoffset="0"
-          />
-        </g>
-      </svg>
-      {/* Titan logo centered */}
-      <div className="absolute inset-0 flex items-center justify-center p-2">
+    <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
+      <style>{`
+        @keyframes titan-arc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .titan-arc-ring { transform-origin: 18px 18px; animation: titan-arc-spin 1.1s linear infinite; }
+      `}</style>
+
+      {/* Ring — absolutely positioned 4px outside the 28×28 box → 36×36 total */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          inset: -4,
+          opacity: spinning ? 1 : 0,
+          transition: 'opacity 350ms ease',
+        }}
+      >
+        <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
+          <defs>
+            <linearGradient id="arcGradMsg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#455a4f" stopOpacity="0" />
+              <stop offset="100%" stopColor="#455a4f" stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          <g className="titan-arc-ring">
+            <circle cx="18" cy="18" r="16" stroke="#455a4f" strokeOpacity="0.12" strokeWidth="2" fill="none" />
+            <circle cx="18" cy="18" r="16" stroke="url(#arcGradMsg)" strokeWidth="2.2" fill="none"
+              strokeLinecap="round" strokeDasharray="75 26" />
+          </g>
+        </svg>
+      </div>
+
+      {/* Titan logo — scales to 1.18 when ring fades */}
+      <div
+        className="w-full h-full"
+        style={{
+          transform: spinning ? 'scale(1)' : 'scale(1.18)',
+          transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transformOrigin: 'center center',
+        }}
+      >
         <svg viewBox="0 0 106 106" fill="none" className="w-full h-full">
           <path d={TITAN_PATH} fill="#FF6E3C" />
         </svg>
@@ -383,7 +394,7 @@ function TitanSpinnerIcon() {
 
 // ─── Option 7: Titan + Shimmer text ──────────────────────────────────────────
 
-function ThinkingOption7() {
+function ThinkingOption7({ isComplete = false }: { isComplete?: boolean }) {
   const [labelIndex, setLabelIndex] = useState(0);
   const [fading, setFading] = useState(false);
 
@@ -405,7 +416,7 @@ function ThinkingOption7() {
 
   return (
     <div className="flex items-center gap-3">
-      <TitanSpinnerIcon />
+      <TitanMessageIcon spinning={!isComplete} />
       <style>{`
         @keyframes shimmer-sweep {
           0%   { background-position: -300% center; }
@@ -438,14 +449,15 @@ function ThinkingOption7() {
 
 // ─── Option 8: Titan + Typewriter fade ───────────────────────────────────────
 
-function ThinkingOption8() {
+function ThinkingOption8({ isComplete = false }: { isComplete?: boolean }) {
   const [labelIndex, setLabelIndex] = useState(0);
   const [displayed, setDisplayed] = useState(0);
 
   const currentLabel = CONTEXT_LABELS[labelIndex];
 
-  // Advance labels
+  // Advance labels (stop cycling when complete)
   useEffect(() => {
+    if (isComplete) return;
     setLabelIndex(0);
     setDisplayed(0);
     let i = 0;
@@ -456,10 +468,11 @@ function ThinkingOption8() {
       if (i >= CONTEXT_LABELS.length - 1) clearInterval(interval);
     }, 1400);
     return () => clearInterval(interval);
-  }, []);
+  }, [isComplete]);
 
   // Type out characters
   useEffect(() => {
+    if (isComplete) return;
     setDisplayed(0);
     let ch = 0;
     const t = setInterval(() => {
@@ -468,11 +481,11 @@ function ThinkingOption8() {
       if (ch >= currentLabel.length) clearInterval(t);
     }, 38);
     return () => clearInterval(t);
-  }, [labelIndex, currentLabel]);
+  }, [labelIndex, currentLabel, isComplete]);
 
   return (
     <div className="flex items-center gap-3">
-      <TitanSpinnerIcon />
+      <TitanMessageIcon spinning={!isComplete} />
       <style>{`
         @keyframes char-arrive {
           from { opacity: 0.2; color: #d1d5db; }
@@ -480,26 +493,28 @@ function ThinkingOption8() {
         }
         .char-arrive { animation: char-arrive 0.25s ease forwards; }
       `}</style>
-      <span className="text-sm font-medium" aria-live="polite">
-        {currentLabel.split('').map((char, i) => (
-          <span
-            key={`${labelIndex}-${i}`}
-            className="char-arrive"
-            style={{
-              animationDelay: `${i * 38}ms`,
-              opacity: i < displayed ? 1 : 0,
-              color: '#111827',
-            }}
-          >
-            {char}
-          </span>
-        ))}
-      </span>
+      {!isComplete && (
+        <span className="text-sm font-medium" aria-live="polite">
+          {currentLabel.split('').map((char, i) => (
+            <span
+              key={`${labelIndex}-${i}`}
+              className="char-arrive"
+              style={{
+                animationDelay: `${i * 38}ms`,
+                opacity: i < displayed ? 1 : 0,
+                color: '#111827',
+              }}
+            >
+              {char}
+            </span>
+          ))}
+        </span>
+      )}
     </div>
   );
 }
 
-const THINKING_COMPONENTS: Record<OptionId, () => JSX.Element> = {
+const THINKING_COMPONENTS: Record<OptionId, (props: { isComplete?: boolean }) => JSX.Element> = {
   1: ThinkingOption1,
   2: ThinkingOption2,
   3: ThinkingOption3,
@@ -516,6 +531,7 @@ function MockChat({ optionId }: { optionId: OptionId }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [thinking, setThinking] = useState(false);
+  const [completing, setCompleting] = useState(false); // ring fading, logo scaling
   const [thinkingKey, setThinkingKey] = useState(0);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -527,6 +543,7 @@ function MockChat({ optionId }: { optionId: OptionId }) {
   useEffect(() => {
     setMessages([]);
     setThinking(false);
+    setCompleting(false);
     setInput('');
   }, [optionId]);
 
@@ -536,14 +553,23 @@ function MockChat({ optionId }: { optionId: OptionId }) {
     setInput('');
     setMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: q }]);
     setThinking(true);
+    setCompleting(false);
     setThinkingKey(k => k + 1);
     setTimeout(() => {
-      setThinking(false);
-      setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: MOCK_RESPONSE }]);
+      // Phase 1: signal completion — ring fades, logo scales
+      setCompleting(true);
+      // Phase 2: after animation (450ms), swap in the real message
+      setTimeout(() => {
+        setThinking(false);
+        setCompleting(false);
+        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: MOCK_RESPONSE }]);
+      }, 450);
     }, 3500);
   };
 
   const ThinkingComponent = THINKING_COMPONENTS[optionId];
+  // Options 7 & 8 use the Titan icon for completed messages too
+  const useTitanIcon = optionId === 7 || optionId === 8;
 
   return (
     <div className="flex flex-col h-full">
@@ -576,9 +602,11 @@ function MockChat({ optionId }: { optionId: OptionId }) {
         {messages.map(msg => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {msg.role === 'assistant' && (
-              <div className="w-7 h-7 rounded-lg bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Sparkles className="w-3.5 h-3.5 text-white" />
-              </div>
+              useTitanIcon
+                ? <TitanMessageIcon spinning={false} />
+                : <div className="w-7 h-7 rounded-lg bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Sparkles className="w-3.5 h-3.5 text-white" />
+                  </div>
             )}
             <div className={`max-w-[75%] text-sm rounded-2xl px-4 py-2.5 leading-relaxed ${
               msg.role === 'user'
@@ -590,7 +618,7 @@ function MockChat({ optionId }: { optionId: OptionId }) {
           </div>
         ))}
 
-        {thinking && <ThinkingComponent key={thinkingKey} />}
+        {(thinking || completing) && <ThinkingComponent key={thinkingKey} isComplete={completing} />}
         <div ref={endRef} />
       </div>
 
