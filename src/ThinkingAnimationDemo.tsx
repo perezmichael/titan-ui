@@ -20,10 +20,10 @@ interface DemoRecord {
 }
 
 interface DemoDossier {
+  name: string;
+  assetClass: string;
   description: string;
   dealDetails: Array<{ label: string; value: string }>;
-  documents: Array<{ name: string; date: string }>;
-  kbDocuments: string[];
 }
 
 interface Message {
@@ -345,38 +345,54 @@ const MATURITY_RECORDS: DemoRecord[] = [
 
 const DEMO_DOSSIERS: Record<string, DemoDossier> = {
   '2': {
-    description: 'GH3 Cler SNU is a multi-tenant Class B office complex located in Scottsdale, AZ. The property is 78% occupied with 3 anchor tenants on leases expiring in 2027–2028. Loan is approaching maturity in April 2026 and is flagged for renewal review.',
+    name: 'GH3 Cler SNU',
+    assetClass: 'CRE — Office',
+    description: 'GH3 Cler SNU operates a portfolio of Class A office properties in suburban markets across the Southeast. The company focuses on long-term leases with investment-grade tenants and maintains active asset management.',
     dealDetails: [
-      { label: 'Balance',      value: '$4.2M'        },
-      { label: 'Maturity',     value: 'Apr 12, 2026' },
-      { label: 'DSCR',        value: '1.21x'         },
-      { label: 'LTV',         value: '68%'           },
-      { label: 'Rate',        value: '5.85% fixed'   },
-      { label: 'Loan Officer', value: 'Sarah Chen'   },
+      { label: 'Transaction Type',        value: 'Renewal'                              },
+      { label: 'NAICS Code',              value: '531120'                               },
+      { label: 'Property Type',           value: 'Class A Office'                       },
+      { label: 'Facility Type',           value: 'Senior Loan, Revolving Line of Credit (RLOC)' },
+      { label: 'Loan Term',               value: '36 months'                            },
+      { label: 'Loan Maturity Date',      value: '4/12/2026'                            },
+      { label: 'Interest Rate',           value: '5.85% Fixed'                          },
+      { label: 'Amortization Structure',  value: 'Interest Only'                        },
+      { label: 'Syndicated',              value: 'No'                                   },
+      { label: 'Sponsor Name',            value: 'GH3 Capital Partners'                 },
+      { label: 'LTV (As-Is)',             value: '68%'                                  },
+      { label: 'DSCR (Underwritten)',     value: '1.38x'                                },
+      { label: 'NOI (Most Recent)',       value: '$2,100,000'                           },
+      { label: 'Appraised Value',         value: '$7,750,000'                           },
+      { label: 'Occupancy Rate',          value: '91%'                                  },
+      { label: 'Primary Covenant Type',   value: 'Minimum DSCR'                         },
+      { label: 'Primary Covenant Threshold', value: '1.20'                             },
+      { label: 'Collateral Description',  value: 'First lien on commercial real estate and all rents'  },
     ],
-    documents: [
-      { name: 'Credit Agreement',           date: '03/15/2023' },
-      { name: 'Appraisal Report',           date: '02/28/2023' },
-      { name: 'Financial Statements Q3 2025', date: '11/01/2025' },
-    ],
-    kbDocuments: ['Axiom Commercial Lending Policy', 'Loan Maturity Guidelines 2026'],
   },
   '4': {
-    description: 'Retail Plaza Holdings owns a 42,000 sq ft open-air strip center in Mesa, AZ anchored by a regional grocery chain. Strong foot traffic but one junior anchor vacancy (8,400 sq ft) since Q3 2025. Loan matures May 2026.',
+    name: 'Retail Plaza Holdings',
+    assetClass: 'CRE — Retail',
+    description: 'Retail Plaza Holdings owns a 42,000 sq ft open-air strip center in Mesa, AZ anchored by a regional grocery chain. Strong foot traffic with one junior anchor vacancy since Q3 2025. Loan matures May 2026.',
     dealDetails: [
-      { label: 'Balance',      value: '$6.1M'        },
-      { label: 'Maturity',     value: 'May 3, 2026'  },
-      { label: 'DSCR',        value: '1.18x'         },
-      { label: 'LTV',         value: '72%'           },
-      { label: 'Rate',        value: '6.10% fixed'   },
-      { label: 'Loan Officer', value: 'Michael Rodriguez' },
+      { label: 'Transaction Type',        value: 'Renewal'                              },
+      { label: 'NAICS Code',              value: '531120'                               },
+      { label: 'Property Type',           value: 'CRE — Retail Strip Center'            },
+      { label: 'Facility Type',           value: 'Senior Loan, Term Loan'               },
+      { label: 'Loan Term',               value: '36 months'                            },
+      { label: 'Loan Maturity Date',      value: '5/3/2026'                             },
+      { label: 'Interest Rate',           value: '6.10% Fixed'                          },
+      { label: 'Amortization Structure',  value: 'Interest Only'                        },
+      { label: 'Syndicated',              value: 'No'                                   },
+      { label: 'Sponsor Name',            value: 'Retail Plaza Group LLC'               },
+      { label: 'LTV (As-Is)',             value: '72%'                                  },
+      { label: 'DSCR (Underwritten)',     value: '1.18x'                                },
+      { label: 'NOI (Most Recent)',       value: '$3,480,000'                           },
+      { label: 'Appraised Value',         value: '$8,500,000'                           },
+      { label: 'Occupancy Rate',          value: '80%'                                  },
+      { label: 'Primary Covenant Type',   value: 'Minimum DSCR'                         },
+      { label: 'Primary Covenant Threshold', value: '1.15'                             },
+      { label: 'Collateral Description',  value: 'First lien on commercial real estate and all rents'  },
     ],
-    documents: [
-      { name: 'Term Sheet',             date: '01/22/2023' },
-      { name: 'Rent Roll Q4 2025',      date: '01/10/2026' },
-      { name: 'Environmental Report',   date: '12/15/2022' },
-    ],
-    kbDocuments: ['Axiom Commercial Lending Policy', 'CRE Retail Underwriting Guidelines'],
   },
 };
 
@@ -388,44 +404,61 @@ const STATUS_STYLES: Record<DemoRecord['status'], string> = {
   Payoff:  'bg-gray-100 text-gray-500',
 };
 
-function RecordCards({ records, onOpen }: { records: DemoRecord[]; onOpen: (r: DemoRecord) => void }) {
+function RecordCards({ records, openId, onOpen }: { records: DemoRecord[]; openId: string | null; onOpen: (r: DemoRecord) => void }) {
   return (
-    <div className="mt-2 space-y-2">
+    <div className="mt-2">
       <style>{`
         @keyframes card-spring {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      {records.map((record, i) => (
-        <div
-          key={record.id}
-          className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 hover:border-gray-300 transition-colors"
-          style={{ animation: `card-spring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 80}ms both` }}
-        >
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
-              <FileText className="w-3.5 h-3.5 text-gray-400" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-gray-900 truncate">{record.name}</div>
-              <div className="text-xs text-gray-400 mt-0.5">{record.assetClass} · {record.noteNumber}</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[record.status]}`}>
-              {record.status}
-            </span>
-            <button
-              onClick={() => onOpen(record)}
-              className="text-xs font-medium text-[#455a4f] hover:underline flex items-center gap-1 transition-colors"
+      <div className="text-xs text-gray-400 mb-2">{records.length} records found</div>
+      <div className="space-y-1.5">
+        {records.map((record, i) => {
+          const isOpen = openId === record.id;
+          return (
+            <div
+              key={record.id}
+              className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex items-center justify-between gap-4 hover:border-gray-300 transition-colors"
+              style={{ animation: `card-spring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 80}ms both` }}
             >
-              Open
-              <ChevronDown className="w-3 h-3 -rotate-90" />
-            </button>
-          </div>
-        </div>
-      ))}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-7 h-7 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-3.5 h-3.5 text-gray-400" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-gray-900 truncate">{record.name}</div>
+                  <div className="text-xs text-gray-400 mt-0.5">{record.assetClass} · {record.noteNumber}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 flex-shrink-0">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[record.status]}`}>
+                  {record.status}
+                </span>
+                <button
+                  onClick={() => onOpen(record)}
+                  className={`text-xs font-medium flex items-center gap-1 px-2.5 py-1 rounded-lg border transition-colors ${
+                    isOpen
+                      ? 'bg-gray-900 text-white border-gray-900 hover:bg-gray-700'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
+                  }`}
+                >
+                  {isOpen ? (
+                    <>Close <ChevronDown className="w-3 h-3 rotate-90" /></>
+                  ) : (
+                    <>Open <ChevronDown className="w-3 h-3 -rotate-90" /></>
+                  )}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <button className="mt-2.5 text-xs text-[#455a4f] hover:underline flex items-center gap-1">
+        Go deeper — chat with these records side by side
+        <ChevronDown className="w-3 h-3 -rotate-90" />
+      </button>
     </div>
   );
 }
@@ -435,64 +468,39 @@ function RecordCards({ records, onOpen }: { records: DemoRecord[]; onOpen: (r: D
 function DossierPanel({ record, dossier, onClose }: { record: DemoRecord; dossier: DemoDossier; onClose: () => void }) {
   return (
     <div
-      className="w-[420px] flex-shrink-0 border-l border-gray-200 bg-white flex flex-col overflow-hidden"
+      className="w-[480px] flex-shrink-0 border-l border-gray-200 bg-[#f5f5f3] flex flex-col overflow-hidden"
       style={{ animation: 'card-spring 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
     >
-      {/* Header */}
-      <div className="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3 flex-shrink-0">
-        <div>
-          <div className="text-sm font-semibold text-gray-900">{record.name}</div>
-          <div className="text-xs text-gray-400 mt-0.5">{record.assetClass} · {record.noteNumber}</div>
-        </div>
-        <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0 mt-0.5">
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Body */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 text-sm">
-        {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed">{dossier.description}</p>
-
-        {/* Deal Details */}
-        <div>
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Deal Details</div>
-          <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-100">
-            {dossier.dealDetails.map(({ label, value }, i) => (
-              <div key={label} className={`flex items-center justify-between px-4 py-2.5 ${i < dossier.dealDetails.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                <span className="text-xs text-gray-500">{label}</span>
-                <span className="text-xs font-medium text-gray-900">{value}</span>
-              </div>
-            ))}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-8 py-6">
+          {/* Header — name, close, subtitle, description */}
+          <div className="mb-6">
+            <div className="flex items-start justify-between gap-3 mb-1">
+              <h1 className="text-xl text-gray-900">{dossier.name}</h1>
+              <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0 mt-1">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="text-sm text-gray-500 mb-4">{dossier.assetClass}</div>
+            <p className="text-sm text-gray-600 leading-relaxed">{dossier.description}</p>
           </div>
-        </div>
 
-        {/* Documents */}
-        <div>
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Documents</div>
-          <div className="space-y-1.5">
-            {dossier.documents.map(doc => (
-              <div key={doc.name} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-lg border border-gray-100">
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                  <span className="text-xs text-gray-700 truncate">{doc.name}</span>
+          {/* Deal Details — matches BorrowerDealView exactly */}
+          <div className="bg-white border border-gray-200 mb-6">
+            <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50">
+              <h2 className="text-sm font-medium text-gray-900">Deal Details</h2>
+            </div>
+            <div className="px-4 py-4 space-y-3">
+              {dossier.dealDetails.map(({ label, value }, i) => (
+                <div
+                  key={label}
+                  className={`grid grid-cols-[200px_1fr] gap-4 text-sm ${i > 0 ? 'border-t border-gray-100 pt-3' : ''}`}
+                >
+                  <div className="text-xs font-medium text-gray-600">{label}</div>
+                  <div className="text-sm text-gray-900">{value}</div>
                 </div>
-                <span className="text-[11px] text-gray-400 flex-shrink-0 ml-2">{doc.date}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* KB Documents */}
-        <div>
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Relevant KB Documents</div>
-          <div className="space-y-1.5">
-            {dossier.kbDocuments.map(doc => (
-              <div key={doc} className="flex items-center gap-2 py-2 px-3 bg-blue-50 rounded-lg border border-blue-100">
-                <BookOpen className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
-                <span className="text-xs text-blue-700">{doc}</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -666,6 +674,7 @@ function MockChat({ optionId }: { optionId: OptionId }) {
               {msg.records && (
                 <RecordCards
                   records={msg.records}
+                  openId={openDossierRecord?.id ?? null}
                   onOpen={r => setOpenDossierRecord(prev => prev?.id === r.id ? null : r)}
                 />
               )}
