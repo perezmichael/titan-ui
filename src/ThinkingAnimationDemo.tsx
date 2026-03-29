@@ -468,7 +468,7 @@ function RecordCards({ records, openId, onOpen }: { records: DemoRecord[]; openI
 function DossierPanel({ record, dossier, onClose }: { record: DemoRecord; dossier: DemoDossier; onClose: () => void }) {
   return (
     <div
-      className="w-[480px] flex-shrink-0 border-l border-gray-200 bg-[#f5f5f3] flex flex-col overflow-hidden"
+      className="flex-1 min-w-[480px] border-l border-gray-200 bg-[#f5f5f3] flex flex-col overflow-hidden"
       style={{ animation: 'card-spring 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
     >
       <div className="flex-1 overflow-y-auto">
@@ -626,8 +626,8 @@ function MockChat({ optionId }: { optionId: OptionId }) {
 
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Chat column */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      {/* Chat column — fixed reading width, left-anchored */}
+      <div className="flex flex-col w-[580px] flex-shrink-0 overflow-hidden">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-6 space-y-5">
         {messages.length === 0 && !thinking && (
@@ -737,7 +737,7 @@ export function ThinkingAnimationDemo() {
     <div className="flex-1 flex flex-col h-screen bg-[#f5f5f3]">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="max-w-3xl mx-auto">
+        <div>
           <div className="flex items-start justify-between mb-4">
             <div>
               <h1 className="text-base font-medium text-gray-900">Thinking Animation — Design Review</h1>
@@ -783,9 +783,7 @@ export function ThinkingAnimationDemo() {
 
       {/* Chat preview */}
       <div className="flex-1 overflow-hidden">
-        <div className="max-w-3xl mx-auto h-full">
-          <MockChat key={`${activeOption}-${chatKey}`} optionId={activeOption} />
-        </div>
+        <MockChat key={`${activeOption}-${chatKey}`} optionId={activeOption} />
       </div>
     </div>
   );
