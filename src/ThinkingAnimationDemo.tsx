@@ -579,7 +579,24 @@ function MockChat({ optionId }: { optionId: OptionId }) {
   const [completing, setCompleting] = useState(false);
   const [thinkingKey, setThinkingKey] = useState(0);
   const [openDossierRecord, setOpenDossierRecord] = useState<DemoRecord | null>(null);
+  const [dossierWidth, setDossierWidth] = useState(520);
   const endRef = useRef<HTMLDivElement>(null);
+
+  const handleDividerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = dossierWidth;
+    const onMove = (e: MouseEvent) => {
+      const delta = startX - e.clientX;
+      setDossierWidth(Math.max(320, Math.min(900, startWidth + delta)));
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -713,18 +730,29 @@ function MockChat({ optionId }: { optionId: OptionId }) {
         </div>
       </div>
 
-      {/* Dossier — always in DOM, width animates 0 → 50% for smooth transition */}
+      {/* Divider + dossier — animate in together */}
       <div
-        className="flex-shrink-0 overflow-hidden border-l border-gray-200 transition-all duration-300 ease-in-out"
-        style={{ width: dossierOpen ? '50%' : '0' }}
+        className="flex flex-shrink-0 overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ width: dossierOpen ? dossierWidth : 0 }}
       >
-        {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
-          <DossierPanel
-            record={openDossierRecord}
-            dossier={DEMO_DOSSIERS[openDossierRecord.id]}
-            onClose={() => setOpenDossierRecord(null)}
-          />
-        )}
+        {/* Drag handle */}
+        <div
+          className="w-2 flex-shrink-0 flex items-center justify-center cursor-col-resize group relative bg-transparent hover:bg-blue-50 transition-colors"
+          onMouseDown={handleDividerMouseDown}
+        >
+          <div className="w-1 h-8 rounded-full bg-gray-300 group-hover:bg-blue-400 transition-colors" />
+        </div>
+
+        {/* Dossier content */}
+        <div className="flex-1 overflow-hidden border-l border-gray-200">
+          {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
+            <DossierPanel
+              record={openDossierRecord}
+              dossier={DEMO_DOSSIERS[openDossierRecord.id]}
+              onClose={() => setOpenDossierRecord(null)}
+            />
+          )}
+        </div>
       </div>
     </div>
   );
