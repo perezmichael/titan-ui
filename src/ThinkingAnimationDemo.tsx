@@ -557,23 +557,22 @@ function ReasoningStepIcon({ icon }: { icon: ReasoningStep['icon'] }) {
 }
 
 function ReasoningPanel({ steps }: { steps: ReasoningStep[] }) {
-  const [visible, setVisible] = useState(0);
-
-  useEffect(() => {
-    setVisible(0);
-    let i = 0;
-    const t = setInterval(() => {
-      i++;
-      setVisible(i);
-      if (i >= steps.length) clearInterval(t);
-    }, 130);
-    return () => clearInterval(t);
-  }, [steps]);
-
   return (
-    <div className="mt-3 ml-1">
-      {steps.slice(0, visible).map((step, i) => (
-        <div key={step.label} className="flex gap-3" style={{ opacity: i < visible ? 1 : 0, transition: 'opacity 200ms ease' }}>
+    <div className="mt-2 ml-1">
+      <style>{`
+        @keyframes step-spring {
+          from { opacity: 0; transform: translateY(10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      {steps.map((step, i) => (
+        <div
+          key={step.label}
+          className="flex gap-3"
+          style={{
+            animation: `step-spring 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) ${i * 45}ms both`,
+          }}
+        >
           {/* Timeline column */}
           <div className="flex flex-col items-center flex-shrink-0" style={{ width: 20 }}>
             <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
@@ -669,7 +668,7 @@ function ReasoningToggle({ steps, summary }: { steps: ReasoningStep[]; summary: 
     <div className="mb-3">
       <button
         onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs text-gray-600 font-medium"
+        className="flex items-center gap-1.5 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
       >
         <span>{summary}</span>
         <ChevronDown
