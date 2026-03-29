@@ -1,14 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { Send, Sparkles, RotateCcw } from 'lucide-react';
+import { Send, Sparkles, RotateCcw, Shield, Search, BookOpen, ChevronDown } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type OptionId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+type OptionId = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+
+interface ReasoningStep {
+  icon: 'shield' | 'search' | 'book' | 'sparkles';
+  label: string;
+  items?: string[];
+}
 
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  reasoning?: ReasoningStep[];
 }
 
 const OPTIONS: { id: OptionId; name: string; description: string }[] = [
@@ -20,6 +27,7 @@ const OPTIONS: { id: OptionId; name: string; description: string }[] = [
   { id: 6, name: 'Morphing Logo',     description: 'Layered shapes rotating at different speeds — Claude-style' },
   { id: 7, name: 'Titan + Shimmer',  description: 'Titan logo with gradient arc spinner, shimmer sweep on text' },
   { id: 8, name: 'Titan + Typewriter', description: 'Titan logo with gradient arc spinner, chars fade in dark as they type' },
+  { id: 9, name: 'Chain of Thought',  description: 'Option 8 loading + collapsible reasoning steps on complete' },
 ];
 
 const STEPS = [
@@ -514,6 +522,166 @@ function ThinkingOption8({ isComplete = false }: { isComplete?: boolean }) {
   );
 }
 
+// ─── Reasoning data ───────────────────────────────────────────────────────────
+
+const REASONING_STEPS: ReasoningStep[] = [
+  {
+    icon: 'shield',
+    label: 'Validated message for PII',
+    items: ['No personally identifiable information detected'],
+  },
+  {
+    icon: 'search',
+    label: 'Searched 6 portfolio records',
+    items: ['GH3 Cler SNU', 'Retail Plaza Holdings', 'VFN Holdings Inc', '+3 more'],
+  },
+  {
+    icon: 'book',
+    label: 'Referenced KB documents',
+    items: ['Axiom Commercial Lending Policy', 'Loan Maturity Guidelines 2026'],
+  },
+  {
+    icon: 'sparkles',
+    label: 'Generated response',
+  },
+];
+
+const REASONING_SUMMARY = 'Searched 6 records · Referenced 2 docs · No PII';
+
+function ReasoningStepIcon({ icon }: { icon: ReasoningStep['icon'] }) {
+  const cls = 'w-3.5 h-3.5 text-gray-400';
+  if (icon === 'shield')   return <Shield   className={cls} />;
+  if (icon === 'search')   return <Search   className={cls} />;
+  if (icon === 'book')     return <BookOpen className={cls} />;
+  return <Sparkles className={cls} />;
+}
+
+function ReasoningPanel({ steps }: { steps: ReasoningStep[] }) {
+  const [visible, setVisible] = useState(0);
+
+  useEffect(() => {
+    setVisible(0);
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setVisible(i);
+      if (i >= steps.length) clearInterval(t);
+    }, 130);
+    return () => clearInterval(t);
+  }, [steps]);
+
+  return (
+    <div className="mt-3 ml-1">
+      {steps.slice(0, visible).map((step, i) => (
+        <div key={step.label} className="flex gap-3" style={{ opacity: i < visible ? 1 : 0, transition: 'opacity 200ms ease' }}>
+          {/* Timeline column */}
+          <div className="flex flex-col items-center flex-shrink-0" style={{ width: 20 }}>
+            <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+              <ReasoningStepIcon icon={step.icon} />
+            </div>
+            {i < steps.length - 1 && (
+              <div className="w-px bg-gray-200 flex-1 my-1" style={{ minHeight: 12 }} />
+            )}
+          </div>
+          {/* Content */}
+          <div className="pb-3 min-w-0">
+            <div className="text-xs font-medium text-gray-700 leading-5">{step.label}</div>
+            {step.items && (
+              <div className="mt-0.5 space-y-0.5">
+                {step.items.map(item => (
+                  <div key={item} className="text-[11px] text-gray-400">{item}</div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Option 9: Chain of Thought ───────────────────────────────────────────────
+
+function ThinkingOption9({ isComplete = false }: { isComplete?: boolean }) {
+  const [labelIndex, setLabelIndex] = useState(0);
+  const [displayed, setDisplayed] = useState(0);
+  const currentLabel = CONTEXT_LABELS[labelIndex];
+
+  useEffect(() => {
+    if (isComplete) return;
+    setLabelIndex(0);
+    setDisplayed(0);
+    let i = 0;
+    const interval = setInterval(() => {
+      i = Math.min(i + 1, CONTEXT_LABELS.length - 1);
+      setLabelIndex(i);
+      setDisplayed(0);
+      if (i >= CONTEXT_LABELS.length - 1) clearInterval(interval);
+    }, 1400);
+    return () => clearInterval(interval);
+  }, [isComplete]);
+
+  useEffect(() => {
+    if (isComplete) return;
+    setDisplayed(0);
+    let ch = 0;
+    const t = setInterval(() => {
+      ch++;
+      setDisplayed(ch);
+      if (ch >= currentLabel.length) clearInterval(t);
+    }, 38);
+    return () => clearInterval(t);
+  }, [labelIndex, currentLabel, isComplete]);
+
+  return (
+    <div className="flex items-center gap-3">
+      <TitanMessageIcon spinning={!isComplete} />
+      <style>{`
+        @keyframes char-arrive9 {
+          from { opacity: 0.2; color: #d1d5db; }
+          to   { opacity: 1;   color: #111827; }
+        }
+        .char-arrive9 { animation: char-arrive9 0.25s ease forwards; }
+      `}</style>
+      {!isComplete && (
+        <span className="text-sm font-medium" aria-live="polite">
+          {currentLabel.split('').map((char, i) => (
+            <span
+              key={`9-${labelIndex}-${i}`}
+              className="char-arrive9"
+              style={{ animationDelay: `${i * 38}ms`, opacity: i < displayed ? 1 : 0, color: '#111827' }}
+            >
+              {char}
+            </span>
+          ))}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Reasoning toggle (rendered inside completed assistant message) ────────────
+
+function ReasoningToggle({ steps, summary }: { steps: ReasoningStep[]; summary: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-3">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs text-gray-600 font-medium"
+      >
+        <span>{summary}</span>
+        <ChevronDown
+          className="w-3.5 h-3.5 text-gray-400 transition-transform duration-200"
+          style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+        />
+      </button>
+      {open && <ReasoningPanel steps={steps} />}
+    </div>
+  );
+}
+
 const THINKING_COMPONENTS: Record<OptionId, (props: { isComplete?: boolean }) => JSX.Element> = {
   1: ThinkingOption1,
   2: ThinkingOption2,
@@ -523,6 +691,7 @@ const THINKING_COMPONENTS: Record<OptionId, (props: { isComplete?: boolean }) =>
   6: ThinkingOption6,
   7: ThinkingOption7,
   8: ThinkingOption8,
+  9: ThinkingOption9,
 };
 
 // ─── Mock Chat ────────────────────────────────────────────────────────────────
@@ -562,14 +731,19 @@ function MockChat({ optionId }: { optionId: OptionId }) {
       setTimeout(() => {
         setThinking(false);
         setCompleting(false);
-        setMessages(prev => [...prev, { id: (Date.now() + 1).toString(), role: 'assistant', content: MOCK_RESPONSE }]);
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: MOCK_RESPONSE,
+          reasoning: optionId === 9 ? REASONING_STEPS : undefined,
+        }]);
       }, 450);
     }, 3500);
   };
 
   const ThinkingComponent = THINKING_COMPONENTS[optionId];
-  // Options 7 & 8 use the Titan icon for completed messages too
-  const useTitanIcon = optionId === 7 || optionId === 8;
+  // Options 7, 8 & 9 use the Titan icon for completed messages too
+  const useTitanIcon = optionId === 7 || optionId === 8 || optionId === 9;
 
   return (
     <div className="flex flex-col h-full">
@@ -613,6 +787,9 @@ function MockChat({ optionId }: { optionId: OptionId }) {
                 ? 'bg-white border border-gray-200 text-gray-900 rounded-tr-sm'
                 : 'bg-gray-50 border border-gray-200 text-gray-900 rounded-tl-sm'
             }`}>
+              {msg.reasoning && (
+                <ReasoningToggle steps={msg.reasoning} summary={REASONING_SUMMARY} />
+              )}
               {renderText(msg.content)}
             </div>
           </div>
