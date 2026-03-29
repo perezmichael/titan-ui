@@ -468,7 +468,7 @@ function RecordCards({ records, openId, onOpen }: { records: DemoRecord[]; openI
 function DossierPanel({ record, dossier, onClose }: { record: DemoRecord; dossier: DemoDossier; onClose: () => void }) {
   return (
     <div
-      className="flex-1 min-w-[480px] border-l border-gray-200 bg-[#f5f5f3] flex flex-col overflow-hidden"
+      className="w-full h-full bg-[#f5f5f3] flex flex-col overflow-hidden"
       style={{ animation: 'card-spring 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both' }}
     >
       <div className="flex-1 overflow-y-auto">
@@ -624,98 +624,108 @@ function MockChat({ optionId }: { optionId: OptionId }) {
 
   const ThinkingComponent = THINKING_COMPONENTS[optionId];
 
+  const dossierOpen = openDossierRecord !== null && !!DEMO_DOSSIERS[openDossierRecord?.id ?? ''];
+
   return (
     <div className="flex h-full overflow-hidden">
-      {/* Chat column — fixed reading width, left-anchored */}
-      <div className="flex flex-col w-[580px] flex-shrink-0 overflow-hidden">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        {messages.length === 0 && !thinking && (
-          <div className="h-full flex flex-col items-center justify-center text-center pb-8">
-            <div className="w-10 h-10 rounded-xl bg-[#455a4f] flex items-center justify-center mb-4">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <p className="text-sm font-medium text-gray-700 mb-1">Send a message to see the animation</p>
-            <p className="text-xs text-gray-400 mb-6">Or try one of these</p>
-            <div className="flex flex-col gap-2 w-full max-w-sm">
-              {[
-                'Which loans have maturities in the next 90 days?',
-                'How many deals are for data centers in Arizona?',
-              ].map(s => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="px-4 py-2.5 text-sm text-left bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-colors text-gray-700"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {messages.map(msg => (
-          <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <TitanMessageIcon spinning={false} />
-            )}
-            <div className="flex flex-col gap-2 max-w-[85%]">
-              <div className={`text-sm rounded-2xl px-4 py-2.5 leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-white border border-gray-200 text-gray-900 rounded-tr-sm self-end'
-                  : 'bg-gray-50 border border-gray-200 text-gray-900 rounded-tl-sm'
-              }`}>
-                {msg.reasoning && (
-                  <ReasoningToggle steps={msg.reasoning} summary={REASONING_SUMMARY} />
-                )}
-                {renderText(msg.content)}
+      {/* Chat column — flex-1, content centered inside with max-w */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-2xl mx-auto space-y-5">
+            {messages.length === 0 && !thinking && (
+              <div className="flex flex-col items-center justify-center text-center pt-24 pb-8">
+                <div className="w-10 h-10 rounded-xl bg-[#455a4f] flex items-center justify-center mb-4">
+                  <Sparkles className="w-5 h-5 text-white" />
+                </div>
+                <p className="text-sm font-medium text-gray-700 mb-1">Send a message to see the animation</p>
+                <p className="text-xs text-gray-400 mb-6">Or try one of these</p>
+                <div className="flex flex-col gap-2 w-full max-w-sm">
+                  {[
+                    'Which loans have maturities in the next 90 days?',
+                    'How many deals are for data centers in Arizona?',
+                  ].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => send(s)}
+                      className="px-4 py-2.5 text-sm text-left bg-white border border-gray-200 rounded-xl hover:border-gray-300 hover:bg-gray-50 transition-colors text-gray-700"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {/* Record cards outside the bubble */}
-              {msg.records && (
-                <RecordCards
-                  records={msg.records}
-                  openId={openDossierRecord?.id ?? null}
-                  onOpen={r => setOpenDossierRecord(prev => prev?.id === r.id ? null : r)}
-                />
-              )}
+            )}
+
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {msg.role === 'assistant' && (
+                  <TitanMessageIcon spinning={false} />
+                )}
+                <div className="flex flex-col gap-2 max-w-[85%]">
+                  <div className={`text-sm rounded-2xl px-4 py-2.5 leading-relaxed ${
+                    msg.role === 'user'
+                      ? 'bg-white border border-gray-200 text-gray-900 rounded-tr-sm self-end'
+                      : 'bg-gray-50 border border-gray-200 text-gray-900 rounded-tl-sm'
+                  }`}>
+                    {msg.reasoning && (
+                      <ReasoningToggle steps={msg.reasoning} summary={REASONING_SUMMARY} />
+                    )}
+                    {renderText(msg.content)}
+                  </div>
+                  {msg.records && (
+                    <RecordCards
+                      records={msg.records}
+                      openId={openDossierRecord?.id ?? null}
+                      onOpen={r => setOpenDossierRecord(prev => prev?.id === r.id ? null : r)}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {(thinking || completing) && <ThinkingComponent key={thinkingKey} isComplete={completing} />}
+            <div ref={endRef} />
+          </div>
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-gray-200 p-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus-within:border-gray-400 transition-colors">
+              <input
+                type="text"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') send(); }}
+                placeholder="Ask anything about your portfolio…"
+                className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
+              />
+              <button
+                onClick={() => send()}
+                disabled={!input.trim() || thinking}
+                className="w-7 h-7 bg-[#455a4f] text-white rounded-lg flex items-center justify-center hover:bg-[#3a4a42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        ))}
-
-        {(thinking || completing) && <ThinkingComponent key={thinkingKey} isComplete={completing} />}
-        <div ref={endRef} />
-      </div>
-
-      {/* Input */}
-      <div className="border-t border-gray-200 p-4">
-        <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-2.5 focus-within:border-gray-400 transition-colors">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter') send(); }}
-            placeholder="Ask anything about your portfolio…"
-            className="flex-1 text-sm text-gray-900 placeholder-gray-400 focus:outline-none bg-transparent"
-          />
-          <button
-            onClick={() => send()}
-            disabled={!input.trim() || thinking}
-            className="w-7 h-7 bg-[#455a4f] text-white rounded-lg flex items-center justify-center hover:bg-[#3a4a42] transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
-      </div>{/* end chat column */}
 
-      {/* Dossier panel — slides in from right */}
-      {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
-        <DossierPanel
-          record={openDossierRecord}
-          dossier={DEMO_DOSSIERS[openDossierRecord.id]}
-          onClose={() => setOpenDossierRecord(null)}
-        />
-      )}
+      {/* Dossier — always in DOM, width animates 0 → 50% for smooth transition */}
+      <div
+        className="flex-shrink-0 overflow-hidden border-l border-gray-200 transition-all duration-300 ease-in-out"
+        style={{ width: dossierOpen ? '50%' : '0' }}
+      >
+        {openDossierRecord && DEMO_DOSSIERS[openDossierRecord.id] && (
+          <DossierPanel
+            record={openDossierRecord}
+            dossier={DEMO_DOSSIERS[openDossierRecord.id]}
+            onClose={() => setOpenDossierRecord(null)}
+          />
+        )}
+      </div>
     </div>
   );
 }
