@@ -1,7 +1,193 @@
 import { Pencil, Paperclip, X, FileText, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
-import { ChatMessage } from './ChatMessage';
+import { ChatMessage, AuditLogPanel, LegacyAuditLog } from './ChatMessage';
+import type { ResponseAuditData, AuditPanelRequest } from './ChatMessage';
 import { TitanLogo } from './TitanLogo';
 import { useEffect, useState, useRef } from 'react';
+
+// ── Mock audit data for the BSA/AML message ───────────────────────────────────
+const bsaAuditData: ResponseAuditData = {
+  model: 'gpt-4.1-mini',
+  slmContributed: true,
+  sources: [
+    {
+      rank: 1,
+      name: 'BSA/AML Compliance Policy',
+      weight: 52,
+      importance: 'critical',
+      keyFactors: ['CTR threshold $10,000', 'AML program requirements', 'FinCEN enforcement'],
+      retrieval: { semanticScore: 0.94, keyword: 'Bank Secrecy Act', entity: 'FinCEN' },
+      saliency: 0.94,
+      snippet: 'Financial institutions must file a Currency Transaction Report for each currency transaction over $10,000...',
+      score: 0.94,
+    },
+    {
+      rank: 2,
+      name: 'AML Program Overview',
+      weight: 30,
+      importance: 'significant',
+      keyFactors: ['SAR filing requirements', 'employee training mandate'],
+      retrieval: { semanticScore: 0.87, keyword: 'anti-money laundering' },
+      saliency: 0.87,
+      snippet: 'Suspicious Activity Reports must be filed within 30 days of detecting potential criminal activity...',
+      score: 0.87,
+    },
+    {
+      rank: 3,
+      name: 'Financial Crimes Enforcement',
+      weight: 18,
+      keyFactors: ['FinCEN regulations'],
+      retrieval: { semanticScore: 0.82, keyword: 'FinCEN compliance' },
+      saliency: 0.72,
+      snippet: 'The Financial Crimes Enforcement Network administers the Bank Secrecy Act and its implementing regulations...',
+      score: 0.82,
+    },
+  ],
+  claims: [
+    {
+      text: 'The Bank Secrecy Act was enacted in 1970',
+      grounded: true,
+      confidenceScore: 99,
+      supportedBy: [{ sourceRef: 1, name: 'BSA/AML Compliance Policy', role: 'primary' }],
+    },
+    {
+      text: 'Financial institutions must file CTRs for transactions over $10,000',
+      grounded: true,
+      confidenceScore: 99,
+      supportedBy: [
+        { sourceRef: 1, name: 'BSA/AML Compliance Policy', role: 'primary' },
+        { sourceRef: 2, name: 'AML Program Overview', role: 'corroborating' },
+      ],
+    },
+    {
+      text: 'SARs are required for suspicious activity reporting',
+      grounded: true,
+      confidenceScore: 94,
+      supportedBy: [
+        { sourceRef: 2, name: 'AML Program Overview', role: 'primary' },
+        { sourceRef: 3, name: 'Financial Crimes Enforcement', role: 'corroborating' },
+      ],
+    },
+    {
+      text: 'AML programs must designate a compliance officer and conduct training',
+      grounded: true,
+      confidenceScore: 91,
+      supportedBy: [{ sourceRef: 1, name: 'BSA/AML Compliance Policy', role: 'primary' }],
+    },
+  ],
+  reasoning: [
+    {
+      icon: 'shield' as const,
+      label: 'Validated message for PII',
+      items: ['No personally identifiable information detected'],
+    },
+    {
+      icon: 'search' as const,
+      label: 'Searched compliance knowledge base',
+      items: ['BSA/AML Compliance Policy', 'AML Program Overview', 'Financial Crimes Enforcement'],
+    },
+    {
+      icon: 'book' as const,
+      label: 'Cross-referenced 4 claims',
+      items: ['CTR threshold $10,000', 'SAR filing requirements', 'AML program mandates', 'FinCEN enforcement authority'],
+    },
+    {
+      icon: 'sparkles' as const,
+      label: 'Synthesized response',
+    },
+  ],
+  executionSummary: 'Parsed the query as a regulatory definition request, then searched the compliance knowledge base and retrieved 3 relevant documents. Validation ran in parallel across 2 sources to cross-reference the CTR threshold and SAR filing requirements. Finally, synthesized a comprehensive response and confirmed all 4 claims meet the assurance threshold.',
+  executionWaves: [
+    {
+      label: 'Planning',
+      parallel: false,
+      timeMs: 12,
+      steps: [
+        {
+          label: 'Parsed query and identified as regulatory definition request',
+          type: 'planning',
+          detail: 'Domain: BSA/AML. Complexity: moderate. Required: definition, key requirements, enforcement context.',
+        },
+      ],
+    },
+    {
+      label: 'Knowledge Search',
+      parallel: false,
+      timeMs: 379,
+      steps: [
+        {
+          label: 'Searched compliance knowledge base',
+          type: 'search',
+          docCount: 3,
+          timeMs: 145,
+          detail: 'Keywords: "Bank Secrecy Act", "BSA", "regulatory compliance". Found 3 relevant documents.',
+        },
+        {
+          label: 'Retrieved and ranked source documents',
+          type: 'search',
+          docCount: 3,
+          timeMs: 234,
+          detail: 'BSA/AML Compliance Policy (0.94), AML Program Overview (0.87), Financial Crimes Enforcement (0.82).',
+        },
+      ],
+    },
+    {
+      label: 'Validation',
+      parallel: true,
+      timeMs: 478,
+      steps: [
+        {
+          label: 'Cross-referenced CTR threshold across sources',
+          type: 'analysis',
+          docCount: 2,
+          timeMs: 240,
+          detail: 'Confirmed $10,000 threshold consistent with 31 CFR 103.22 across 2 sources.',
+        },
+        {
+          label: 'Validated SAR filing requirements',
+          type: 'analysis',
+          docCount: 2,
+          timeMs: 238,
+          detail: 'Confirmed SAR requirements align with FinCEN standards for suspicious activity detection.',
+        },
+      ],
+    },
+    {
+      label: 'Synthesis',
+      parallel: false,
+      timeMs: 150,
+      steps: [
+        {
+          label: 'Synthesized comprehensive definition',
+          type: 'synthesis',
+          timeMs: 112,
+          detail: 'Covered: legislative purpose, CTR/SAR requirements, AML program mandates, enforcement mechanisms.',
+        },
+        {
+          label: 'Quality check and citation selection',
+          type: 'quality',
+          timeMs: 38,
+          detail: 'All 4 claims verified. 2 citations prepared. Response meets assurance threshold.',
+        },
+      ],
+    },
+  ],
+  deep: {
+    signalAgreement: 0.94,
+    featureImportance: [
+      { rank: 1, name: 'BSA/AML Compliance Policy', coefficient: 0.52, attribution: 0.50, saliency: 0.94, counterfactual: 1.00 },
+      { rank: 2, name: 'AML Program Overview',       coefficient: 0.30, attribution: 0.30, saliency: 0.87, counterfactual: 0.65 },
+      { rank: 3, name: 'Financial Crimes Enforcement', coefficient: 0.18, attribution: 0.20, saliency: 0.72, counterfactual: 0.22 },
+    ],
+    overallConfidence: 96,
+    flaggedItems: [],
+    confidenceFactors: [
+      { label: 'SUFFICIENT assurance level', passed: true },
+      { label: '4/4 claims grounded in citations', passed: true },
+      { label: 'High signal agreement across sources (R²=0.94)', passed: true },
+      { label: 'No single-source dependencies detected', passed: true },
+    ],
+  },
+};
 
 interface SelectedDocument {
   id: string;
@@ -36,6 +222,35 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const hasStartedUploadRef = useRef<boolean>(false);
   const [activeCitation, setActiveCitation] = useState<ActiveCitation | null>(null);
   const [internetSearchEnabled, setInternetSearchEnabled] = useState<boolean>(false);
+  const [auditPanel, setAuditPanel] = useState<AuditPanelRequest | null>(null);
+  const [auditPanelWidth, setAuditPanelWidth] = useState(480);
+  const auditPanelRef = useRef<HTMLDivElement>(null);
+
+  const handleAuditDividerMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startWidth = auditPanelWidth;
+    // Kill transition during drag so it tracks the mouse instantly
+    if (auditPanelRef.current) auditPanelRef.current.style.transition = 'none';
+    const onMove = (ev: MouseEvent) => {
+      const w = Math.max(380, Math.min(800, startWidth + (startX - ev.clientX)));
+      if (auditPanelRef.current) auditPanelRef.current.style.width = `${w}px`;
+    };
+    const onUp = (ev: MouseEvent) => {
+      const w = Math.max(380, Math.min(800, startWidth + (startX - ev.clientX)));
+      if (auditPanelRef.current) auditPanelRef.current.style.transition = '';
+      setAuditPanelWidth(w);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const handleOpenAuditPanel = (req: AuditPanelRequest) => {
+    setActiveCitation(null); // close PDF viewer if open
+    setAuditPanel(req);
+  };
   
   // Trigger upload start when user first views the upload-processing conversation
   useEffect(() => {
@@ -124,7 +339,8 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             title: 'BANK SECRECY ACT AND ANTI-MONEY LAUNDERING COMPLIANCE POLICY.docx',
             description: 'Outlines expected the Bank Secrecy Act requirements to prevent financial institutions from being used as intermediaries for the transfer or deposit of money derived from criminal activity.'
           }
-        ]
+        ],
+        responseAuditData: bsaAuditData,
       }
     ]
   };
@@ -309,9 +525,9 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const showDocumentChip = selectedDocument && conversationId !== 'new-chat';
 
   return (
-    <div className="flex-1 flex h-screen bg-[#f5f5f3]">
-      {/* Chat Section */}
-      <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
+    <div className="flex-1 flex h-screen overflow-hidden bg-[#f5f5f3]">
+      {/* Chat Section — always flex-1 min-w-0 so it squeezes as the panel grows */}
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden bg-[#f5f5f3]">
         {/* Header */}
         {!isNewConversationWithDoc && (
           <div className="border-b border-gray-200 bg-white px-4 py-3">
@@ -510,10 +726,11 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
           ) : (
             <div className="max-w-3xl">
               {activeConversation.messages.map((message, index) => (
-                <ChatMessage 
-                  key={index} 
+                <ChatMessage
+                  key={index}
                   {...message}
                   onCitationClick={setActiveCitation}
+                  onOpenAuditPanel={handleOpenAuditPanel}
                 />
               ))}
             </div>
@@ -570,6 +787,57 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             </div>
           </div>
         )}
+      </div>
+
+      {/* Audit Log Panel — always in DOM, width animates 0 → target */}
+      <div
+        ref={auditPanelRef}
+        className="flex-shrink-0 h-screen overflow-hidden transition-all duration-300 ease-in-out"
+        style={{ width: auditPanel ? auditPanelWidth : 0 }}
+      >
+        <div className="flex h-full w-full">
+          {/* Drag handle */}
+          <div
+            className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group"
+            onMouseDown={handleAuditDividerMouseDown}
+          >
+            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
+            <div className="relative z-10 w-[5px] h-8 rounded-full bg-gray-300 group-hover:bg-blue-200 transition-colors" />
+          </div>
+          {/* Panel content */}
+          <div className="flex-1 overflow-hidden bg-[#f9f9f8] border-l border-gray-200 flex flex-col">
+            {auditPanel?.kind === 'v2' ? (
+              <AuditLogPanel
+                auditData={auditPanel.auditData}
+                confidenceThresholdPassed={auditPanel.confidenceThresholdPassed}
+                chainOfThought={auditPanel.chainOfThought}
+                timestamp={auditPanel.timestamp}
+                onClose={() => setAuditPanel(null)}
+              />
+            ) : auditPanel?.kind === 'legacy' ? (
+              <div className="flex flex-col h-full">
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+                  <button onClick={() => setAuditPanel(null)} className="text-gray-400 hover:text-gray-700 transition-colors">
+                    <X className="w-4 h-4" />
+                  </button>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">Audit Log</div>
+                    <div className="text-xs text-gray-500 mt-0.5 font-mono">
+                      Ref #{Math.random().toString(36).substring(2, 12).toUpperCase()}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <LegacyAuditLog
+                    confidenceThresholdPassed={auditPanel.confidenceThresholdPassed}
+                    chainOfThought={auditPanel.chainOfThought}
+                    internetSearchAssisted={auditPanel.internetSearchAssisted}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </div>
       </div>
 
       {/* PDF Viewer Section - Only show when citation is active */}
