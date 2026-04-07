@@ -148,9 +148,15 @@ export function AuditReport() {
             <CheckCircle2 className="w-4 h-4 text-green-600" />
             <span className="text-sm font-semibold text-green-700 uppercase tracking-wide">Sufficient</span>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-gray-600 mb-3">
             Answer is well-supported by multiple authoritative sources.
           </p>
+          {auditData.executionSummary && (
+            <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mb-4">
+              <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <span>{auditData.executionSummary}</span>
+            </div>
+          )}
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
               <div className="text-2xl font-bold text-gray-800">{auditData.sources.length}</div>
@@ -170,6 +176,40 @@ export function AuditReport() {
             </div>
           </div>
         </div>
+
+        {/* ── Reasoning Steps ── */}
+        {auditData.reasoning && (
+          <div className="mb-8">
+            <SectionTitle>Reasoning Steps</SectionTitle>
+            <div>
+              {auditData.reasoning.map((step, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="flex flex-col items-center flex-shrink-0" style={{ width: 20 }}>
+                    <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      {step.icon === 'shield'   && <Shield   className="w-3.5 h-3.5 text-gray-400" />}
+                      {step.icon === 'search'   && <Search   className="w-3.5 h-3.5 text-gray-400" />}
+                      {step.icon === 'book'     && <BookOpen className="w-3.5 h-3.5 text-gray-400" />}
+                      {step.icon === 'sparkles' && <Sparkles className="w-3.5 h-3.5 text-gray-400" />}
+                    </div>
+                    {i < auditData.reasoning!.length - 1 && (
+                      <div className="w-px bg-gray-200 flex-1 my-1" style={{ minHeight: 12 }} />
+                    )}
+                  </div>
+                  <div className="pb-3 min-w-0">
+                    <div className="text-sm font-medium text-gray-800 leading-5">{step.label}</div>
+                    {step.items && (
+                      <div className="mt-0.5 space-y-0.5">
+                        {step.items.map((item, j) => (
+                          <div key={j} className="text-xs text-gray-400">{item}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* ── Sources ── */}
         <div className="mb-8">
@@ -321,40 +361,6 @@ export function AuditReport() {
             </div>
           )}
         </div>
-
-        {/* ── Reasoning Steps ── */}
-        {auditData.reasoning && (
-          <div className="mb-8">
-            <SectionTitle>Reasoning Steps</SectionTitle>
-            <div>
-              {auditData.reasoning.map((step, i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="flex flex-col items-center flex-shrink-0" style={{ width: 20 }}>
-                    <div className="w-5 h-5 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
-                      {step.icon === 'shield'   && <Shield   className="w-3.5 h-3.5 text-gray-400" />}
-                      {step.icon === 'search'   && <Search   className="w-3.5 h-3.5 text-gray-400" />}
-                      {step.icon === 'book'     && <BookOpen className="w-3.5 h-3.5 text-gray-400" />}
-                      {step.icon === 'sparkles' && <Sparkles className="w-3.5 h-3.5 text-gray-400" />}
-                    </div>
-                    {i < auditData.reasoning!.length - 1 && (
-                      <div className="w-px bg-gray-200 flex-1 my-1" style={{ minHeight: 12 }} />
-                    )}
-                  </div>
-                  <div className="pb-3 min-w-0">
-                    <div className="text-sm font-medium text-gray-800 leading-5">{step.label}</div>
-                    {step.items && (
-                      <div className="mt-0.5 space-y-0.5">
-                        {step.items.map((item, j) => (
-                          <div key={j} className="text-xs text-gray-400">{item}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ── What If ── */}
         {auditData.deep?.featureImportance && (
