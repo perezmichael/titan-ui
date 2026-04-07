@@ -322,10 +322,10 @@ export function AuditReport() {
           )}
         </div>
 
-        {/* ── Chain of Thought ── */}
+        {/* ── Reasoning Steps ── */}
         {auditData.reasoning && (
           <div className="mb-8">
-            <SectionTitle>Chain of Thought</SectionTitle>
+            <SectionTitle>Reasoning Steps</SectionTitle>
             <div>
               {auditData.reasoning.map((step, i) => (
                 <div key={i} className="flex gap-3">
