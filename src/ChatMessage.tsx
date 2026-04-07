@@ -1,4 +1,4 @@
-import { ThumbsUp, ThumbsDown, Heart, Info, FileText, ExternalLink, Cloud, Upload, Database, Copy, ChevronDown, ChevronUp, ChevronRight, Download, CheckCircle2, XCircle, AlertTriangle, Clock, Layers, BarChart2, X, Shield, Search, BookOpen, Sparkles } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Heart, Info, FileText, ExternalLink, Cloud, Upload, Database, Copy, ChevronDown, ChevronUp, ChevronRight, Download, CheckCircle2, XCircle, AlertTriangle, Clock, Layers, BarChart2, X, Shield, Search, BookOpen, Sparkles, Flag } from 'lucide-react';
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 
@@ -1026,58 +1026,60 @@ export function ChatMessage({
             {/* Message Footer */}
             <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
               {/* Left: actions */}
-              <div className="flex items-center gap-2">
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Copy">
+              <div className="flex items-center gap-0.5">
+                <button className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100 rounded transition-colors" title="Copy response">
                   <Copy className="w-3.5 h-3.5" />
                 </button>
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs up">
+                <button className="text-gray-400 hover:text-green-600 p-1.5 hover:bg-gray-100 rounded transition-colors" title="Helpful">
                   <ThumbsUp className="w-3.5 h-3.5" />
                 </button>
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs down">
+                <button className="text-gray-400 hover:text-red-500 p-1.5 hover:bg-gray-100 rounded transition-colors" title="Not helpful">
                   <ThumbsDown className="w-3.5 h-3.5" />
                 </button>
+                <button className="text-gray-400 hover:text-amber-500 p-1.5 hover:bg-gray-100 rounded transition-colors" title="Flag this response">
+                  <Flag className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Divider */}
+                <div className="w-px h-3.5 bg-gray-200 mx-1.5" />
 
                 {/* Audit Log trigger */}
                 {responseAuditData ? (
                   <button
                     onClick={() => onOpenAuditPanel?.({ kind: 'v2', auditData: responseAuditData, confidenceThresholdPassed, chainOfThought, timestamp })}
-                    className={`flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded border uppercase tracking-wide transition-colors ml-1 cursor-pointer ${
-                      confidenceThresholdPassed !== false
-                        ? 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'
-                        : 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100'
-                    }`}
+                    className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-800 transition-colors px-1 py-1 hover:bg-gray-100 rounded"
                   >
-                    {confidenceThresholdPassed !== false
-                      ? <><CheckCircle2 className="w-3 h-3" /><span>Audit Log · Sufficient</span><ChevronRight className="w-3 h-3 opacity-60" /></>
-                      : <><AlertTriangle className="w-3 h-3" /><span>Audit Log · Limited</span><ChevronRight className="w-3 h-3 opacity-60" /></>
-                    }
+                    <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>View audit log</span>
+                    <ChevronRight className="w-3 h-3 opacity-40" />
                   </button>
                 ) : (
                   <button
                     onClick={() => onOpenAuditPanel?.({ kind: 'legacy', confidenceThresholdPassed, chainOfThought, internetSearchAssisted })}
-                    className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1"
+                    className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-800 transition-colors px-1 py-1 hover:bg-gray-100 rounded"
                   >
-                    <Info className="w-3.5 h-3.5" />
-                    <span>More about this response</span>
+                    <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                    <span>View audit log</span>
+                    <ChevronRight className="w-3 h-3 opacity-40" />
                   </button>
                 )}
               </div>
 
               {/* Right: meta */}
-              <div className="flex items-center gap-2 text-[11px] text-gray-500">
+              <div className="flex items-center gap-2 text-[11px] text-gray-400">
                 {internetSearchAssisted && (
-                  <><span className="text-gray-500">Internet search assisted</span><span>•</span></>
+                  <><span>Internet assisted</span><span>·</span></>
                 )}
                 {sources && (sources.connectors?.length > 0 || sources.uploads?.length > 0 || sources.internet?.length > 0) && (() => {
                   const total = (sources.connectors?.length || 0) + (sources.uploads?.length || 0) + (sources.internet?.length || 0);
                   return (
-                    <><button onClick={() => setSourcesExpanded(!sourcesExpanded)} className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded text-[10px]">
-                      {total} {total === 1 ? 'Source' : 'Sources'}
-                    </button><span>•</span></>
+                    <><button onClick={() => setSourcesExpanded(!sourcesExpanded)} className="hover:text-gray-600 bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded-full text-[10px] transition-colors">
+                      {total} {total === 1 ? 'Source' : 'Sources'} ∨
+                    </button><span>·</span></>
                   );
                 })()}
                 {references && references.length > 0 && (
-                  <><span>{references.length} {references.length === 1 ? 'Source' : 'Sources'}</span><span>•</span></>
+                  <><span className="bg-gray-100 px-2 py-0.5 rounded-full text-[10px]">{references.length} {references.length === 1 ? 'Source' : 'Sources'}</span><span>·</span></>
                 )}
                 <span>{timestamp}</span>
               </div>
