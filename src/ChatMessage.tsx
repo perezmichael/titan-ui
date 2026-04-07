@@ -167,78 +167,44 @@ function SourcesSection({ sources }: { sources: AuditSource[] }) {
 
   return (
     <div className="space-y-2">
-      <div className="mb-1">
-        <div className="text-[9px] text-gray-400 uppercase tracking-widest mb-1.5">Weight Distribution</div>
-        <WeightBar sources={sources} />
-      </div>
+      <WeightBar sources={sources} />
       {sources.map((source, i) => {
         const isExpanded = expandedIndexes.includes(i);
+        const reliance = source.weight >= 50 ? 'Used most' : source.weight >= 25 ? 'Used heavily' : 'Used partially';
         return (
-          <div key={i} className="border border-gray-200 rounded-lg bg-white overflow-hidden">
-            <div className="px-3 pt-3 pb-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full bg-[#455a4f] text-white flex items-center justify-center text-[10px] flex-shrink-0">
-                    {source.rank}
-                  </div>
-                  <span className="text-xs text-gray-900 font-medium">{source.name}</span>
+          <div key={i} className="border border-gray-100 rounded-lg bg-white overflow-hidden">
+            <button
+              onClick={() => toggle(i)}
+              className="w-full px-3 pt-3 pb-2.5 text-left"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{i + 1}</span>
+                  <span className="text-xs text-gray-900 font-medium truncate">{source.name}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <ImportanceBadge importance={source.importance} />
-                  <span className="text-xs font-semibold text-gray-700">{source.weight}%</span>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span className="text-[10px] text-gray-400">{reliance}</span>
+                  {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
                 </div>
               </div>
-
-              {/* Progress bar */}
-              <div className="h-1 bg-gray-100 rounded-full mb-2">
-                <div className="h-full bg-[#3d6b47] rounded-full" style={{ width: `${source.weight}%` }} />
+              {/* Weight bar */}
+              <div className="h-1 bg-gray-100 rounded-full mt-2">
+                <div className="h-full bg-[#455a4f] rounded-full" style={{ width: `${source.weight}%` }} />
               </div>
+            </button>
 
-              {/* Key factor tags */}
-              <div className="flex flex-wrap gap-1 mb-2">
-                {source.keyFactors.map((f, j) => (
-                  <span key={j} className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">{f}</span>
-                ))}
-              </div>
-
-              {/* Details toggle */}
-              <button
-                onClick={() => toggle(i)}
-                className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-gray-700"
-              >
-                <FileText className="w-3 h-3" />
-                <span>Details</span>
-                {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-
-              {isExpanded && source.retrieval && (
-                <div className="mt-2 pt-2 border-t border-gray-100 space-y-1">
-                  <div className="text-[10px] text-gray-700">
-                    <span className="text-gray-500">Retrieval: </span>
-                    Semantic match ({source.retrieval.semanticScore})
-                    {source.retrieval.entity && `, entity: ${source.retrieval.entity}`}
-                    , keyword: "{source.retrieval.keyword}"
-                  </div>
-                  {source.saliency !== undefined && (
-                    <div className="text-[10px] text-gray-700">
-                      <span className="text-gray-500">Saliency: </span>
-                      {source.saliency}{' '}
-                      <span className={source.saliency >= 0.85 ? 'text-green-600 font-medium' : source.saliency >= 0.7 ? 'text-amber-600 font-medium' : 'text-gray-500'}>
-                        ({source.saliency >= 0.85 ? 'high' : source.saliency >= 0.7 ? 'medium' : 'low'})
-                      </span>
-                    </div>
-                  )}
-                  {source.snippet && (
-                    <div className="text-[10px] text-gray-600 italic leading-relaxed">
-                      Snippet: {source.snippet}
-                    </div>
-                  )}
-                  {source.score !== undefined && (
-                    <div className="text-[10px] text-gray-500">Type: doc · Score: {source.score}</div>
-                  )}
+            {isExpanded && (
+              <div className="px-3 pb-3 border-t border-gray-100 pt-2 space-y-1.5">
+                {source.snippet && (
+                  <p className="text-[11px] text-gray-600 italic leading-relaxed">"{source.snippet}"</p>
+                )}
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {source.keyFactors.map((f, j) => (
+                    <span key={j} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{f}</span>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         );
       })}
@@ -249,69 +215,33 @@ function SourcesSection({ sources }: { sources: AuditSource[] }) {
 function ClaimsSection({ claims }: { claims: AuditClaim[] }) {
   const grounded = claims.filter(c => c.grounded);
   const ungrounded = claims.filter(c => !c.grounded);
-  const pct = Math.round((grounded.length / claims.length) * 100);
 
   return (
-    <div>
-      {/* Header bar */}
-      <div className="flex items-center justify-between mb-1.5">
-        <span className="text-[9px] text-gray-400 uppercase tracking-widest">Claim Grounding</span>
-        <span className="text-[10px] text-gray-600">{grounded.length}/{claims.length} grounded ({pct}%)</span>
-      </div>
-      <div className="flex h-1.5 rounded overflow-hidden mb-4">
-        <div className="bg-green-500 h-full" style={{ width: `${pct}%` }} />
-        <div className="bg-red-400 h-full flex-1" />
-      </div>
-
-      <div className="space-y-2">
-        {claims.map((claim, i) => (
-          <div key={i} className="border border-gray-200 rounded-lg bg-white px-3 py-2.5">
-            <div className="flex items-start gap-2 mb-1.5">
-              {claim.grounded
-                ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
-                : <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />}
-              <span className="text-[11px] text-gray-900 leading-snug">{claim.text}</span>
-            </div>
-
-            {/* Confidence bar */}
-            <div className="h-1 bg-gray-100 rounded-full mb-2 ml-5">
-              <div
-                className={`h-full rounded-full ${claim.grounded ? 'bg-green-500' : 'bg-red-400'}`}
-                style={{ width: `${claim.confidenceScore}%` }}
-              />
-            </div>
-            <div className="flex justify-end mb-2">
-              <span className="text-[10px] text-gray-400">{claim.confidenceScore}%</span>
-            </div>
-
+    <div className="space-y-2">
+      {claims.map((claim, i) => (
+        <div key={i} className="flex items-start gap-2.5 py-2 border-b border-gray-100 last:border-0">
+          {claim.grounded
+            ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+            : <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />}
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-gray-800 leading-snug">{claim.text}</p>
             {claim.supportedBy.length > 0 && (
-              <div className="ml-5">
-                <div className="text-[9px] text-gray-400 uppercase tracking-widest mb-1">Supported by</div>
-                <div className="flex flex-wrap gap-1">
-                  {claim.supportedBy.map((s, j) => (
-                    <span key={j} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-200">
-                      [{s.sourceRef}] {s.name} <span className="text-gray-400">({s.role})</span>
-                    </span>
-                  ))}
-                </div>
-              </div>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                From: {claim.supportedBy.map(s => s.name).join(', ')}
+              </p>
             )}
           </div>
-        ))}
-      </div>
-
+          <span className={`text-[10px] font-medium flex-shrink-0 ${claim.grounded ? 'text-green-600' : 'text-amber-600'}`}>
+            {claim.grounded ? 'Verified' : 'Unverified'}
+          </span>
+        </div>
+      ))}
       {ungrounded.length > 0 && (
-        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <AlertTriangle className="w-3.5 h-3.5 text-red-500" />
-            <span className="text-[11px] font-semibold text-red-700">Ungrounded Claims</span>
-          </div>
-          {ungrounded.map((c, i) => (
-            <div key={i} className="text-[10px] text-red-600 flex items-start gap-1">
-              <span className="mt-0.5">•</span>
-              <span>{c.text}</span>
-            </div>
-          ))}
+        <div className="mt-2 flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-lg">
+          <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
+          <p className="text-[10px] text-amber-800">
+            {ungrounded.length} {ungrounded.length === 1 ? 'fact' : 'facts'} could not be matched to a source document. Verify independently.
+          </p>
         </div>
       )}
     </div>
@@ -678,71 +608,61 @@ export function AuditLogPanel({
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto">
         {/* ── Verdict ── */}
-        <div className="px-5 pt-5 pb-4 border-b border-gray-100">
-          <div className="flex items-center gap-2 mb-1.5">
-            {confidenceThresholdPassed !== false
-              ? <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-green-50 border border-green-200 text-xs font-semibold text-green-700 uppercase tracking-wide">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Sufficient
-                </span>
-              : <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 border border-amber-200 text-xs font-semibold text-amber-700 uppercase tracking-wide">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Limited
-                </span>
-            }
+        <div className="px-5 pt-5 pb-5 border-b border-gray-100">
+          {/* Plain-English confidence statement */}
+          <div className="flex items-start gap-3 mb-4">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+              confidenceThresholdPassed !== false ? 'bg-green-100' : 'bg-amber-100'
+            }`}>
+              {confidenceThresholdPassed !== false
+                ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                : <AlertTriangle className="w-4 h-4 text-amber-600" />
+              }
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-900 leading-snug">
+                {confidenceThresholdPassed !== false
+                  ? 'Titan is confident in this answer'
+                  : 'Titan has limited confidence in this answer'}
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                {confidenceThresholdPassed !== false
+                  ? `Reviewed ${auditData.sources.length} ${auditData.sources.length === 1 ? 'document' : 'documents'}, verified ${auditData.claims.filter(c => c.grounded).length} of ${auditData.claims.length} facts, and found consistent support.`
+                  : 'Some facts could not be fully verified. Review carefully before acting on this response.'}
+              </p>
+            </div>
           </div>
-          <p className="text-[11px] text-gray-600 leading-relaxed">
-            {confidenceThresholdPassed !== false
-              ? 'A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence.'
-              : 'Answer has limited support. Verify claims before relying on this response.'}
-          </p>
 
-          {/* Execution summary line */}
+          {/* Summary row */}
           {(() => {
             const totalMs = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0);
-            const totalDocs = auditData.sources.length;
-            const phases = auditData.executionWaves.length;
             const timeStr = totalMs >= 1000 ? `${(totalMs / 1000).toFixed(1)}s` : `${totalMs}ms`;
             return (
-              <div className="flex items-center gap-1.5 mt-2">
-                <Clock className="w-3 h-3 text-gray-400" />
-                <span className="text-[10px] text-gray-400">
-                  Searched {totalDocs} {totalDocs === 1 ? 'document' : 'documents'} across {phases} phases in {timeStr}
-                </span>
+              <div className="flex items-center gap-3 text-[11px] text-gray-400 border-t border-gray-100 pt-3">
+                <span className="flex items-center gap-1"><span className="font-medium text-gray-600">{auditData.sources.length}</span> documents reviewed</span>
+                <span>·</span>
+                <span className="flex items-center gap-1"><span className="font-medium text-gray-600">{auditData.claims.length}</span> facts checked</span>
+                <span>·</span>
+                <span>{timeStr}</span>
               </div>
             );
           })()}
 
-          {/* Stat cards */}
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <div className="border border-gray-200 rounded-lg p-2.5 text-center bg-white">
-              <div className="text-lg font-bold text-gray-800">{auditData.sources.length}</div>
-              <div className="text-[9px] text-gray-500 uppercase tracking-wide mt-0.5">Sources</div>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-2.5 text-center bg-white">
-              <div className="text-lg font-bold text-gray-800">{auditData.claims.length}</div>
-              <div className="text-[9px] text-gray-500 uppercase tracking-wide mt-0.5">Claims</div>
-            </div>
-            <div className={`border rounded-lg p-2.5 text-center ${criticalCount > 0 ? 'border-amber-200 bg-amber-50' : 'border-gray-200 bg-white'}`}>
-              <div className={`text-lg font-bold ${criticalCount > 0 ? 'text-amber-700' : 'text-gray-800'}`}>{criticalCount}</div>
-              <div className={`text-[9px] uppercase tracking-wide mt-0.5 ${criticalCount > 0 ? 'text-amber-600' : 'text-gray-500'}`}>Critical</div>
-            </div>
-          </div>
-
-          {/* Key callouts */}
           {ungroundedCount > 0 && (
-            <div className="mt-3 flex items-start gap-1.5 p-2.5 bg-red-50 border border-red-100 rounded-lg">
-              <AlertTriangle className="w-3.5 h-3.5 text-red-500 flex-shrink-0 mt-0.5" />
-              <p className="text-[10px] text-red-700 leading-relaxed">
-                {ungroundedCount} {ungroundedCount === 1 ? 'claim has' : 'claims have'} no citation support. Review before using this response.
+            <div className="mt-3 flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-lg">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                {ungroundedCount} {ungroundedCount === 1 ? 'fact' : 'facts'} could not be verified against a source document.
               </p>
             </div>
           )}
         </div>
 
-        {/* ── Reasoning Steps ── */}
+        {/* ── How Titan Answered ── */}
         {auditData.reasoning && (
           <div className="px-5 border-b border-gray-100">
             <SectionHeader
-              label="Reasoning Steps"
+              label="How Titan answered"
               open={reasoningOpen}
               onToggle={() => setReasoningOpen(o => !o)}
               count={`${auditData.reasoning.length} steps`}
@@ -755,10 +675,10 @@ export function AuditLogPanel({
           </div>
         )}
 
-        {/* ── Sources ── */}
+        {/* ── Documents Reviewed ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="Sources"
+            label="Documents reviewed"
             open={sourcesOpen}
             onToggle={() => setSourcesOpen(o => !o)}
             count={`${auditData.sources.length} documents`}
@@ -770,13 +690,13 @@ export function AuditLogPanel({
           )}
         </div>
 
-        {/* ── Claims ── */}
+        {/* ── Key Facts Checked ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="Claim Verification"
+            label="Key facts checked"
             open={claimsOpen}
             onToggle={() => setClaimsOpen(o => !o)}
-            count={`${auditData.claims.filter(c => c.grounded).length}/${auditData.claims.length} grounded`}
+            count={`${auditData.claims.filter(c => c.grounded).length} of ${auditData.claims.length} verified`}
           />
           {claimsOpen && (
             <div className="pb-4">
@@ -785,10 +705,10 @@ export function AuditLogPanel({
           )}
         </div>
 
-        {/* ── What If ── */}
+        {/* ── What Would Change ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="What If"
+            label="What would change"
             open={whatIfOpen}
             onToggle={() => setWhatIfOpen(o => !o)}
             count={`${auditData.sources.length} scenarios`}
@@ -804,10 +724,10 @@ export function AuditLogPanel({
           )}
         </div>
 
-        {/* ── Execution Record ── */}
+        {/* ── Orchestration ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="Execution Record"
+            label="Orchestration"
             open={executionOpen}
             onToggle={() => setExecutionOpen(o => !o)}
             count={`${auditData.executionWaves.length} phases · ${(() => { const ms = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0); return ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`; })()}`}

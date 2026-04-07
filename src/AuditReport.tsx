@@ -149,7 +149,7 @@ export function AuditReport() {
             <span className="text-sm font-semibold text-green-700 uppercase tracking-wide">Sufficient</span>
           </div>
           <p className="text-sm text-gray-600 mb-3">
-            Answer is well-supported by multiple authoritative sources.
+            Titan reviewed the available documents and found consistent support for this answer.
           </p>
           {auditData.executionSummary && (
             <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mb-4">
@@ -160,27 +160,25 @@ export function AuditReport() {
           <div className="grid grid-cols-3 gap-3">
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
               <div className="text-2xl font-bold text-gray-800">{auditData.sources.length}</div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">Sources</div>
+              <div className="text-[10px] text-gray-500 mt-0.5">Documents reviewed</div>
             </div>
             <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-2xl font-bold text-gray-800">{auditData.claims.length}</div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wide mt-0.5">Claims</div>
+              <div className="text-2xl font-bold text-gray-800">{auditData.claims.filter(c => c.grounded).length}/{auditData.claims.length}</div>
+              <div className="text-[10px] text-gray-500 mt-0.5">Facts verified</div>
             </div>
-            <div className={`text-center p-3 rounded-lg border ${criticalSources.length > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'}`}>
-              <div className={`text-2xl font-bold ${criticalSources.length > 0 ? 'text-amber-700' : 'text-gray-800'}`}>
-                {criticalSources.length}
+            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="text-2xl font-bold text-gray-800">
+                {(() => { const ms = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0); return ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`; })()}
               </div>
-              <div className={`text-[10px] uppercase tracking-wide mt-0.5 ${criticalSources.length > 0 ? 'text-amber-600' : 'text-gray-500'}`}>
-                Critical
-              </div>
+              <div className="text-[10px] text-gray-500 mt-0.5">Time to answer</div>
             </div>
           </div>
         </div>
 
-        {/* ── Reasoning Steps ── */}
+        {/* ── How Titan Answered ── */}
         {auditData.reasoning && (
           <div className="mb-8">
-            <SectionTitle>Reasoning Steps</SectionTitle>
+            <SectionTitle>How Titan answered</SectionTitle>
             <div>
               {auditData.reasoning.map((step, i) => (
                 <div key={i} className="flex gap-3">
@@ -211,9 +209,9 @@ export function AuditReport() {
           </div>
         )}
 
-        {/* ── Sources ── */}
+        {/* ── Documents Reviewed ── */}
         <div className="mb-8">
-          <SectionTitle>Sources — Weight Distribution</SectionTitle>
+          <SectionTitle>Documents reviewed</SectionTitle>
 
           {/* Stacked weight bar */}
           <div className="flex rounded overflow-hidden h-2 mb-5">
@@ -298,9 +296,9 @@ export function AuditReport() {
           </div>
         </div>
 
-        {/* ── Claims ── */}
+        {/* ── Key Facts Checked ── */}
         <div className="mb-8">
-          <SectionTitle>Claim Verification</SectionTitle>
+          <SectionTitle>Key facts checked</SectionTitle>
 
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-500">{groundedClaims.length} of {auditData.claims.length} claims grounded</span>
@@ -362,10 +360,10 @@ export function AuditReport() {
           )}
         </div>
 
-        {/* ── What If ── */}
+        {/* ── What Would Change ── */}
         {auditData.deep?.featureImportance && (
           <div className="mb-8">
-            <SectionTitle>What If</SectionTitle>
+            <SectionTitle>What would change</SectionTitle>
             <div className="space-y-3">
               {auditData.sources
                 .map(source => {
@@ -417,10 +415,10 @@ export function AuditReport() {
           </div>
         )}
 
-        {/* ── Execution Record ── */}
+        {/* ── Orchestration ── */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <SectionTitle>Execution Record</SectionTitle>
+            <SectionTitle>Orchestration</SectionTitle>
           </div>
           <div className="flex items-center gap-2 mb-4 text-xs text-gray-500">
             <Clock className="w-3.5 h-3.5" />
