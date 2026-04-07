@@ -708,7 +708,7 @@ export function AuditLogPanel({
         {/* ── What Would Change ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="What would change"
+            label="If a document was missing"
             open={whatIfOpen}
             onToggle={() => setWhatIfOpen(o => !o)}
             count={`${auditData.sources.length} scenarios`}

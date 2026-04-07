@@ -295,7 +295,7 @@ export function AuditReport() {
         {/* ── What Would Change ── */}
         {auditData.deep?.featureImportance && (
           <div className="mb-8">
-            <SectionTitle>What would change</SectionTitle>
+            <SectionTitle>If a document was missing</SectionTitle>
             <div className="space-y-3">
               {auditData.sources
                 .map(source => {
