@@ -47,8 +47,8 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
         },
         {
           id: '3',
-          title: 'AI Assistant Core Capabilities',
-          preview: 'AI there! How can I assist you today?',
+          title: 'BSA/AML Review — VFN Holdings',
+          preview: 'What does the Bank Secrecy Act require of us as a financial institution?',
           timestamp: '10:08 AM'
         },
         {

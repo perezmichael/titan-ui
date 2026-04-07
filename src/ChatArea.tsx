@@ -189,6 +189,78 @@ const bsaAuditData: ResponseAuditData = {
   },
 };
 
+// ── Thinking bubble ───────────────────────────────────────────────────────────
+
+const STEP_ICONS: Record<string, React.ReactNode> = {
+  shield: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+  book: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  sparkles: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>,
+};
+
+function ThinkingBubble({
+  steps,
+  activeStep,
+}: {
+  steps: Array<{ icon: 'shield' | 'search' | 'book' | 'sparkles'; label: string; items?: string[] }>;
+  activeStep: number;
+}) {
+  return (
+    <div className="mb-6 flex items-start gap-3">
+      <div className="flex-1">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-4 max-w-xl">
+          {/* Spinning Titan logo + label */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="animate-spin" style={{ animationDuration: '1.4s' }}>
+              <TitanLogo className="h-5" collapsed={true} />
+            </div>
+            <span className="text-sm text-gray-500">Analyzing your question…</span>
+          </div>
+          {/* Steps */}
+          <div className="space-y-2.5">
+            {steps.map((step, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2.5 transition-all duration-500 ${
+                  i <= activeStep ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
+                }`}
+              >
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
+                  i < activeStep
+                    ? 'bg-[#455a4f] text-white'
+                    : i === activeStep
+                    ? 'bg-orange-100 text-orange-600 ring-2 ring-orange-200'
+                    : 'bg-gray-100 text-gray-400'
+                }`}>
+                  {STEP_ICONS[step.icon]}
+                </div>
+                <span className={`text-xs transition-colors duration-300 ${
+                  i < activeStep ? 'text-gray-500 line-through' : i === activeStep ? 'text-gray-800 font-medium' : 'text-gray-400'
+                }`}>
+                  {step.label}
+                </span>
+                {i < activeStep && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3 text-[#455a4f] flex-shrink-0 ml-auto">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                )}
+                {i === activeStep && (
+                  <div className="ml-auto flex gap-[3px] items-center">
+                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="text-[10px] text-gray-400 mt-1.5 ml-1">Just now</div>
+      </div>
+    </div>
+  );
+}
+
 interface SelectedDocument {
   id: string;
   name: string;
@@ -225,6 +297,9 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const [auditPanel, setAuditPanel] = useState<AuditPanelRequest | null>(null);
   const [auditPanelWidth, setAuditPanelWidth] = useState(480);
   const auditPanelRef = useRef<HTMLDivElement>(null);
+  const [thinkingStep, setThinkingStep] = useState<number>(-1); // -1 = done, 0–N = thinking
+  const [justRevealed, setJustRevealed] = useState(false);
+  const revealedRef = useRef<Set<string>>(new Set());
 
   const handleAuditDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -260,59 +335,64 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
     }
   }, [conversationId, onUploadStart]);
 
-  // Conversation 3: AI Assistant Core Capabilities
+  // Thinking animation — plays once per conversation session
+  useEffect(() => {
+    if (conversationId === '3' && !revealedRef.current.has('3')) {
+      revealedRef.current.add('3');
+      const steps = bsaAuditData.reasoning ?? [];
+      setThinkingStep(0);
+      let current = 0;
+      const iv = setInterval(() => {
+        current++;
+        if (current >= steps.length) {
+          clearInterval(iv);
+          setTimeout(() => {
+            setThinkingStep(-1);
+            setJustRevealed(true);
+            setTimeout(() => setJustRevealed(false), 800);
+          }, 700);
+        } else {
+          setThinkingStep(current);
+        }
+      }, 800);
+      return () => clearInterval(iv);
+    }
+  }, [conversationId]);
+
+  // Conversation 3: BSA/AML Compliance Review
   const conversation3 = {
-    title: 'AI Assistant Core Capabilities',
-    timestamp: 'Oct 24, 10:08 AM',
+    title: 'BSA/AML Compliance Review — VFN Holdings',
+    timestamp: 'Apr 5, 10:08 AM',
     messages: [
       {
         type: 'user' as const,
-        content: 'what is our credit policy',
-        timestamp: 'Oct 24, 10:12 AM'
+        content: 'Before I approve the VFN Holdings credit memo, I need to confirm we\'re covered on BSA/AML. What are the key thresholds our compliance team monitors?',
+        timestamp: 'Apr 5, 10:08 AM'
       },
       {
         type: 'assistant' as const,
-        content: 'That is a very general question. Can you please be more specific? For example, are you asking about consumer credit policies, commercial lending policies, credit risk assessment, or credit approval procedures?',
-        timestamp: 'Oct 24, 10:12 AM',
-        hasReactions: true,
-        confidence: 'Low' as const,
-        confidenceThresholdPassed: false,
-        chainOfThought: [
-          { step: 'Parsed user query: "what is our credit policy" - identified as broad, non-specific request requiring clarification', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 11 },
-          { step: 'Initiated semantic search across policy knowledge base using keywords: "credit policy", "credit", "lending policy"', confidencePassed: true, category: 'Search', confidenceScore: 95, timeMs: 156 },
-          { step: 'Retrieved 4 potentially relevant documents: "Consumer Credit Policy.docx", "Commercial Lending Standards.pdf", "Credit Risk Assessment Guidelines.docx", "Credit Approval Procedures.pdf" - unable to determine which document matches user intent due to query ambiguity', confidencePassed: false, category: 'Search', confidenceScore: 58, timeMs: 198 },
-          { step: 'Determined that providing specific answer without clarification would risk delivering incorrect or incomplete information', confidencePassed: true, category: 'Quality Check', confidenceScore: 96, timeMs: 34 },
-          { step: 'Generated clarifying response requesting user to specify which aspect of credit policy they need information about', confidencePassed: true, category: 'Synthesis', confidenceScore: 98, timeMs: 67 }
-        ]
-      },
-      {
-        type: 'user' as const,
-        content: 'what is our exact policy about using the office on the weekends',
-        timestamp: 'Oct 24, 10:16 AM'
-      },
-      {
-        type: 'assistant' as const,
-        content: 'I have checked the available policies and I don\'t have information about office usage on weekends. This specific policy may not be in my current knowledge base.',
-        timestamp: 'Oct 24, 10:16 AM',
+        content: 'For VFN Holdings, the primary BSA/AML thresholds your compliance team tracks are:\n\n**Currency Transaction Reports (CTRs):** Any cash transaction over **$10,000** triggers a mandatory CTR filing with FinCEN. For VFN, given their commercial real estate activity, watch for structured transactions that fall just below this threshold.\n\n**Suspicious Activity Reports (SARs):** Required when a transaction involves $5,000 or more and you have reason to suspect money laundering, fraud, or structuring. SARs must be filed within 30 days of detection.\n\n**Enhanced Due Diligence:** VFN\'s multi-state operations put them in the moderate-risk tier under our risk categorization framework — meaning quarterly transaction monitoring applies.\n\nWant me to pull the full Customer Risk Profile for VFN Holdings?',
+        timestamp: 'Apr 5, 10:09 AM',
         hasReactions: true,
         confidence: 'High' as const,
-        confidenceThresholdPassed: false,
+        confidenceThresholdPassed: true,
         chainOfThought: [
-          { step: 'User asked about office weekend policy', confidencePassed: true, category: 'Analysis', confidenceScore: 99, timeMs: 8 },
-          { step: 'Searched knowledge base for weekend office usage policies', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 187 },
-          { step: 'No relevant policy documents found matching this query', confidencePassed: true, category: 'Search', confidenceScore: 94, timeMs: 223 },
-          { step: 'Confirmed absence of information rather than providing uncertain answer', confidencePassed: true, category: 'Quality Check', confidenceScore: 97, timeMs: 15 }
+          { step: 'Parsed query as BSA/AML threshold lookup for specific relationship (VFN Holdings)', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 11 },
+          { step: 'Searched compliance knowledge base: "BSA AML thresholds CTR SAR"', confidencePassed: true, category: 'Search', confidenceScore: 95, timeMs: 156 },
+          { step: 'Retrieved BSA/AML Compliance Policy (0.94), AML Program Overview (0.87)', confidencePassed: true, category: 'Search', confidenceScore: 93, timeMs: 198 },
+          { step: 'Identified VFN risk tier as moderate based on multi-state commercial operations', confidencePassed: true, category: 'Analysis', confidenceScore: 91, timeMs: 67 },
+          { step: 'Synthesized threshold summary with relationship-specific context', confidencePassed: true, category: 'Synthesis', confidenceScore: 96, timeMs: 82 }
         ]
       },
       {
         type: 'user' as const,
-        content: 'what is the bank secrecy act',
-        timestamp: 'Oct 24, 10:20 AM'
+        content: 'Good. And what exactly does the Bank Secrecy Act require of us as a financial institution?',
+        timestamp: 'Apr 5, 10:20 AM'
       },
       {
         type: 'assistant' as const,
-        content: 'The Bank Secrecy Act (BSA) is a U.S. federal law enacted in 1970 that requires financial institutions to assist government agencies in detecting and preventing money laundering and other financial crimes. The BSA mandates that banks and other financial institutions maintain certain records and file specific reports, such as Currency Transaction Reports (CTRs) for transactions over $10,000 and Suspicious Activity Reports (SARs) when they detect potential criminal activity. Financial institutions must also implement Anti-Money Laundering (AML) programs to ensure compliance with BSA requirements and prevent their services from being used to facilitate illegal activities such as terrorism financing or the transfer of criminally derived funds.\n\nReferences:',
-        timestamp: 'Oct 24, 10:23 AM',
+        content: 'The **Bank Secrecy Act (BSA)**, enacted in 1970, is the primary U.S. federal law requiring financial institutions to partner with government agencies to detect and prevent money laundering, terrorism financing, and other financial crimes.\n\nAs a financial institution, Axiom Bank has four core obligations under the BSA:\n\n1. **Currency Transaction Reports (CTRs)** — File with FinCEN for any cash transaction exceeding $10,000, including structured transactions designed to avoid the threshold.\n\n2. **Suspicious Activity Reports (SARs)** — File within 30 days when transactions of $5,000+ suggest potential criminal activity, structuring, or fraud.\n\n3. **AML Program** — Maintain a written anti-money laundering program with a designated compliance officer, employee training, independent audit, and ongoing customer monitoring.\n\n4. **Recordkeeping** — Retain transaction records and Customer Identification Program (CIP) documentation for a minimum of five years.\n\nFinCEN (Financial Crimes Enforcement Network) is the primary enforcement agency. Non-compliance can result in civil penalties and OCC enforcement actions.\n\nReferences:',
+        timestamp: 'Apr 5, 10:23 AM',
         hasReactions: true,
         confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
@@ -725,14 +805,40 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             </div>
           ) : (
             <div className="max-w-3xl">
-              {activeConversation.messages.map((message, index) => (
-                <ChatMessage
-                  key={index}
-                  {...message}
-                  onCitationClick={setActiveCitation}
-                  onOpenAuditPanel={handleOpenAuditPanel}
-                />
-              ))}
+              {(() => {
+                const msgs = activeConversation.messages;
+                // When thinking is active, hide the last assistant message and show thinking state
+                const isActiveThinking = thinkingStep >= 0 && conversationId === '3';
+                const visibleMsgs = isActiveThinking
+                  ? msgs.slice(0, msgs.length - 1)
+                  : msgs;
+                return (
+                  <>
+                    {visibleMsgs.map((message, index) => {
+                      const isLastAndRevealing = !isActiveThinking && justRevealed && index === msgs.length - 1;
+                      return (
+                        <div
+                          key={index}
+                          className={isLastAndRevealing ? 'animate-fade-in' : ''}
+                          style={isLastAndRevealing ? { animation: 'fadeIn 0.5s ease-out' } : {}}
+                        >
+                          <ChatMessage
+                            {...message}
+                            onCitationClick={setActiveCitation}
+                            onOpenAuditPanel={handleOpenAuditPanel}
+                          />
+                        </div>
+                      );
+                    })}
+                    {isActiveThinking && (
+                      <ThinkingBubble
+                        steps={bsaAuditData.reasoning ?? []}
+                        activeStep={thinkingStep}
+                      />
+                    )}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
