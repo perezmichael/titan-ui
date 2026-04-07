@@ -221,78 +221,39 @@ export function AuditReport() {
           </div>
 
           <div className="space-y-3">
-            {auditData.sources.map((source, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
-                <div className="px-4 pt-4 pb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-full bg-[#455a4f] text-white flex items-center justify-center text-[11px] font-semibold flex-shrink-0">
-                        {source.rank}
+            {auditData.sources.map((source, i) => {
+              const reliance = source.weight >= 50 ? 'Used most' : source.weight >= 25 ? 'Used heavily' : 'Used partially';
+              return (
+                <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
+                  <div className="px-4 pt-4 pb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-[11px] text-gray-400 font-mono flex-shrink-0">{i + 1}</span>
+                        <span className="text-sm font-medium text-gray-900 truncate">{source.name}</span>
                       </div>
-                      <span className="text-sm font-medium text-gray-900">{source.name}</span>
+                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{reliance}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <ImportanceBadge importance={source.importance} />
-                      <span className="text-sm font-bold text-gray-700">{source.weight}%</span>
+
+                    {/* Weight bar */}
+                    <div className="h-1.5 bg-gray-100 rounded-full mb-3">
+                      <div className="h-full bg-[#455a4f] rounded-full" style={{ width: `${source.weight}%` }} />
                     </div>
-                  </div>
 
-                  {/* Weight bar */}
-                  <div className="h-1.5 bg-gray-100 rounded-full mb-3">
-                    <div className="h-full bg-[#3d6b47] rounded-full transition-all" style={{ width: `${source.weight}%` }} />
-                  </div>
+                    {/* Snippet — always visible */}
+                    {source.snippet && (
+                      <p className="text-xs text-gray-500 italic leading-relaxed mb-3">"{source.snippet}"</p>
+                    )}
 
-                  {/* Factor tags */}
-                  <div className="flex flex-wrap gap-1.5 mb-3">
-                    {source.keyFactors.map((f, j) => (
-                      <span key={j} className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-700 rounded border border-blue-100">{f}</span>
-                    ))}
-                  </div>
-
-                  {/* Details toggle */}
-                  <button
-                    onClick={() => toggleSource(i)}
-                    className="print:hidden flex items-center gap-1 text-[11px] text-gray-500 hover:text-gray-700"
-                  >
-                    <FileText className="w-3.5 h-3.5" />
-                    Details
-                    {expandedSources.includes(i) ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-
-                  {/* Details — visible on print always, toggle on screen */}
-                  {(expandedSources.includes(i)) && source.retrieval && (
-                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
-                      <div className="text-xs text-gray-700">
-                        <span className="text-gray-400">Retrieval: </span>
-                        Semantic match ({source.retrieval.semanticScore})
-                        {source.retrieval.entity && `, entity: ${source.retrieval.entity}`}
-                        , keyword: "{source.retrieval.keyword}"
-                      </div>
-                      {source.saliency !== undefined && (
-                        <div className="text-xs text-gray-700">
-                          <span className="text-gray-400">Saliency: </span>
-                          {source.saliency}{' '}
-                          <span className={source.saliency >= 0.85 ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
-                            ({source.saliency >= 0.85 ? 'high' : 'medium'})
-                          </span>
-                        </div>
-                      )}
-                      {source.snippet && (
-                        <p className="text-xs text-gray-500 italic leading-relaxed">{source.snippet}</p>
-                      )}
-                      {source.score !== undefined && (
-                        <div className="text-[11px] text-gray-400">Type: doc · Score: {source.score}</div>
-                      )}
+                    {/* Factor tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {source.keyFactors.map((f, j) => (
+                        <span key={j} className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{f}</span>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Print: always show snippet */}
-                  <div className="hidden print:block mt-2 pt-2 border-t border-gray-100">
-                    {source.snippet && <p className="text-xs text-gray-500 italic">{source.snippet}</p>}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -300,62 +261,33 @@ export function AuditReport() {
         <div className="mb-8">
           <SectionTitle>Key facts checked</SectionTitle>
 
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">{groundedClaims.length} of {auditData.claims.length} claims grounded</span>
-            <span className="text-xs font-semibold text-gray-700">{groundedPct}%</span>
-          </div>
-          <div className="flex h-2 rounded overflow-hidden mb-5">
-            <div className="bg-green-500 h-full" style={{ width: `${groundedPct}%` }} />
-            <div className="bg-red-300 h-full flex-1" />
-          </div>
-
-          <div className="space-y-3">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
             {auditData.claims.map((claim, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-xl px-4 py-3 print:border-gray-300">
-                <div className="flex items-start gap-2.5 mb-2">
-                  {claim.grounded
-                    ? <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                    : <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />}
-                  <span className="text-sm text-gray-900">{claim.text}</span>
+              <div key={i} className="flex items-start gap-3 px-4 py-3 border-b border-gray-100 last:border-0">
+                {claim.grounded
+                  ? <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
+                  : <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-900 leading-snug">{claim.text}</p>
+                  {claim.supportedBy.length > 0 && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      From: {claim.supportedBy.map(s => s.name).join(', ')}
+                    </p>
+                  )}
                 </div>
-
-                <div className="flex items-center gap-2 mb-2 pl-6">
-                  <div className="flex-1 h-1.5 bg-gray-100 rounded-full">
-                    <div
-                      className={`h-full rounded-full ${claim.grounded ? 'bg-green-500' : 'bg-red-400'}`}
-                      style={{ width: `${claim.confidenceScore}%` }}
-                    />
-                  </div>
-                  <span className="text-[11px] text-gray-400 w-8 text-right">{claim.confidenceScore}%</span>
-                </div>
-
-                {claim.supportedBy.length > 0 && (
-                  <div className="pl-6">
-                    <span className="text-[10px] text-gray-400 uppercase tracking-wide mr-2">Supported by</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {claim.supportedBy.map((s, j) => (
-                        <span key={j} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded border border-gray-200">
-                          [{s.sourceRef}] {s.name} <span className="text-gray-400">({s.role})</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <span className={`text-xs font-medium flex-shrink-0 ${claim.grounded ? 'text-green-600' : 'text-amber-600'}`}>
+                  {claim.grounded ? 'Verified' : 'Unverified'}
+                </span>
               </div>
             ))}
           </div>
 
           {ungroundedClaims.length > 0 && (
-            <div className="mt-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-                <span className="text-sm font-semibold text-red-700">Ungrounded Claims</span>
-              </div>
-              {ungroundedClaims.map((c, i) => (
-                <div key={i} className="text-xs text-red-600 flex items-start gap-1.5">
-                  <span className="mt-0.5">•</span><span>{c.text}</span>
-                </div>
-              ))}
+            <div className="mt-3 flex items-start gap-2.5 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-800">
+                {ungroundedClaims.length} {ungroundedClaims.length === 1 ? 'fact' : 'facts'} could not be matched to a source document. Verify independently before acting on this response.
+              </p>
             </div>
           )}
         </div>
