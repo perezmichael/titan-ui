@@ -6,6 +6,8 @@ import { UploadsView } from './UploadsView';
 import { AgentsView } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
 import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
+import { ComplianceAuditView } from './ComplianceAuditView';
+import { ModelRiskDashboard } from './ModelRiskDashboard';
 import { ChevronRight, Menu } from 'lucide-react';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -20,7 +22,7 @@ interface SelectedDocument {
 
 export default function App() {
   const [activeConversationId, setActiveConversationId] = useState('new-chat');
-  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm' | 'compliance-audit' | 'model-risk'>('chat');
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uploadCompleted, setUploadCompleted] = useState(false);
@@ -169,9 +171,15 @@ export default function App() {
         />
       )}
       {activeView === 'tprm' && (
-        <TPRMWorkbench 
+        <TPRMWorkbench
           onBack={() => setActiveView('agents')}
         />
+      )}
+      {activeView === 'compliance-audit' && (
+        <ComplianceAuditView />
+      )}
+      {activeView === 'model-risk' && (
+        <ModelRiskDashboard />
       )}
     </div>
   );

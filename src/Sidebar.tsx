@@ -1,4 +1,4 @@
-import { Search, Plus, Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Plus, Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight, ShieldCheck, BarChart2 } from 'lucide-react';
 import { TitanLogo } from './TitanLogo';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -17,8 +17,8 @@ interface ConversationGroup {
 interface SidebarProps {
   activeConversationId: string;
   onConversationSelect: (id: string) => void;
-  activeView: 'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending';
-  onViewChange: (view: 'chat' | 'agents' | 'connectors' | 'uploads') => void;
+  activeView: 'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'tprm' | 'knowledge-base' | 'compliance-audit' | 'model-risk';
+  onViewChange: (view: 'chat' | 'agents' | 'connectors' | 'uploads' | 'compliance-audit' | 'model-risk') => void;
   collapsed?: boolean;
   onToggleCollapse?: () => void;
   uploadCompleted?: boolean;
@@ -246,6 +246,53 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
           {!collapsed && <span className="text-xs font-medium text-gray-900">Your Uploads</span>}
         </button>
       </div>
+
+      {/* Oversight Section */}
+      {!collapsed && (
+        <div className="border-t border-gray-200">
+          <div className="px-3 pt-3 pb-1">
+            <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Oversight</span>
+          </div>
+          <div className="pb-2">
+            <button
+              className={`w-full px-3 py-2 justify-start hover:bg-gray-200/50 flex items-center gap-3 ${
+                activeView === 'compliance-audit' ? 'bg-gray-200/70' : ''
+              }`}
+              onClick={() => onViewChange('compliance-audit')}
+            >
+              <ShieldCheck className="w-4 h-4 text-gray-700 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-900">Audit Log</span>
+            </button>
+            <button
+              className={`w-full px-3 py-2 justify-start hover:bg-gray-200/50 flex items-center gap-3 ${
+                activeView === 'model-risk' ? 'bg-gray-200/70' : ''
+              }`}
+              onClick={() => onViewChange('model-risk')}
+            >
+              <BarChart2 className="w-4 h-4 text-gray-700 flex-shrink-0" />
+              <span className="text-xs font-medium text-gray-900">Model Health</span>
+            </button>
+          </div>
+        </div>
+      )}
+      {collapsed && (
+        <div className="py-2 flex flex-col items-center border-t border-gray-200 gap-1">
+          <button
+            className={`w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-200/50 ${activeView === 'compliance-audit' ? 'bg-gray-200/70' : ''}`}
+            onClick={() => onViewChange('compliance-audit')}
+            title="Audit Log"
+          >
+            <ShieldCheck className="w-4 h-4 text-gray-700" />
+          </button>
+          <button
+            className={`w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-200/50 ${activeView === 'model-risk' ? 'bg-gray-200/70' : ''}`}
+            onClick={() => onViewChange('model-risk')}
+            title="Model Health"
+          >
+            <BarChart2 className="w-4 h-4 text-gray-700" />
+          </button>
+        </div>
+      )}
 
       {/* Divider */}
       {!collapsed && <div className="border-t border-gray-200" />}
