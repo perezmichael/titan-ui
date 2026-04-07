@@ -724,10 +724,10 @@ export function AuditLogPanel({
           )}
         </div>
 
-        {/* ── Orchestration ── */}
+        {/* ── AI Orchestration ── */}
         <div className="px-5 border-b border-gray-100">
           <SectionHeader
-            label="Orchestration"
+            label="AI Orchestration"
             open={executionOpen}
             onToggle={() => setExecutionOpen(o => !o)}
             count={`${auditData.executionWaves.length} phases · ${(() => { const ms = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0); return ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`; })()}`}

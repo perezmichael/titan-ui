@@ -347,10 +347,10 @@ export function AuditReport() {
           </div>
         )}
 
-        {/* ── Orchestration ── */}
+        {/* ── AI Orchestration ── */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
-            <SectionTitle>Orchestration</SectionTitle>
+            <SectionTitle>AI Orchestration</SectionTitle>
           </div>
           <div className="flex items-center gap-2 mb-4 text-xs text-gray-500">
             <Clock className="w-3.5 h-3.5" />
