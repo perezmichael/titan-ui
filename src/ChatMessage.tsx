@@ -498,7 +498,7 @@ function TechnicalSection({ deep }: { deep: AuditDeep }) {
   );
 }
 
-// ── Chain of Thought Section ─────────────────────────────────────────────────
+// ── Reasoning Steps Section ─────────────────────────────────────────────────
 
 function ReasoningIcon({ icon }: { icon: 'shield' | 'search' | 'book' | 'sparkles' }) {
   const cls = 'w-3.5 h-3.5 text-gray-400';
@@ -616,9 +616,9 @@ export function AuditLogPanel({
   timestamp: string;
   onClose?: () => void;
 }) {
+  const [reasoningOpen, setReasoningOpen] = useState(true);
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [claimsOpen, setClaimsOpen] = useState(true);
-  const [reasoningOpen, setReasoningOpen] = useState(false);
   const [whatIfOpen, setWhatIfOpen] = useState(false);
   const [executionOpen, setExecutionOpen] = useState(false);
   const [techOpen, setTechOpen] = useState(false);
@@ -695,6 +695,22 @@ export function AuditLogPanel({
               : 'Answer has limited support. Verify claims before relying on this response.'}
           </p>
 
+          {/* Execution summary line */}
+          {(() => {
+            const totalMs = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0);
+            const totalDocs = auditData.sources.length;
+            const phases = auditData.executionWaves.length;
+            const timeStr = totalMs >= 1000 ? `${(totalMs / 1000).toFixed(1)}s` : `${totalMs}ms`;
+            return (
+              <div className="flex items-center gap-1.5 mt-2">
+                <Clock className="w-3 h-3 text-gray-400" />
+                <span className="text-[10px] text-gray-400">
+                  Searched {totalDocs} {totalDocs === 1 ? 'document' : 'documents'} across {phases} phases in {timeStr}
+                </span>
+              </div>
+            );
+          })()}
+
           {/* Stat cards */}
           <div className="grid grid-cols-3 gap-2 mt-4">
             <div className="border border-gray-200 rounded-lg p-2.5 text-center bg-white">
@@ -721,6 +737,23 @@ export function AuditLogPanel({
             </div>
           )}
         </div>
+
+        {/* ── Reasoning Steps ── */}
+        {auditData.reasoning && (
+          <div className="px-5 border-b border-gray-100">
+            <SectionHeader
+              label="Reasoning Steps"
+              open={reasoningOpen}
+              onToggle={() => setReasoningOpen(o => !o)}
+              count={`${auditData.reasoning.length} steps`}
+            />
+            {reasoningOpen && (
+              <div className="pb-4">
+                <ChainOfThoughtSection steps={auditData.reasoning} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Sources ── */}
         <div className="px-5 border-b border-gray-100">
@@ -751,23 +784,6 @@ export function AuditLogPanel({
             </div>
           )}
         </div>
-
-        {/* ── Chain of Thought ── */}
-        {auditData.reasoning && (
-          <div className="px-5 border-b border-gray-100">
-            <SectionHeader
-              label="Chain of Thought"
-              open={reasoningOpen}
-              onToggle={() => setReasoningOpen(o => !o)}
-              count={`${auditData.reasoning.length} steps`}
-            />
-            {reasoningOpen && (
-              <div className="pb-4">
-                <ChainOfThoughtSection steps={auditData.reasoning} />
-              </div>
-            )}
-          </div>
-        )}
 
         {/* ── What If ── */}
         <div className="px-5 border-b border-gray-100">
@@ -891,7 +907,7 @@ export function LegacyAuditLog({
           <div className="border-t border-gray-200 my-4" />
 
           <div>
-            <h4 className="text-sm text-gray-900 mb-3">Chain of Thought</h4>
+            <h4 className="text-sm text-gray-900 mb-3">Reasoning Steps</h4>
             <div className="space-y-3">
               {chainOfThought.map((step, index) => (
                 <div key={index} className="flex items-center gap-3">
@@ -945,11 +961,11 @@ export function ChatMessage({
     <div className="flex gap-3 mb-4">
       {/* Avatar */}
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
-        type === 'assistant' ? 'bg-[#ff6b5a] text-white' : 'bg-[#455a4f] text-white'
+        type === 'assistant' ? 'bg-white border border-gray-200' : 'bg-[#455a4f] text-white'
       }`}>
         {type === 'assistant' ? (
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="3" y="3" width="8" height="8" fill="white" />
+          <svg viewBox="0 0 106 106" fill="none" className="w-4 h-4">
+            <path d="M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z" fill="#FF6E3C" />
           </svg>
         ) : 'TB'}
       </div>
