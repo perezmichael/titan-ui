@@ -189,73 +189,129 @@ const bsaAuditData: ResponseAuditData = {
   },
 };
 
-// ── Thinking bubble ───────────────────────────────────────────────────────────
+// ── Thinking bubble — Titan arc + typewriter (from thinking-animation branch) ──
 
-const STEP_ICONS: Record<string, React.ReactNode> = {
-  shield: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
-  search: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
-  book: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-  sparkles: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>,
-};
+const TITAN_ICON_PATH = "M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z";
 
-function ThinkingBubble({
-  steps,
-  activeStep,
-}: {
-  steps: Array<{ icon: 'shield' | 'search' | 'book' | 'sparkles'; label: string; items?: string[] }>;
-  activeStep: number;
-}) {
+const THINKING_LABELS = [
+  'Validating message for PII',
+  'Searching compliance knowledge base',
+  'Referencing BSA/AML policy documents',
+  'Drafting response',
+];
+
+// Module-level flag — survives StrictMode double-mount
+const _thinkingPlayed = new Set<string>();
+
+function TitanMessageIcon({ spinning }: { spinning: boolean }) {
+  return (
+    <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
+      <style>{`
+        @keyframes titan-arc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .titan-arc-ring { transform-origin: 18px 18px; animation: titan-arc-spin 1.1s linear infinite; }
+      `}</style>
+      {/* Gradient arc ring */}
+      <div
+        className="absolute pointer-events-none"
+        style={{ inset: -4, opacity: spinning ? 1 : 0, transition: 'opacity 350ms ease' }}
+      >
+        <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
+          <defs>
+            <linearGradient id="arcGradMsg" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FF6E3C" stopOpacity="0" />
+              <stop offset="100%" stopColor="#FF6E3C" stopOpacity="1" />
+            </linearGradient>
+          </defs>
+          <g className="titan-arc-ring">
+            <circle cx="18" cy="18" r="16" stroke="#FF6E3C" strokeOpacity="0.15" strokeWidth="2" fill="none" />
+            <circle cx="18" cy="18" r="16" stroke="url(#arcGradMsg)" strokeWidth="2.2" fill="none"
+              strokeLinecap="round" strokeDasharray="75 26" />
+          </g>
+        </svg>
+      </div>
+      {/* Logo — smaller while spinning, springs up when done */}
+      <div
+        className="w-full h-full"
+        style={{
+          transform: spinning ? 'scale(0.68)' : 'scale(0.88)',
+          transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transformOrigin: 'center center',
+        }}
+      >
+        <svg viewBox="0 0 106 106" fill="none" className="w-full h-full">
+          <path d={TITAN_ICON_PATH} fill="#FF6E3C" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+function ThinkingBubble({ onComplete }: { onComplete: () => void }) {
+  const [labelIndex, setLabelIndex] = useState(0);
+  const [displayed, setDisplayed] = useState(0);
+  const currentLabel = THINKING_LABELS[labelIndex];
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
+  // Advance label every 1100ms
+  useEffect(() => {
+    setLabelIndex(0);
+    setDisplayed(0);
+    let i = 0;
+    const iv = setInterval(() => {
+      i = Math.min(i + 1, THINKING_LABELS.length - 1);
+      setLabelIndex(i);
+      setDisplayed(0);
+      if (i >= THINKING_LABELS.length - 1) {
+        clearInterval(iv);
+        // After the last label fully types out, call complete
+        const delay = THINKING_LABELS[i].length * 36 + 500;
+        setTimeout(() => onCompleteRef.current(), delay);
+      }
+    }, 1100);
+    return () => clearInterval(iv);
+  }, []);
+
+  // Type characters
+  useEffect(() => {
+    setDisplayed(0);
+    let ch = 0;
+    const t = setInterval(() => {
+      ch++;
+      setDisplayed(ch);
+      if (ch >= currentLabel.length) clearInterval(t);
+    }, 36);
+    return () => clearInterval(t);
+  }, [labelIndex, currentLabel]);
+
   return (
     <div className="mb-6 flex items-start gap-3">
       <div className="flex-1">
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-4 max-w-xl">
-          {/* Spinning Titan logo + label */}
-          <div className="flex items-center gap-3 mb-4">
-            <div className="animate-spin" style={{ animationDuration: '1.4s' }}>
-              <TitanLogo className="h-5" collapsed={true} />
-            </div>
-            <span className="text-sm text-gray-500">Analyzing your question…</span>
-          </div>
-          {/* Steps */}
-          <div className="space-y-2.5">
-            {steps.map((step, i) => (
-              <div
-                key={i}
-                className={`flex items-center gap-2.5 transition-all duration-500 ${
-                  i <= activeStep ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-1'
-                }`}
+        <div className="flex items-center gap-3">
+          <TitanMessageIcon spinning={true} />
+          <style>{`
+            @keyframes char-arrive {
+              from { opacity: 0.15; }
+              to   { opacity: 1; }
+            }
+            .char-arrive { animation: char-arrive 0.22s ease forwards; }
+          `}</style>
+          <span className="text-sm font-medium text-gray-800" aria-live="polite">
+            {currentLabel.split('').map((char, i) => (
+              <span
+                key={`${labelIndex}-${i}`}
+                className="char-arrive"
+                style={{
+                  animationDelay: `${i * 36}ms`,
+                  opacity: i < displayed ? 1 : 0,
+                }}
               >
-                <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
-                  i < activeStep
-                    ? 'bg-[#455a4f] text-white'
-                    : i === activeStep
-                    ? 'bg-orange-100 text-orange-600 ring-2 ring-orange-200'
-                    : 'bg-gray-100 text-gray-400'
-                }`}>
-                  {STEP_ICONS[step.icon]}
-                </div>
-                <span className={`text-xs transition-colors duration-300 ${
-                  i < activeStep ? 'text-gray-500 line-through' : i === activeStep ? 'text-gray-800 font-medium' : 'text-gray-400'
-                }`}>
-                  {step.label}
-                </span>
-                {i < activeStep && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="w-3 h-3 text-[#455a4f] flex-shrink-0 ml-auto">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-                {i === activeStep && (
-                  <div className="ml-auto flex gap-[3px] items-center">
-                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1 h-1 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                )}
-              </div>
+                {char}
+              </span>
             ))}
-          </div>
+          </span>
         </div>
-        <div className="text-[10px] text-gray-400 mt-1.5 ml-1">Just now</div>
+        <div className="text-[10px] text-gray-400 mt-2 ml-9">Just now</div>
       </div>
     </div>
   );
@@ -297,9 +353,8 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const [auditPanel, setAuditPanel] = useState<AuditPanelRequest | null>(null);
   const [auditPanelWidth, setAuditPanelWidth] = useState(480);
   const auditPanelRef = useRef<HTMLDivElement>(null);
-  const [thinkingStep, setThinkingStep] = useState<number>(-1); // -1 = done, 0–N = thinking
+  const [thinkingActive, setThinkingActive] = useState(() => conversationId === '3' && !_thinkingPlayed.has('3'));
   const [justRevealed, setJustRevealed] = useState(false);
-  const revealedRef = useRef<Set<string>>(new Set());
 
   const handleAuditDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -335,28 +390,9 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
     }
   }, [conversationId, onUploadStart]);
 
-  // Thinking animation — plays once per conversation session
+  // Mark thinking as played (module-level so StrictMode double-mount can't reset it)
   useEffect(() => {
-    if (conversationId === '3' && !revealedRef.current.has('3')) {
-      revealedRef.current.add('3');
-      const steps = bsaAuditData.reasoning ?? [];
-      setThinkingStep(0);
-      let current = 0;
-      const iv = setInterval(() => {
-        current++;
-        if (current >= steps.length) {
-          clearInterval(iv);
-          setTimeout(() => {
-            setThinkingStep(-1);
-            setJustRevealed(true);
-            setTimeout(() => setJustRevealed(false), 800);
-          }, 700);
-        } else {
-          setThinkingStep(current);
-        }
-      }, 800);
-      return () => clearInterval(iv);
-    }
+    if (conversationId === '3') _thinkingPlayed.add('3');
   }, [conversationId]);
 
   // Conversation 3: BSA/AML Compliance Review
@@ -807,20 +843,15 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             <div className="max-w-3xl">
               {(() => {
                 const msgs = activeConversation.messages;
-                // When thinking is active, hide the last assistant message and show thinking state
-                const isActiveThinking = thinkingStep >= 0 && conversationId === '3';
-                const visibleMsgs = isActiveThinking
-                  ? msgs.slice(0, msgs.length - 1)
-                  : msgs;
+                const visibleMsgs = thinkingActive ? msgs.slice(0, msgs.length - 1) : msgs;
                 return (
                   <>
                     {visibleMsgs.map((message, index) => {
-                      const isLastAndRevealing = !isActiveThinking && justRevealed && index === msgs.length - 1;
+                      const isLastRevealing = !thinkingActive && justRevealed && index === msgs.length - 1;
                       return (
                         <div
                           key={index}
-                          className={isLastAndRevealing ? 'animate-fade-in' : ''}
-                          style={isLastAndRevealing ? { animation: 'fadeIn 0.5s ease-out' } : {}}
+                          style={isLastRevealing ? { animation: 'fadeIn 0.5s ease-out' } : {}}
                         >
                           <ChatMessage
                             {...message}
@@ -830,10 +861,13 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                         </div>
                       );
                     })}
-                    {isActiveThinking && (
+                    {thinkingActive && (
                       <ThinkingBubble
-                        steps={bsaAuditData.reasoning ?? []}
-                        activeStep={thinkingStep}
+                        onComplete={() => {
+                          setThinkingActive(false);
+                          setJustRevealed(true);
+                          setTimeout(() => setJustRevealed(false), 600);
+                        }}
                       />
                     )}
                   </>
