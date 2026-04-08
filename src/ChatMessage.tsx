@@ -1,5 +1,5 @@
 import { ThumbsUp, ThumbsDown, Heart, ChevronDown, ChevronUp, Info, CheckCircle2, XCircle, FileText, ExternalLink, Cloud, Upload, Database, Copy } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 
@@ -56,10 +56,34 @@ interface ChatMessageProps {
   onCitationClick?: (citation: { title: string; pageNumber?: number; highlightedText?: string; context?: string; description?: string; }) => void;
 }
 
+const PHASE_NAMES: Record<string, string> = {
+  'Analysis': 'Analysis',
+  'Search': 'Knowledge Search',
+  'Validation': 'Validation',
+  'Synthesis': 'Synthesis',
+  'Quality Check': 'Quality Review',
+};
+
+function groupIntoPhases(steps: ChainStep[]) {
+  const phases: { name: string; steps: ChainStep[]; totalMs: number }[] = [];
+  for (const step of steps) {
+    const phaseName = PHASE_NAMES[step.category ?? ''] ?? (step.category ?? 'Processing');
+    const last = phases[phases.length - 1];
+    if (last && last.name === phaseName) {
+      last.steps.push(step);
+      last.totalMs += step.timeMs ?? 0;
+    } else {
+      phases.push({ name: phaseName, steps: [step], totalMs: step.timeMs ?? 0 });
+    }
+  }
+  return phases;
+}
+
 export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, onCitationClick }: ChatMessageProps) {
   const [expandedRef, setExpandedRef] = useState<number | null>(null);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [viewingSource, setViewingSource] = useState<Source | null>(null);
+  const refId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
 
   const getConfidenceBadgeColor = (conf?: 'High' | 'Medium' | 'Low') => {
     switch (conf) {
@@ -169,90 +193,72 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                       <span>More about this response</span>
                     </button>
                   </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl bg-[#f5f5f3] overflow-y-auto">
+                  <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto">
                     <SheetHeader className="border-b border-gray-200 pb-4">
-                      <SheetTitle className="text-sm text-gray-900">Audit Log</SheetTitle>
-                      <SheetDescription className="text-xs text-gray-500 mt-1">
-                        Reference #AL-{Math.random().toString(36).substring(2, 15)}
+                      <SheetTitle className="text-base font-semibold text-gray-900">Audit Log</SheetTitle>
+                      <SheetDescription className="text-xs text-gray-400 mt-0.5 font-mono">
+                        Reference #{refId}
                       </SheetDescription>
                     </SheetHeader>
-                    
-                    <div className="px-6 pb-6">
-                      {/* Chain of Thought Steps */}
-                      {chainOfThought && chainOfThought.length > 0 && (
-                        <div>
-                          {/* Internet Search Assisted Indicator */}
-                          {internetSearchAssisted && (
-                            <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Cloud className="w-3.5 h-3.5 text-slate-600" />
-                                <span className="text-sm text-slate-900 font-medium">Internet Search Assisted</span>
-                              </div>
-                              <p className="text-xs text-slate-700 leading-relaxed">
-                                This response used information gathered from the public internet. Online sources are not independently verified and may contain errors or outdated information. You should review the cited sources and confirm key facts with reliable references before relying on the information.
-                              </p>
-                            </div>
-                          )}
 
-                          {/* Answer Strength Section */}
-                          <div className="mb-4">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm text-gray-900">Assurance Level</span>
-                              {confidenceThresholdPassed ? (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-green-50 border border-green-200 text-[10px] text-green-700 uppercase tracking-wide">Sufficient</span>
-                              ) : (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-yellow-50 border border-yellow-200 text-[10px] text-yellow-700 uppercase tracking-wide">Limited</span>
-                              )}
+                    <div className="px-6 pb-8 mt-5">
+                      {chainOfThought && chainOfThought.length > 0 && (
+                        <>
+                          {/* Assurance Level */}
+                          <div className="mb-6">
+                            <div className="flex items-center gap-2.5 mb-2">
+                              <span className="text-sm font-semibold text-gray-900">Assurance Level</span>
+                              {confidenceThresholdPassed
+                                ? <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 uppercase tracking-wide">Sufficient</span>
+                                : <span className="inline-flex items-center px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-[11px] font-semibold text-amber-700 uppercase tracking-wide">Limited</span>
+                              }
                             </div>
-                            
-                            <p className="text-xs text-gray-700 leading-relaxed">
-                              {confidenceThresholdPassed 
-                                ? "A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence."
-                                : "A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence, typically when evidence is missing or multiple conflicting answers exist. It deliberately avoids guessing in these scenarios and may ask you to clarify or provide more details."}
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                              {confidenceThresholdPassed
+                                ? 'A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence.'
+                                : 'A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence, typically when evidence is missing or multiple conflicting answers exist.'}
                             </p>
                           </div>
 
-                          {/* Divider */}
-                          <div className="border-t border-gray-200 my-4"></div>
+                          <div className="border-t border-gray-200 mb-6" />
 
-                          {/* Chain-of-thought Section */}
+                          {/* AI Orchestration */}
                           <div>
-                            <h4 className="text-sm text-gray-900 mb-3">Chain of Thought</h4>
-                            
-                            <div className="space-y-3">
-                              {chainOfThought.map((step, index) => (
-                                <div key={index} className="flex items-center gap-3">
-                                  {/* Circle number outside */}
-                                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5a7a5e] text-white flex items-center justify-center text-[10px]">
-                                    {index + 1}
-                                  </div>
-                                  
-                                  {/* Step content */}
-                                  <div className="flex-1 border-l-2 border-[#5a7a5e] bg-white p-3">
-                                    {step.category && (
-                                      <div className="text-[10px] text-gray-500 mb-1 bg-[rgba(0,0,0,0)] uppercase tracking-wide">
-                                        {step.category}
-                                      </div>
+                            <h4 className="text-sm font-semibold text-gray-900 mb-5">AI Orchestration</h4>
+                            <div className="space-y-6">
+                              {groupIntoPhases(chainOfThought).map((phase, pi) => (
+                                <div key={pi}>
+                                  <div className="flex items-center justify-between mb-2.5">
+                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-[0.1em]">{phase.name}</span>
+                                    {phase.totalMs > 0 && (
+                                      <span className="text-[11px] text-gray-400">
+                                        {phase.totalMs >= 1000 ? `${(phase.totalMs / 1000).toFixed(1)}s` : `${phase.totalMs}ms`}
+                                      </span>
                                     )}
-                                    
-                                    <p className="text-xs text-gray-900">
-                                      {step.step}
-                                    </p>
+                                  </div>
+                                  <div className="pl-3 border-l-2 border-gray-200 space-y-2.5">
+                                    {phase.steps.map((step, si) => (
+                                      <div key={si} className="flex items-start justify-between gap-4">
+                                        <p className="text-xs text-gray-700 leading-relaxed">{step.step}</p>
+                                        {step.timeMs !== undefined && step.timeMs > 0 && (
+                                          <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">{step.timeMs}ms</span>
+                                        )}
+                                      </div>
+                                    ))}
                                   </div>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        </div>
+                        </>
                       )}
 
-                      {/* Disclaimer */}
-                      <div className="mt-6 pt-6 border-t border-gray-200">
-                        <div>
-                          <p className="text-[10px] text-gray-700 leading-relaxed">
-                            <strong className="text-gray-900">Note:</strong> Always verify critical information with official sources. Titan provides responses based on available data but may not have access to the most current information.
-                          </p>
-                        </div>
+                      {/* Footer */}
+                      <div className="mt-8 pt-5 border-t border-gray-200">
+                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                          Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-2">Synthesized by Titan Banking Model</p>
                       </div>
                     </div>
                   </SheetContent>
