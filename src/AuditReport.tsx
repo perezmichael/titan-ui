@@ -94,8 +94,6 @@ export function AuditReport() {
     }
   };
 
-  const barColors = ['bg-[#3d6b47]', 'bg-[#5a8a65]', 'bg-[#7aaa85]'];
-
   return (
     <div className="min-h-screen bg-gray-50 print:bg-white">
       {/* ── Top bar (hidden on print) ── */}
@@ -143,42 +141,52 @@ export function AuditReport() {
         </div>
 
         {/* ── Verdict ── */}
-        <div className="mb-8 p-5 rounded-xl border border-gray-200 bg-white print:border-gray-300">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="w-4 h-4 text-green-600" />
-            <span className="text-sm font-semibold text-green-700 uppercase tracking-wide">Sufficient</span>
-          </div>
-          <p className="text-sm text-gray-600 mb-3">
-            Titan reviewed the available documents and found consistent support for this answer.
-          </p>
-          {auditData.executionSummary && (
-            <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 mb-4">
-              <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
-              <span>{auditData.executionSummary}</span>
-            </div>
-          )}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-2xl font-bold text-gray-800">{auditData.sources.length}</div>
-              <div className="text-[10px] text-gray-500 mt-0.5">Documents reviewed</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-2xl font-bold text-gray-800">{auditData.claims.filter(c => c.grounded).length}/{auditData.claims.length}</div>
-              <div className="text-[10px] text-gray-500 mt-0.5">Facts verified</div>
-            </div>
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="text-2xl font-bold text-gray-800">
-                {(() => { const ms = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0); return ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`; })()}
+        {(() => {
+          const groundedCount = auditData.claims.filter(c => c.grounded).length;
+          const totalMs = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0);
+          const timeStr = totalMs >= 1000 ? `${(totalMs / 1000).toFixed(1)}s` : `${totalMs}ms`;
+          const allVerified = groundedCount === auditData.claims.length;
+          return (
+            <div className="mb-8 p-5 rounded-xl border border-gray-200 bg-white print:border-gray-300">
+              <div className="flex items-start gap-3 mb-5">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${allVerified ? 'bg-green-100' : 'bg-amber-100'}`}>
+                  {allVerified
+                    ? <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    : <AlertTriangle className="w-5 h-5 text-amber-500" />}
+                </div>
+                <div>
+                  <p className="text-base font-semibold text-gray-900 leading-snug">
+                    {allVerified ? 'Titan is confident in this answer' : 'Titan has limited confidence in this answer'}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1 leading-relaxed">
+                    {allVerified
+                      ? `Reviewed ${auditData.sources.length} ${auditData.sources.length === 1 ? 'document' : 'documents'} and verified all ${auditData.claims.length} facts.`
+                      : `Reviewed ${auditData.sources.length} ${auditData.sources.length === 1 ? 'document' : 'documents'}. ${groundedCount} of ${auditData.claims.length} facts could be verified — review carefully before acting on this response.`}
+                  </p>
+                </div>
               </div>
-              <div className="text-[10px] text-gray-500 mt-0.5">Time to answer</div>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="text-3xl font-bold text-gray-800">{auditData.sources.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">Documents reviewed</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="text-3xl font-bold text-gray-800">{groundedCount}/{auditData.claims.length}</div>
+                  <div className="text-xs text-gray-500 mt-1">Facts verified</div>
+                </div>
+                <div className="text-center p-4 bg-white rounded-xl border border-gray-200">
+                  <div className="text-3xl font-bold text-gray-800">{timeStr}</div>
+                  <div className="text-xs text-gray-500 mt-1">Time to answer</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* ── How Titan Answered ── */}
         {auditData.reasoning && (
           <div className="mb-8">
-            <SectionTitle>How Titan answered</SectionTitle>
+            <SectionTitle>Titan's reasoning</SectionTitle>
             <div>
               {auditData.reasoning.map((step, i) => (
                 <div key={i} className="flex gap-3">
@@ -212,39 +220,30 @@ export function AuditReport() {
         {/* ── Documents Reviewed ── */}
         <div className="mb-8">
           <SectionTitle>Documents reviewed</SectionTitle>
-
-          {/* Stacked weight bar */}
-          <div className="flex rounded overflow-hidden h-2 mb-5">
-            {auditData.sources.map((s, i) => (
-              <div key={i} className={`${barColors[i % barColors.length]} h-full`} style={{ width: `${s.weight}%` }} />
-            ))}
-          </div>
-
           <div className="space-y-3">
             {auditData.sources.map((source, i) => {
-              const reliance = source.weight >= 50 ? 'Used most' : source.weight >= 25 ? 'Used heavily' : 'Used partially';
+              const role = source.weight >= 50
+                ? { label: 'Primary source', cls: 'bg-[#455a4f]/10 text-[#3d6b47] border-[#455a4f]/20' }
+                : source.weight >= 25
+                ? { label: 'Supporting source', cls: 'bg-blue-50 text-blue-600 border-blue-100' }
+                : { label: 'Referenced', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
               return (
                 <div key={i} className="bg-white border border-gray-200 rounded-xl overflow-hidden print:border-gray-300">
                   <div className="px-4 pt-4 pb-3">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className="text-[11px] text-gray-400 font-mono flex-shrink-0">{i + 1}</span>
                         <span className="text-sm font-medium text-gray-900 truncate">{source.name}</span>
                       </div>
-                      <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{reliance}</span>
+                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border flex-shrink-0 ${role.cls}`}>
+                        {role.label}
+                      </span>
                     </div>
 
-                    {/* Weight bar */}
-                    <div className="h-1.5 bg-gray-100 rounded-full mb-3">
-                      <div className="h-full bg-[#455a4f] rounded-full" style={{ width: `${source.weight}%` }} />
-                    </div>
-
-                    {/* Snippet — always visible */}
                     {source.snippet && (
                       <p className="text-xs text-gray-500 italic leading-relaxed mb-3">"{source.snippet}"</p>
                     )}
 
-                    {/* Factor tags */}
                     <div className="flex flex-wrap gap-1.5">
                       {source.keyFactors.map((f, j) => (
                         <span key={j} className="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-600 rounded">{f}</span>

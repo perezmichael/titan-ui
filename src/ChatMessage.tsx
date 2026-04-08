@@ -150,14 +150,15 @@ function ImportanceBadge({ importance }: { importance?: 'critical' | 'significan
     : <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 border border-amber-200 uppercase tracking-wide">Significant</span>;
 }
 
-function WeightBar({ sources }: { sources: AuditSource[] }) {
-  const colors = ['bg-[#3d6b47]', 'bg-[#5a8a65]', 'bg-[#7aaa85]', 'bg-[#9abba0]'];
+function SourceRole({ weight }: { weight: number }) {
+  if (weight >= 50) return (
+    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[#455a4f]/10 text-[#3d6b47] border border-[#455a4f]/20 flex-shrink-0">Primary source</span>
+  );
+  if (weight >= 25) return (
+    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex-shrink-0">Supporting source</span>
+  );
   return (
-    <div className="flex rounded overflow-hidden h-1.5 mb-4">
-      {sources.map((s, i) => (
-        <div key={i} className={`${colors[i % colors.length]} h-full`} style={{ width: `${s.weight}%` }} />
-      ))}
-    </div>
+    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 flex-shrink-0">Referenced</span>
   );
 }
 
@@ -167,29 +168,23 @@ function SourcesSection({ sources }: { sources: AuditSource[] }) {
 
   return (
     <div className="space-y-2">
-      <WeightBar sources={sources} />
       {sources.map((source, i) => {
         const isExpanded = expandedIndexes.includes(i);
-        const reliance = source.weight >= 50 ? 'Used most' : source.weight >= 25 ? 'Used heavily' : 'Used partially';
         return (
           <div key={i} className="border border-gray-100 rounded-lg bg-white overflow-hidden">
             <button
               onClick={() => toggle(i)}
               className="w-full px-3 pt-3 pb-2.5 text-left"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="text-[10px] text-gray-400 font-mono flex-shrink-0">{i + 1}</span>
                   <span className="text-xs text-gray-900 font-medium truncate">{source.name}</span>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                  <span className="text-[10px] text-gray-400">{reliance}</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <SourceRole weight={source.weight} />
                   {isExpanded ? <ChevronUp className="w-3 h-3 text-gray-400" /> : <ChevronDown className="w-3 h-3 text-gray-400" />}
                 </div>
-              </div>
-              {/* Weight bar */}
-              <div className="h-1 bg-gray-100 rounded-full mt-2">
-                <div className="h-full bg-[#455a4f] rounded-full" style={{ width: `${source.weight}%` }} />
               </div>
             </button>
 
@@ -198,11 +193,13 @@ function SourcesSection({ sources }: { sources: AuditSource[] }) {
                 {source.snippet && (
                   <p className="text-[11px] text-gray-600 italic leading-relaxed">"{source.snippet}"</p>
                 )}
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {source.keyFactors.map((f, j) => (
-                    <span key={j} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{f}</span>
-                  ))}
-                </div>
+                {source.keyFactors.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {source.keyFactors.map((f, j) => (
+                      <span key={j} className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded">{f}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -550,8 +547,6 @@ export function AuditLogPanel({
   const [sourcesOpen, setSourcesOpen] = useState(true);
   const [claimsOpen, setClaimsOpen] = useState(true);
   const [whatIfOpen, setWhatIfOpen] = useState(false);
-  const [executionOpen, setExecutionOpen] = useState(false);
-  const [techOpen, setTechOpen] = useState(false);
 
   const refIdRef = useRef<string>(`AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`);
   const refId = refIdRef.current;
@@ -608,61 +603,53 @@ export function AuditLogPanel({
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto">
         {/* ── Verdict ── */}
-        <div className="px-5 pt-5 pb-5 border-b border-gray-100">
-          {/* Plain-English confidence statement */}
-          <div className="flex items-start gap-3 mb-4">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-              confidenceThresholdPassed !== false ? 'bg-green-100' : 'bg-amber-100'
-            }`}>
-              {confidenceThresholdPassed !== false
-                ? <CheckCircle2 className="w-4 h-4 text-green-600" />
-                : <AlertTriangle className="w-4 h-4 text-amber-600" />
-              }
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-gray-900 leading-snug">
-                {confidenceThresholdPassed !== false
-                  ? 'Titan is confident in this answer'
-                  : 'Titan has limited confidence in this answer'}
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
-                {confidenceThresholdPassed !== false
-                  ? `Reviewed ${auditData.sources.length} ${auditData.sources.length === 1 ? 'document' : 'documents'}, verified ${auditData.claims.filter(c => c.grounded).length} of ${auditData.claims.length} facts, and found consistent support.`
-                  : 'Some facts could not be fully verified. Review carefully before acting on this response.'}
-              </p>
-            </div>
-          </div>
-
-          {/* Summary row */}
-          {(() => {
-            const totalMs = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0);
-            const timeStr = totalMs >= 1000 ? `${(totalMs / 1000).toFixed(1)}s` : `${totalMs}ms`;
-            return (
-              <div className="flex items-center gap-3 text-[11px] text-gray-400 border-t border-gray-100 pt-3">
-                <span className="flex items-center gap-1"><span className="font-medium text-gray-600">{auditData.sources.length}</span> documents reviewed</span>
-                <span>·</span>
-                <span className="flex items-center gap-1"><span className="font-medium text-gray-600">{auditData.claims.length}</span> facts checked</span>
-                <span>·</span>
-                <span>{timeStr}</span>
+        {(() => {
+          const groundedCount = auditData.claims.filter(c => c.grounded).length;
+          const totalMs = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0);
+          const timeStr = totalMs >= 1000 ? `${(totalMs / 1000).toFixed(1)}s` : `${totalMs}ms`;
+          const allVerified = groundedCount === auditData.claims.length;
+          return (
+            <div className="px-5 pt-5 pb-5 border-b border-gray-100">
+              <div className="flex items-start gap-3 mb-4">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${allVerified ? 'bg-green-100' : 'bg-amber-100'}`}>
+                  {allVerified
+                    ? <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    : <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 leading-snug">
+                    {allVerified ? 'Titan is confident in this answer' : 'Titan has limited confidence in this answer'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                    {allVerified
+                      ? `Reviewed ${auditData.sources.length} ${auditData.sources.length === 1 ? 'document' : 'documents'} and verified all ${auditData.claims.length} facts.`
+                      : `${groundedCount} of ${auditData.claims.length} facts could be verified — review carefully before acting.`}
+                  </p>
+                </div>
               </div>
-            );
-          })()}
-
-          {ungroundedCount > 0 && (
-            <div className="mt-3 flex items-start gap-2 p-2.5 bg-amber-50 border border-amber-100 rounded-lg">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-800 leading-relaxed">
-                {ungroundedCount} {ungroundedCount === 1 ? 'fact' : 'facts'} could not be verified against a source document.
-              </p>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center p-3 bg-white rounded-xl border border-gray-200">
+                  <div className="text-2xl font-bold text-gray-800">{auditData.sources.length}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5 leading-tight">Documents<br/>reviewed</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-xl border border-gray-200">
+                  <div className="text-2xl font-bold text-gray-800">{groundedCount}/{auditData.claims.length}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5 leading-tight">Facts<br/>verified</div>
+                </div>
+                <div className="text-center p-3 bg-white rounded-xl border border-gray-200">
+                  <div className="text-2xl font-bold text-gray-800">{timeStr}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5 leading-tight">Time to<br/>answer</div>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         {/* ── How Titan Answered ── */}
         {auditData.reasoning && (
           <div className="px-5 border-b border-gray-100">
             <SectionHeader
-              label="How Titan answered"
+              label="Titan's reasoning"
               open={reasoningOpen}
               onToggle={() => setReasoningOpen(o => !o)}
               count={`${auditData.reasoning.length} steps`}
@@ -724,42 +711,7 @@ export function AuditLogPanel({
           )}
         </div>
 
-        {/* ── AI Orchestration ── */}
-        <div className="px-5 border-b border-gray-100">
-          <SectionHeader
-            label="AI Orchestration"
-            open={executionOpen}
-            onToggle={() => setExecutionOpen(o => !o)}
-            count={`${auditData.executionWaves.length} phases · ${(() => { const ms = auditData.executionWaves.reduce((a, w) => a + (w.timeMs ?? 0), 0); return ms >= 1000 ? `${(ms/1000).toFixed(1)}s` : `${ms}ms`; })()}`}
-          />
-          {executionOpen && (
-            <div className="pb-4">
-              {auditData.executionSummary && (
-                <p className="text-[11px] text-gray-500 font-mono leading-relaxed mb-4 border-l-2 border-gray-200 pl-3">
-                  {auditData.executionSummary}
-                </p>
-              )}
-              <ExecutionSection waves={auditData.executionWaves} />
-            </div>
-          )}
-        </div>
-
-        {/* ── Technical Details ── */}
-        {auditData.deep && (
-          <div className="px-5 border-b border-gray-100">
-            <SectionHeader
-              label="Technical Details"
-              open={techOpen}
-              onToggle={() => setTechOpen(o => !o)}
-              count="model risk"
-            />
-            {techOpen && (
-              <div className="pb-4">
-                <TechnicalSection deep={auditData.deep} />
-              </div>
-            )}
-          </div>
-        )}
+        {/* AI Orchestration and Technical Details are in the full report only */}
 
         {/* ── Footer ── */}
         <div className="px-5 py-4 bg-gray-50 border-t border-gray-100">
