@@ -350,7 +350,11 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const hasStartedUploadRef = useRef<boolean>(false);
   const [activeCitation, setActiveCitation] = useState<ActiveCitation | null>(null);
   const [internetSearchEnabled, setInternetSearchEnabled] = useState<boolean>(false);
-  const [auditPanel, setAuditPanel] = useState<AuditPanelRequest | null>(null);
+  const [auditPanel, setAuditPanel] = useState<AuditPanelRequest | null>(
+    conversationId === '3'
+      ? { kind: 'v2', auditData: bsaAuditData, confidenceThresholdPassed: true, timestamp: 'Apr 5, 10:23 AM' }
+      : null
+  );
   const [auditPanelWidth, setAuditPanelWidth] = useState(480);
   const auditPanelRef = useRef<HTMLDivElement>(null);
   const [thinkingActive, setThinkingActive] = useState(() => conversationId === '3' && !_thinkingPlayed.has('3'));
