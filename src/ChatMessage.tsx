@@ -1,7 +1,7 @@
 import { ThumbsUp, ThumbsDown, Heart, ChevronDown, ChevronUp, Info, CheckCircle2, XCircle, FileText, ExternalLink, Cloud, Upload, Database, Copy } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 interface Reference {
   number: number;
@@ -57,8 +57,8 @@ interface ChatMessageProps {
 }
 
 const PHASE_NAMES: Record<string, string> = {
-  'Analysis': 'Analysis',
-  'Search': 'Knowledge Search',
+  'Analysis': 'Planning',
+  'Search': 'Knowledge Retrieval',
   'Validation': 'Validation',
   'Synthesis': 'Synthesis',
   'Quality Check': 'Quality Review',
@@ -79,11 +79,26 @@ function groupIntoPhases(steps: ChainStep[]) {
   return phases;
 }
 
+function fmtMs(ms: number) {
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
+}
+
 export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, onCitationClick }: ChatMessageProps) {
   const [expandedRef, setExpandedRef] = useState<number | null>(null);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const [viewingSource, setViewingSource] = useState<Source | null>(null);
   const refId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
+
+  // Audit log section state
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [traceOpen, setTraceOpen] = useState(false);
+  const [s2Expanded, setS2Expanded] = useState<number[]>([]);
+  const [s3Expanded, setS3Expanded] = useState<number[]>([]);
+  const toggleS2 = (i: number) => setS2Expanded(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i]);
+  const toggleS3 = (i: number) => setS3Expanded(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i]);
+
+  const phases = useMemo(() => chainOfThought ? groupIntoPhases(chainOfThought) : [], [chainOfThought]);
+  const totalMs = useMemo(() => phases.reduce((a, p) => a + p.totalMs, 0), [phases]);
 
   const getConfidenceBadgeColor = (conf?: 'High' | 'Medium' | 'Low') => {
     switch (conf) {
@@ -193,73 +208,192 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                       <span>More about this response</span>
                     </button>
                   </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto">
-                    <SheetHeader className="border-b border-gray-200 pb-4">
-                      <SheetTitle className="text-base font-semibold text-gray-900">Audit Log</SheetTitle>
-                      <SheetDescription className="text-xs text-gray-400 mt-0.5 font-mono">
-                        Reference #{refId}
-                      </SheetDescription>
-                    </SheetHeader>
+                  <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto p-0">
+                    {/* Header */}
+                    <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h2 className="text-base font-semibold text-gray-900">Audit Log</h2>
+                          <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
+                        </div>
+                      </div>
+                    </div>
 
-                    <div className="px-6 pb-8 mt-5">
-                      {chainOfThought && chainOfThought.length > 0 && (
-                        <>
-                          {/* Assurance Level */}
-                          <div className="mb-6">
-                            <div className="flex items-center gap-2.5 mb-2">
-                              <span className="text-sm font-semibold text-gray-900">Assurance Level</span>
+                    <div className="divide-y divide-gray-100">
+
+                      {/* ── Section 1: Trust (always open) ── */}
+                      <div className="px-6 py-5">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-4">Trust</p>
+
+                        {/* Assurance Level */}
+                        <div className="flex items-start justify-between gap-4 mb-5">
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900 mb-1">Assurance Level</p>
+                            <p className="text-xs text-gray-500 leading-relaxed">
                               {confidenceThresholdPassed
-                                ? <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-200 bg-green-50 text-[11px] font-semibold text-green-700 uppercase tracking-wide">Sufficient</span>
-                                : <span className="inline-flex items-center px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-[11px] font-semibold text-amber-700 uppercase tracking-wide">Limited</span>
-                              }
-                            </div>
-                            <p className="text-sm text-gray-600 leading-relaxed">
-                              {confidenceThresholdPassed
-                                ? 'A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence.'
-                                : 'A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence, typically when evidence is missing or multiple conflicting answers exist.'}
+                                ? 'Titan has sufficient confidence to provide a direct answer based on available evidence.'
+                                : 'Titan has limited confidence — evidence is insufficient or conflicting. Verify before acting.'}
                             </p>
                           </div>
+                          {confidenceThresholdPassed
+                            ? <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-200 bg-green-50 text-[10px] font-bold text-green-700 uppercase tracking-wider flex-shrink-0">Sufficient</span>
+                            : <span className="inline-flex items-center px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700 uppercase tracking-wider flex-shrink-0">Limited</span>
+                          }
+                        </div>
 
-                          <div className="border-t border-gray-200 mb-6" />
-
-                          {/* AI Orchestration */}
-                          <div>
-                            <h4 className="text-sm font-semibold text-gray-900 mb-5">AI Orchestration</h4>
-                            <div className="space-y-6">
-                              {groupIntoPhases(chainOfThought).map((phase, pi) => (
-                                <div key={pi}>
-                                  <div className="flex items-center justify-between mb-2.5">
-                                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-[0.1em]">{phase.name}</span>
-                                    {phase.totalMs > 0 && (
-                                      <span className="text-[11px] text-gray-400">
-                                        {phase.totalMs >= 1000 ? `${(phase.totalMs / 1000).toFixed(1)}s` : `${phase.totalMs}ms`}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <div className="pl-3 border-l-2 border-gray-200 space-y-2.5">
-                                    {phase.steps.map((step, si) => (
-                                      <div key={si} className="flex items-start justify-between gap-4">
-                                        <p className="text-xs text-gray-700 leading-relaxed">{step.step}</p>
-                                        {step.timeMs !== undefined && step.timeMs > 0 && (
-                                          <span className="text-[10px] text-gray-400 flex-shrink-0 mt-0.5">{step.timeMs}ms</span>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
+                        {/* Sources */}
+                        {references && references.length > 0 && (
+                          <div className="mb-5">
+                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-2">Sources</p>
+                            <div className="space-y-1.5">
+                              {references.map((ref, i) => (
+                                <div key={i} className="flex items-start gap-2.5">
+                                  <span className="text-[10px] text-gray-400 font-mono mt-0.5 w-3 flex-shrink-0">{ref.number}</span>
+                                  <span className="text-xs text-gray-700 leading-snug">{ref.title}</span>
                                 </div>
                               ))}
                             </div>
                           </div>
-                        </>
+                        )}
+
+                        {/* Model */}
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[11px] text-gray-400">Synthesized by</span>
+                          <span className="text-[11px] font-medium text-gray-600">Titan Banking Model</span>
+                        </div>
+                      </div>
+
+                      {/* ── Section 2: Methodology (Janet — compliance) ── */}
+                      {phases.length > 0 && (
+                        <div className="px-6 py-5">
+                          <button
+                            onClick={() => setMethodologyOpen(o => !o)}
+                            className="w-full flex items-start justify-between gap-4 group"
+                          >
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-1">Methodology</p>
+                              <p className="text-sm font-semibold text-gray-900">How Titan answered</p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-4 flex-shrink-0">
+                              <span className="text-[11px] text-gray-400">{phases.length} phases · {fmtMs(totalMs)}</span>
+                              {methodologyOpen
+                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                            </div>
+                          </button>
+
+                          {methodologyOpen && (
+                            <div className="mt-5 relative">
+                              {/* Vertical timeline line */}
+                              <div className="absolute left-[6px] top-3 bottom-3 w-px bg-gray-200" />
+
+                              <div className="space-y-1">
+                                {phases.map((phase, pi) => {
+                                  const isLast = pi === phases.length - 1;
+                                  const open = s2Expanded.includes(pi);
+                                  return (
+                                    <div key={pi} className={`relative pl-6 ${!isLast ? 'pb-1' : ''}`}>
+                                      {/* Timeline dot */}
+                                      <div className={`absolute left-0 top-[7px] w-3 h-3 rounded-full border-2 bg-white transition-colors ${open ? 'border-gray-600' : 'border-gray-300'}`} />
+
+                                      <button
+                                        onClick={() => toggleS2(pi)}
+                                        className="w-full flex items-center justify-between py-1 text-left group/phase"
+                                      >
+                                        <span className={`text-sm transition-colors ${open ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
+                                          {phase.name}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                          {phase.totalMs > 0 && <span className="text-[11px] text-gray-400">{fmtMs(phase.totalMs)}</span>}
+                                          {open
+                                            ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+                                            : <ChevronDown className="w-3.5 h-3.5 text-gray-300 group-hover/phase:text-gray-400" />}
+                                        </div>
+                                      </button>
+
+                                      {open && (
+                                        <div className="pb-3 pt-1 space-y-2">
+                                          {phase.steps.map((step, si) => (
+                                            <p key={si} className="text-xs text-gray-600 leading-relaxed">{step.step}</p>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* ── Section 3: Full Audit Trace (Matheus — engineering) ── */}
+                      {phases.length > 0 && (
+                        <div className="px-6 py-5">
+                          <button
+                            onClick={() => setTraceOpen(o => !o)}
+                            className="w-full flex items-start justify-between gap-4 group"
+                          >
+                            <div className="text-left">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-1">Full Audit Trace</p>
+                              <p className="text-sm font-semibold text-gray-900">Engineering &amp; compliance detail</p>
+                            </div>
+                            <div className="flex items-center gap-2 pt-4 flex-shrink-0">
+                              <span className="text-[11px] text-gray-400">{chainOfThought?.length} steps</span>
+                              {traceOpen
+                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
+                                : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                            </div>
+                          </button>
+
+                          {traceOpen && (
+                            <div className="mt-5 space-y-3">
+                              {phases.map((phase, pi) => {
+                                const open = s3Expanded.includes(pi);
+                                return (
+                                  <div key={pi} className="border border-gray-100 rounded-lg overflow-hidden">
+                                    <button
+                                      onClick={() => toggleS3(pi)}
+                                      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 text-left"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-[10px] font-mono text-gray-400 w-5">P{pi}</span>
+                                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{phase.name}</span>
+                                        <span className="text-[10px] text-gray-400">{phase.steps.length} {phase.steps.length === 1 ? 'step' : 'steps'}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        {phase.totalMs > 0 && <span className="text-[10px] text-gray-400 font-mono">{fmtMs(phase.totalMs)}</span>}
+                                        {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
+                                      </div>
+                                    </button>
+
+                                    {open && (
+                                      <div className="border-t border-gray-100 divide-y divide-gray-50">
+                                        {phase.steps.map((step, si) => (
+                                          <div key={si} className="px-3 py-2.5 flex items-start justify-between gap-4">
+                                            <p className="text-[11px] text-gray-600 leading-relaxed font-mono">{step.step}</p>
+                                            {step.timeMs !== undefined && step.timeMs > 0 && (
+                                              <span className="text-[10px] text-gray-400 flex-shrink-0 font-mono mt-0.5">{step.timeMs}ms</span>
+                                            )}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {/* Footer */}
-                      <div className="mt-8 pt-5 border-t border-gray-200">
-                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                      <div className="px-6 py-4">
+                        <p className="text-[10px] text-gray-400 leading-relaxed">
                           Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
                         </p>
-                        <p className="text-[11px] text-gray-400 mt-2">Synthesized by Titan Banking Model</p>
                       </div>
+
                     </div>
                   </SheetContent>
                 </Sheet>
