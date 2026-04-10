@@ -34,79 +34,10 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
       title: 'TODAY',
       conversations: [
         {
-          id: 'upload-processing',
-          title: 'Regulatory Filing Analysis',
-          preview: '6 regulatory filing documents',
-          timestamp: '10:24 AM'
-        },
-        {
-          id: '4',
-          title: 'Current Fed Interest Rate',
-          preview: 'What is the current federal funds rate and when was it last changed?',
-          timestamp: '9:42 AM'
-        },
-        {
           id: '3',
-          title: 'AI Assistant Core Capabilities',
-          preview: 'AI there! How can I assist you today?',
+          title: 'Audit Log Example',
+          preview: 'Before I approve the VFN Holdings credit memo, I need to confirm BSA/AML coverage.',
           timestamp: '10:08 AM'
-        },
-        {
-          id: '1',
-          title: 'BSA AML Procedure Review',
-          preview: 'Can you help me review this procedure? 2026 BSA AML Procedure - Final.docx',
-          timestamp: '8:53 AM'
-        }
-      ]
-    },
-    {
-      title: 'THIS WEEK',
-      conversations: [
-        {
-          id: '2',
-          title: 'Training Announcement Email',
-          preview: 'Can you help me write an email about the upcoming...',
-          timestamp: '2d ago'
-        }
-      ]
-    },
-    {
-      title: 'LAST WEEK',
-      conversations: [
-        {
-          id: '5',
-          title: 'AI Assistant Core Capabilities Overvi...',
-          preview: 'I my browse windows',
-          timestamp: '2w ago'
-        },
-        {
-          id: '6',
-          title: 'Handling Sensitive Information',
-          preview: 'Good! I\'ll exercise caution',
-          timestamp: '2w ago'
-        }
-      ]
-    },
-    {
-      title: 'LAST MONTH',
-      conversations: [
-        {
-          id: '7',
-          title: 'Handling Personal Information ...',
-          preview: 'If person mentions a bank',
-          timestamp: '2w ago'
-        },
-        {
-          id: '8',
-          title: 'New Chat',
-          preview: 'my vin is 123-123-2234',
-          timestamp: '2w ago'
-        },
-        {
-          id: '9',
-          title: 'Requesting Information or Details',
-          preview: 'not you sure are single customer',
-          timestamp: '3w ago'
         }
       ]
     }

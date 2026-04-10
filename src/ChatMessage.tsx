@@ -504,7 +504,7 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                   className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1"
                 >
                   <Info className="w-3.5 h-3.5" />
-                  <span>More about this response</span>
+                  <span>Audit Log</span>
                   <ChevronRight className="w-3 h-3 opacity-40" />
                 </button>
               </div>

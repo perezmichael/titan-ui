@@ -26,7 +26,7 @@ export default function App() {
   }
 
 
-  const [activeConversationId, setActiveConversationId] = useState('new-chat');
+  const [activeConversationId, setActiveConversationId] = useState('3');
   const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

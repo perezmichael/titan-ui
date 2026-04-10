@@ -209,7 +209,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
 
   // Conversation 3: AI Assistant Core Capabilities
   const conversation3 = {
-    title: 'AI Assistant Core Capabilities',
+    title: 'Audit Log Example',
     timestamp: 'Oct 24, 10:08 AM',
     messages: [
       {
