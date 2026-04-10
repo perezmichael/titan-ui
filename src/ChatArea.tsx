@@ -102,6 +102,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         hasReactions: true,
         confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
+        auditData: bsaAuditData,
         chainOfThought: [
           { step: 'Parsed user query: "what is the bank secrecy act" - identified as a request for regulatory definition', confidencePassed: true, category: 'Analysis', confidenceScore: 98, timeMs: 12 },
           { step: 'Initiated semantic search across compliance policy knowledge base using keywords: "Bank Secrecy Act", "BSA", "regulatory compliance"', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 145 },
