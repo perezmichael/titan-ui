@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AuditReport } from './AuditReport';
 import { Sidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
 import { ConnectorsView } from './ConnectorsView';
@@ -19,6 +20,12 @@ interface SelectedDocument {
 }
 
 export default function App() {
+  // Route /audit-report to standalone page
+  if (window.location.pathname === '/audit-report') {
+    return <AuditReport />;
+  }
+
+
   const [activeConversationId, setActiveConversationId] = useState('new-chat');
   const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);

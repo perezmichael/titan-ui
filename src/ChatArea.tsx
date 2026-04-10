@@ -1,6 +1,7 @@
 import { Pencil, Paperclip, X, FileText, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
 import { ChatMessage } from './ChatMessage';
 import { TitanLogo } from './TitanLogo';
+import { bsaAuditData } from './auditMockData';
 import { useEffect, useState, useRef } from 'react';
 
 interface SelectedDocument {
@@ -150,6 +151,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         hasReactions: true,
         confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
+        auditData: bsaAuditData,
         chainOfThought: [
           { step: 'Parsed user request: Document review for "2025 BSA AML Procedure Draft.docx" - identified as compliance document analysis task', confidencePassed: true, category: 'Analysis', confidenceScore: 99, timeMs: 15 },
           { step: 'Extracted text content from uploaded document: 45 pages, 12,847 words - detected structured policy sections', confidencePassed: true, category: 'Analysis', confidenceScore: 98, timeMs: 892 },

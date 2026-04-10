@@ -1,4 +1,4 @@
-import { ThumbsUp, ThumbsDown, Heart, ChevronDown, ChevronUp, Info, CheckCircle2, XCircle, FileText, ExternalLink, Cloud, Upload, Database, Copy } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Info, FileText, ExternalLink, Upload, Database, Copy, ChevronRight, Cloud, Heart } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
@@ -37,6 +37,46 @@ interface ChainStep {
   timeMs?: number;
 }
 
+// ── Rich audit data types ─────────────────────────────────────────────────────
+
+export interface AuditStepSource {
+  name: string;
+  relevance: number; // 0–100
+}
+
+export interface AuditStep {
+  num: number;
+  tool: string;
+  description: string;
+  durationMs: number;
+  docCount?: number;
+  chunkCount?: number;
+  model?: string;
+  dependsOn?: number[];
+  output?: string;
+  sources?: AuditStepSource[];
+  rawOutput?: string;
+}
+
+export interface AuditPhase {
+  name: string;
+  description: string;
+  parallel: boolean;
+  durationMs: number;
+  steps: AuditStep[];
+}
+
+export interface AuditData {
+  assuranceLevel: 'sufficient' | 'limited' | 'partial';
+  assuranceDesc: string;
+  sources: { num: number; name: string }[];
+  model: string;
+  executionPlan: string;
+  phases: AuditPhase[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 interface ChatMessageProps {
   type: 'user' | 'assistant';
   content: string;
@@ -47,71 +87,321 @@ interface ChatMessageProps {
   confidence?: 'High' | 'Medium' | 'Low';
   chainOfThought?: ChainStep[];
   confidenceThresholdPassed?: boolean;
-  attachment?: {
-    fileName: string;
-    fileSize?: string;
-  };
+  attachment?: { fileName: string; fileSize?: string };
   sources?: CategorizedSources;
   internetSearchAssisted?: boolean;
+  auditData?: AuditData;
   onCitationClick?: (citation: { title: string; pageNumber?: number; highlightedText?: string; context?: string; description?: string; }) => void;
-}
-
-const PHASE_NAMES: Record<string, string> = {
-  'Analysis': 'Planning',
-  'Search': 'Knowledge Retrieval',
-  'Validation': 'Validation',
-  'Synthesis': 'Synthesis',
-  'Quality Check': 'Quality Review',
-};
-
-function groupIntoPhases(steps: ChainStep[]) {
-  const phases: { name: string; steps: ChainStep[]; totalMs: number }[] = [];
-  for (const step of steps) {
-    const phaseName = PHASE_NAMES[step.category ?? ''] ?? (step.category ?? 'Processing');
-    const last = phases[phases.length - 1];
-    if (last && last.name === phaseName) {
-      last.steps.push(step);
-      last.totalMs += step.timeMs ?? 0;
-    } else {
-      phases.push({ name: phaseName, steps: [step], totalMs: step.timeMs ?? 0 });
-    }
-  }
-  return phases;
 }
 
 function fmtMs(ms: number) {
   return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
 }
 
-export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, onCitationClick }: ChatMessageProps) {
-  const [expandedRef, setExpandedRef] = useState<number | null>(null);
+// ── Audit Log Sheet ───────────────────────────────────────────────────────────
+
+function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId }: {
+  auditData?: AuditData;
+  confidenceThresholdPassed?: boolean;
+  references?: Reference[];
+  refId: string;
+}) {
+  const [s1Open, setS1Open] = useState(true);
+  const [s2Open, setS2Open] = useState(false);
+  const [s3Open, setS3Open] = useState(false);
+  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
+  const [expandedRaw, setExpandedRaw] = useState<Set<string>>(new Set());
+
+  const toggleStep = (key: string) => setExpandedSteps(p => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleRaw  = (key: string) => setExpandedRaw(p => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  const totalMs = auditData?.phases.reduce((a, p) => a + p.durationMs, 0) ?? 0;
+
+  const level = auditData?.assuranceLevel ?? (confidenceThresholdPassed !== false ? 'sufficient' : 'limited');
+  const levelLabel = level === 'sufficient' ? 'Sufficient' : level === 'partial' ? 'Partial' : 'Limited';
+  const levelCls   = level === 'sufficient'
+    ? 'bg-green-50 text-green-800 border-green-200'
+    : level === 'partial'
+    ? 'bg-amber-50 text-amber-800 border-amber-200'
+    : 'bg-red-50 text-red-800 border-red-200';
+
+  const displaySources = auditData?.sources ?? references?.map((r, i) => ({ num: i + 1, name: r.title })) ?? [];
+
+  // Section toggle header
+  const SectionBtn = ({ label, meta, open, onToggle }: { label: string; meta: string; open: boolean; onToggle: () => void }) => (
+    <button onClick={onToggle} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left">
+      <div>
+        <p className="text-sm font-semibold text-gray-900">{label}</p>
+        <p className="text-[11px] text-gray-400 mt-0.5">{meta}</p>
+      </div>
+      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
+        <h2 className="text-[15px] font-semibold text-gray-900">Audit Log</h2>
+        <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
+      </div>
+
+      <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+
+        {/* ── Section 1: Trust ── */}
+        <div>
+          <SectionBtn
+            label="Trust"
+            meta="Assurance · Sources · Model"
+            open={s1Open}
+            onToggle={() => setS1Open(o => !o)}
+          />
+          {s1Open && (
+            <div className="px-5 pb-5 space-y-4">
+              {/* Assurance */}
+              <div>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Assurance Level</p>
+                <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border ${levelCls}`}>
+                  {levelLabel}
+                </span>
+                <p className="text-sm text-gray-600 leading-relaxed mt-2">
+                  {auditData?.assuranceDesc ?? (confidenceThresholdPassed !== false
+                    ? 'A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence.'
+                    : 'A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence.')}
+                </p>
+              </div>
+
+              {/* Sources */}
+              {displaySources.length > 0 && (
+                <div>
+                  <hr className="border-gray-100 mb-4" />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Sources</p>
+                  <div className="space-y-1.5">
+                    {displaySources.map((s) => (
+                      <div key={s.num} className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                        <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0">{s.num}</span>
+                        <span className="text-xs font-medium text-gray-700 leading-snug">{s.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Model */}
+              <div>
+                <hr className="border-gray-100 mb-4" />
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Model Attribution</p>
+                <span className="font-mono text-xs text-gray-700 bg-gray-100 border border-gray-200 rounded px-2.5 py-1">
+                  {auditData?.model ?? 'Titan Banking Model'}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── Section 2: Titan's Reasoning ── */}
+        {auditData && (
+          <div>
+            <SectionBtn
+              label="Titan's Reasoning"
+              meta={`${auditData.phases.length} phases`}
+              open={s2Open}
+              onToggle={() => setS2Open(o => !o)}
+            />
+            {s2Open && (
+              <div className="px-5 pb-5 space-y-4">
+                {/* Execution Plan */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Execution Plan</p>
+                  <pre className="text-[11.5px] font-mono text-gray-600 leading-relaxed bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 whitespace-pre-wrap break-words">
+                    {auditData.executionPlan}
+                  </pre>
+                </div>
+
+                <hr className="border-gray-100" />
+
+                {/* Phase list */}
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">Phases</p>
+                  <div className="space-y-4">
+                    {auditData.phases.map((phase, pi) => (
+                      <div key={pi} className="flex gap-3">
+                        <div className="w-7 h-7 rounded-md bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                          P{pi + 1}
+                        </div>
+                        <div className="pt-0.5">
+                          <p className="text-[11px] font-bold text-[#166534] uppercase tracking-wider mb-0.5">{phase.name}</p>
+                          <p className="text-xs text-gray-500 leading-relaxed">{phase.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Section 3: AI Orchestration ── */}
+        {auditData && (
+          <div>
+            <SectionBtn
+              label="AI Orchestration"
+              meta={`${auditData.phases.length} phases · ${auditData.phases.reduce((a, p) => a + p.steps.length, 0)} steps · ${fmtMs(totalMs)}`}
+              open={s3Open}
+              onToggle={() => setS3Open(o => !o)}
+            />
+            {s3Open && (
+              <div className="px-5 pb-5">
+                {/* Total time */}
+                <div className="flex items-center justify-end gap-1 text-[11.5px] font-semibold text-gray-500 mb-4">
+                  <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-gray-400 fill-none stroke-2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                  Total: {fmtMs(totalMs)}
+                </div>
+
+                <div className="space-y-4">
+                  {auditData.phases.map((phase, pi) => (
+                    <div key={pi}>
+                      {/* Phase header */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-md bg-[#166534] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">
+                          P{pi}
+                        </div>
+                        <span className="text-[12.5px] font-bold text-gray-900 flex-1">{phase.name}</span>
+                        {phase.parallel && (
+                          <span className="text-[10px] font-semibold text-[#166534] bg-green-100 border border-green-300 rounded-full px-2 py-0.5 flex items-center gap-1">
+                            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-[#166534] stroke-2"><path d="M17 1l4 4-4 4M7 1l-4 4 4 4M21 5H3M21 19H3M17 15l4 4-4 4M7 15l-4 4 4 4"/></svg>
+                            Parallel · {phase.steps.length} steps
+                          </span>
+                        )}
+                        <span className="text-[11px] text-gray-400 font-mono">{fmtMs(phase.durationMs)}</span>
+                      </div>
+
+                      {/* Steps */}
+                      <div className={`space-y-2 ${phase.parallel ? 'pl-2.5 border-l-2 border-indigo-100' : ''}`}>
+                        {phase.steps.map((step) => {
+                          const sk = `${pi}-${step.num}`;
+                          const rk = `raw-${pi}-${step.num}`;
+                          const stepOpen = expandedSteps.has(sk);
+                          const rawOpen  = expandedRaw.has(rk);
+                          return (
+                            <div key={step.num} className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="px-3 pt-2.5 pb-2">
+                                {/* Row 1: dot + step num + tool + duration */}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                  <div className="w-2 h-2 rounded-full bg-[#16a34a] flex-shrink-0" />
+                                  <span className="text-xs font-bold text-gray-900">Step {step.num}</span>
+                                  <span className="font-mono text-[10px] text-gray-600 bg-gray-200 rounded px-1.5 py-0.5">{step.tool}</span>
+                                  <span className="text-[10px] text-gray-400 font-mono ml-auto">{fmtMs(step.durationMs)}</span>
+                                </div>
+                                {/* Row 2: doc/chunk/model meta */}
+                                {(step.docCount !== undefined || step.model) && (
+                                  <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-1.5">
+                                    <FileText className="w-3 h-3 flex-shrink-0" />
+                                    {step.docCount !== undefined && <span>{step.docCount} {step.docCount === 1 ? 'doc' : 'docs'}</span>}
+                                    {step.chunkCount !== undefined && <><span className="text-gray-300">·</span><span>{step.chunkCount} chunks</span></>}
+                                    {step.model && <><span className="text-gray-300">·</span><span className="font-mono">{step.model}</span></>}
+                                  </div>
+                                )}
+                                {/* Depends on */}
+                                {step.dependsOn && step.dependsOn.length > 0 && (
+                                  <p className="text-[11px] text-gray-400 mb-1.5">← After steps {step.dependsOn.join(', ')}</p>
+                                )}
+                                {/* Description */}
+                                <p className="text-[11.5px] font-mono text-gray-600 leading-relaxed mb-2">{step.description}</p>
+                                {/* View details toggle */}
+                                {step.output && (
+                                  <button
+                                    onClick={() => toggleStep(sk)}
+                                    className="flex items-center gap-1 text-[11.5px] font-semibold text-[#166534] hover:underline"
+                                  >
+                                    <ChevronRight className={`w-3 h-3 transition-transform ${stepOpen ? 'rotate-90' : ''}`} />
+                                    {stepOpen ? 'Hide details' : 'View details'}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Progress bar */}
+                              <div className="h-0.5 bg-gray-200">
+                                <div className="h-full bg-gradient-to-r from-[#3d6b47] to-green-400 w-full" />
+                              </div>
+
+                              {/* Detail panel */}
+                              {stepOpen && step.output && (
+                                <div className="border-t border-gray-200 bg-white px-3 py-2.5">
+                                  <p className="text-xs text-gray-700 leading-relaxed mb-2">{step.output}</p>
+
+                                  {/* Source relevance */}
+                                  {step.sources && step.sources.length > 0 && (
+                                    <div className="mb-2 divide-y divide-gray-100">
+                                      {step.sources.map((src, si) => (
+                                        <div key={si} className="flex items-center justify-between py-1.5 gap-2">
+                                          <span className="text-[11px] font-medium text-gray-700 flex-1">{src.name}</span>
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${src.relevance >= 50 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {src.relevance}%
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Raw output toggle */}
+                                  {step.rawOutput && (
+                                    <>
+                                      <button
+                                        onClick={() => toggleRaw(rk)}
+                                        className="flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:underline"
+                                      >
+                                        <ChevronRight className={`w-3 h-3 transition-transform ${rawOpen ? 'rotate-90' : ''}`} />
+                                        {rawOpen ? 'Hide raw output' : 'View raw output'}
+                                      </button>
+                                      {rawOpen && (
+                                        <pre className="mt-2 text-[10.5px] font-mono text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-2.5 whitespace-pre-wrap overflow-x-auto">
+                                          {step.rawOutput}
+                                        </pre>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="px-5 py-4 space-y-2">
+          <p className="text-[10px] text-gray-400 leading-relaxed">
+            ⓘ Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
+          </p>
+          {auditData && (
+            <a
+              href={`/audit-report?ref=${refId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#166534] hover:underline"
+            >
+              <FileText className="w-3 h-3" />
+              View full report
+            </a>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, auditData, onCitationClick }: ChatMessageProps) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const [viewingSource, setViewingSource] = useState<Source | null>(null);
   const refId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
-
-  // Audit log section state
-  const [methodologyOpen, setMethodologyOpen] = useState(false);
-  const [traceOpen, setTraceOpen] = useState(false);
-  const [s2Expanded, setS2Expanded] = useState<number[]>([]);
-  const [s3Expanded, setS3Expanded] = useState<number[]>([]);
-  const toggleS2 = (i: number) => setS2Expanded(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i]);
-  const toggleS3 = (i: number) => setS3Expanded(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i]);
-
-  const phases = useMemo(() => chainOfThought ? groupIntoPhases(chainOfThought) : [], [chainOfThought]);
-  const totalMs = useMemo(() => phases.reduce((a, p) => a + p.totalMs, 0), [phases]);
-
-  const getConfidenceBadgeColor = (conf?: 'High' | 'Medium' | 'Low') => {
-    switch (conf) {
-      case 'High':
-        return 'bg-green-100 text-green-700 border-green-200';
-      case 'Medium':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'Low':
-        return 'bg-orange-100 text-orange-700 border-orange-200';
-      default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
 
   return (
     <div className="flex gap-3 mb-4">
@@ -208,193 +498,13 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                       <span>More about this response</span>
                     </button>
                   </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl bg-white overflow-y-auto p-0">
-                    {/* Header */}
-                    <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h2 className="text-base font-semibold text-gray-900">Audit Log</h2>
-                          <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="divide-y divide-gray-100">
-
-                      {/* ── Section 1: Trust (always open) ── */}
-                      <div className="px-6 py-5">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-4">Trust</p>
-
-                        {/* Assurance Level */}
-                        <div className="flex items-start justify-between gap-4 mb-5">
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-900 mb-1">Assurance Level</p>
-                            <p className="text-xs text-gray-500 leading-relaxed">
-                              {confidenceThresholdPassed
-                                ? 'Titan has sufficient confidence to provide a direct answer based on available evidence.'
-                                : 'Titan has limited confidence — evidence is insufficient or conflicting. Verify before acting.'}
-                            </p>
-                          </div>
-                          {confidenceThresholdPassed
-                            ? <span className="inline-flex items-center px-2 py-0.5 rounded border border-green-200 bg-green-50 text-[10px] font-bold text-green-700 uppercase tracking-wider flex-shrink-0">Sufficient</span>
-                            : <span className="inline-flex items-center px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700 uppercase tracking-wider flex-shrink-0">Limited</span>
-                          }
-                        </div>
-
-                        {/* Sources */}
-                        {references && references.length > 0 && (
-                          <div className="mb-5">
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-2">Sources</p>
-                            <div className="space-y-1.5">
-                              {references.map((ref, i) => (
-                                <div key={i} className="flex items-start gap-2.5">
-                                  <span className="text-[10px] text-gray-400 font-mono mt-0.5 w-3 flex-shrink-0">{ref.number}</span>
-                                  <span className="text-xs text-gray-700 leading-snug">{ref.title}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Model */}
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[11px] text-gray-400">Synthesized by</span>
-                          <span className="text-[11px] font-medium text-gray-600">Titan Banking Model</span>
-                        </div>
-                      </div>
-
-                      {/* ── Section 2: Methodology (Janet — compliance) ── */}
-                      {phases.length > 0 && (
-                        <div className="px-6 py-5">
-                          <button
-                            onClick={() => setMethodologyOpen(o => !o)}
-                            className="w-full flex items-start justify-between gap-4 group"
-                          >
-                            <div className="text-left">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-1">Methodology</p>
-                              <p className="text-sm font-semibold text-gray-900">How Titan answered</p>
-                            </div>
-                            <div className="flex items-center gap-2 pt-4 flex-shrink-0">
-                              <span className="text-[11px] text-gray-400">{phases.length} phases · {fmtMs(totalMs)}</span>
-                              {methodologyOpen
-                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                                : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                            </div>
-                          </button>
-
-                          {methodologyOpen && (
-                            <div className="mt-5 relative">
-                              {/* Vertical timeline line */}
-                              <div className="absolute left-[6px] top-3 bottom-3 w-px bg-gray-200" />
-
-                              <div className="space-y-1">
-                                {phases.map((phase, pi) => {
-                                  const isLast = pi === phases.length - 1;
-                                  const open = s2Expanded.includes(pi);
-                                  return (
-                                    <div key={pi} className={`relative pl-6 ${!isLast ? 'pb-1' : ''}`}>
-                                      {/* Timeline dot */}
-                                      <div className={`absolute left-0 top-[7px] w-3 h-3 rounded-full border-2 bg-white transition-colors ${open ? 'border-gray-600' : 'border-gray-300'}`} />
-
-                                      <button
-                                        onClick={() => toggleS2(pi)}
-                                        className="w-full flex items-center justify-between py-1 text-left group/phase"
-                                      >
-                                        <span className={`text-sm transition-colors ${open ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>
-                                          {phase.name}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                          {phase.totalMs > 0 && <span className="text-[11px] text-gray-400">{fmtMs(phase.totalMs)}</span>}
-                                          {open
-                                            ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
-                                            : <ChevronDown className="w-3.5 h-3.5 text-gray-300 group-hover/phase:text-gray-400" />}
-                                        </div>
-                                      </button>
-
-                                      {open && (
-                                        <div className="pb-3 pt-1 space-y-2">
-                                          {phase.steps.map((step, si) => (
-                                            <p key={si} className="text-xs text-gray-600 leading-relaxed">{step.step}</p>
-                                          ))}
-                                        </div>
-                                      )}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* ── Section 3: Full Audit Trace (Matheus — engineering) ── */}
-                      {phases.length > 0 && (
-                        <div className="px-6 py-5">
-                          <button
-                            onClick={() => setTraceOpen(o => !o)}
-                            className="w-full flex items-start justify-between gap-4 group"
-                          >
-                            <div className="text-left">
-                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.14em] mb-1">Full Audit Trace</p>
-                              <p className="text-sm font-semibold text-gray-900">Engineering &amp; compliance detail</p>
-                            </div>
-                            <div className="flex items-center gap-2 pt-4 flex-shrink-0">
-                              <span className="text-[11px] text-gray-400">{chainOfThought?.length} steps</span>
-                              {traceOpen
-                                ? <ChevronUp className="w-4 h-4 text-gray-400" />
-                                : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                            </div>
-                          </button>
-
-                          {traceOpen && (
-                            <div className="mt-5 space-y-3">
-                              {phases.map((phase, pi) => {
-                                const open = s3Expanded.includes(pi);
-                                return (
-                                  <div key={pi} className="border border-gray-100 rounded-lg overflow-hidden">
-                                    <button
-                                      onClick={() => toggleS3(pi)}
-                                      className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 text-left"
-                                    >
-                                      <div className="flex items-center gap-3">
-                                        <span className="text-[10px] font-mono text-gray-400 w-5">P{pi}</span>
-                                        <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">{phase.name}</span>
-                                        <span className="text-[10px] text-gray-400">{phase.steps.length} {phase.steps.length === 1 ? 'step' : 'steps'}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        {phase.totalMs > 0 && <span className="text-[10px] text-gray-400 font-mono">{fmtMs(phase.totalMs)}</span>}
-                                        {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
-                                      </div>
-                                    </button>
-
-                                    {open && (
-                                      <div className="border-t border-gray-100 divide-y divide-gray-50">
-                                        {phase.steps.map((step, si) => (
-                                          <div key={si} className="px-3 py-2.5 flex items-start justify-between gap-4">
-                                            <p className="text-[11px] text-gray-600 leading-relaxed font-mono">{step.step}</p>
-                                            {step.timeMs !== undefined && step.timeMs > 0 && (
-                                              <span className="text-[10px] text-gray-400 flex-shrink-0 font-mono mt-0.5">{step.timeMs}ms</span>
-                                            )}
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Footer */}
-                      <div className="px-6 py-4">
-                        <p className="text-[10px] text-gray-400 leading-relaxed">
-                          Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
-                        </p>
-                      </div>
-
-                    </div>
+                  <SheetContent className="w-full sm:max-w-xl bg-white p-0 overflow-hidden flex flex-col">
+                    <AuditLogSheet
+                      auditData={auditData}
+                      confidenceThresholdPassed={confidenceThresholdPassed}
+                      references={references}
+                      refId={refId}
+                    />
                   </SheetContent>
                 </Sheet>
               </div>
