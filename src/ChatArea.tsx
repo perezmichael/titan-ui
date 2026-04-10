@@ -164,15 +164,17 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const [activeCitation, setActiveCitation] = useState<ActiveCitation | null>(null);
   const [internetSearchEnabled, setInternetSearchEnabled] = useState<boolean>(false);
 
-  // Audit panel (inline draggable slider)
-  const [auditPanel, setAuditPanel] = useState<AuditPanelState | null>(null);
+  // Audit panel (inline draggable slider) — preopen for conversation3
+  const [auditPanel, setAuditPanel] = useState<AuditPanelState | null>(
+    conversationId === '3' ? { auditData: bsaAuditData, confidenceThresholdPassed: true } : null
+  );
   const [auditPanelWidth, setAuditPanelWidth] = useState(460);
   const auditPanelRef = useRef<HTMLDivElement>(null);
   const auditRefId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
 
-  // Thinking animation — plays once for conversation3
-  const [thinkingActive, setThinkingActive] = useState(() => conversationId === '3' && !_thinkingPlayed.has('3'));
-  const [justRevealed, setJustRevealed] = useState(false);
+  // Thinking animation — disabled, show messages immediately
+  const [thinkingActive] = useState(false);
+  const [justRevealed] = useState(false);
 
   const handleAuditDividerMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -193,11 +195,6 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };
-
-  // Mark thinking as played (module-level survives StrictMode double-mount)
-  useEffect(() => {
-    if (conversationId === '3') _thinkingPlayed.add('3');
-  }, [conversationId]);
 
   // Trigger upload start when user first views the upload-processing conversation
   useEffect(() => {
