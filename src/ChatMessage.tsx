@@ -146,6 +146,17 @@ export function AuditLogSheet({ auditData, confidenceThresholdPassed, references
         <div>
           <h2 className="text-[15px] font-semibold text-gray-900">Audit Log</h2>
           <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
+          {auditData && (
+            <a
+              href={`/audit-report?ref=${refId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#166534] hover:underline mt-1.5"
+            >
+              <FileText className="w-3 h-3" />
+              View full report
+            </a>
+          )}
         </div>
         {onClose && (
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 -mr-1 rounded transition-colors">
@@ -389,17 +400,6 @@ export function AuditLogSheet({ auditData, confidenceThresholdPassed, references
           <p className="text-[10px] text-gray-400 leading-relaxed">
             ⓘ Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
           </p>
-          {auditData && (
-            <a
-              href={`/audit-report?ref=${refId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#166534] hover:underline"
-            >
-              <FileText className="w-3 h-3" />
-              View full report
-            </a>
-          )}
         </div>
 
       </div>
