@@ -1,7 +1,6 @@
 import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Info, FileText, ExternalLink, Upload, Database, Copy, ChevronRight, Cloud, Heart } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
-import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 interface Reference {
   number: number;
@@ -92,6 +91,7 @@ interface ChatMessageProps {
   internetSearchAssisted?: boolean;
   auditData?: AuditData;
   onCitationClick?: (citation: { title: string; pageNumber?: number; highlightedText?: string; context?: string; description?: string; }) => void;
+  onOpenAuditPanel?: (data: { auditData?: AuditData; confidenceThresholdPassed?: boolean; references?: Reference[] }) => void;
 }
 
 function fmtMs(ms: number) {
@@ -100,11 +100,12 @@ function fmtMs(ms: number) {
 
 // ── Audit Log Sheet ───────────────────────────────────────────────────────────
 
-function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId }: {
+export function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId, onClose }: {
   auditData?: AuditData;
   confidenceThresholdPassed?: boolean;
   references?: Reference[];
   refId: string;
+  onClose?: () => void;
 }) {
   const [s1Open, setS1Open] = useState(true);
   const [s2Open, setS2Open] = useState(false);
@@ -141,9 +142,16 @@ function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0">
-        <h2 className="text-[15px] font-semibold text-gray-900">Audit Log</h2>
-        <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
+      <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0 flex items-start justify-between">
+        <div>
+          <h2 className="text-[15px] font-semibold text-gray-900">Audit Log</h2>
+          <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
+        </div>
+        {onClose && (
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 -mr-1 rounded transition-colors">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
@@ -399,7 +407,7 @@ function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId
   );
 }
 
-export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, auditData, onCitationClick }: ChatMessageProps) {
+export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, auditData, onCitationClick, onOpenAuditPanel }: ChatMessageProps) {
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
   const refId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
 
@@ -491,22 +499,14 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                 <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs down">
                   <ThumbsDown className="w-3.5 h-3.5" />
                 </button>
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <button className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1">
-                      <Info className="w-3.5 h-3.5" />
-                      <span>More about this response</span>
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-xl bg-white p-0 overflow-hidden flex flex-col">
-                    <AuditLogSheet
-                      auditData={auditData}
-                      confidenceThresholdPassed={confidenceThresholdPassed}
-                      references={references}
-                      refId={refId}
-                    />
-                  </SheetContent>
-                </Sheet>
+                <button
+                  onClick={() => onOpenAuditPanel?.({ auditData, confidenceThresholdPassed, references })}
+                  className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1"
+                >
+                  <Info className="w-3.5 h-3.5" />
+                  <span>More about this response</span>
+                  <ChevronRight className="w-3 h-3 opacity-40" />
+                </button>
               </div>
               
               {/* Right side - Sources count, internet assisted indicator, and timestamp */}
