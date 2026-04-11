@@ -537,136 +537,141 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                 </button>
               </div>
               
-              {/* Right side - Sources count, internet assisted indicator, and timestamp */}
-              <div className="flex items-center gap-2 text-[11px] text-gray-500">
-                {internetSearchAssisted && (
-                  <>
-                    <span className="text-gray-500">Internet search assisted</span>
-                    <span>•</span>
-                  </>
-                )}
-                {sources && (sources.connectors?.length > 0 || sources.uploads?.length > 0 || sources.internet?.length > 0) && (() => {
-                  const totalSources = (sources.connectors?.length || 0) + (sources.uploads?.length || 0) + (sources.internet?.length || 0);
-                  return (
-                    <>
-                      <button 
+              {/* Right side - Internet assisted + Sources pill + timestamp */}
+              {(() => {
+                const totalSources =
+                  (references?.length || 0) +
+                  (sources?.connectors?.length || 0) +
+                  (sources?.uploads?.length || 0) +
+                  (sources?.internet?.length || 0);
+                const hasSources = totalSources > 0;
+                return (
+                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                    {internetSearchAssisted && <span>Internet search assisted</span>}
+                    {internetSearchAssisted && <span>·</span>}
+                    {hasSources && (
+                      <button
                         onClick={() => setSourcesExpanded(!sourcesExpanded)}
-                        className="text-gray-500 hover:text-gray-700 transition-colors bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded text-[10px]"
+                        className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2.5 py-0.5 transition-colors"
                       >
-                        {totalSources} {totalSources === 1 ? 'Source' : 'Sources'}
+                        <span className="text-[11px] font-medium text-gray-700">
+                          {totalSources} {totalSources === 1 ? 'Source' : 'Sources'}
+                        </span>
+                        <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-150 ${sourcesExpanded ? 'rotate-180' : ''}`} />
                       </button>
-                      <span>•</span>
-                    </>
-                  );
-                })()}
-                {references && references.length > 0 && (
-                  <>
-                    <span>{references.length} {references.length === 1 ? 'Source' : 'Sources'}</span>
-                    <span>•</span>
-                  </>
-                )}
-                <span>{timestamp}</span>
-              </div>
+                    )}
+                    {hasSources && <span>·</span>}
+                    <span>{timestamp}</span>
+                  </div>
+                );
+              })()}
             </div>
             
-            {/* Sources Dropdown - Appears BELOW the message bubble */}
-            {sources && (sources.connectors?.length > 0 || sources.uploads?.length > 0 || sources.internet?.length > 0) && sourcesExpanded && (() => {
-              let sourceCounter = 0;
-              
+            {/* Sources Dropdown */}
+            <AnimatePresence initial={false}>
+            {sourcesExpanded && (() => {
+              let n = 0;
+              const hasConnectors = (references && references.length > 0) || (sources?.connectors && sources.connectors.length > 0);
+              const hasUploads = sources?.uploads && sources.uploads.length > 0;
+              const hasInternet = sources?.internet && sources.internet.length > 0;
+              if (!hasConnectors && !hasUploads && !hasInternet) return null;
+
               return (
-                <div className="mt-2 border border-gray-200 rounded bg-white">
-                  {/* Connectors */}
-                  {sources.connectors && sources.connectors.length > 0 && (
+                <motion.div key="sources-panel" variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
+                <div className="mt-1 rounded-lg border border-gray-200 bg-white overflow-hidden">
+
+                  {/* Connectors — references shown here */}
+                  {hasConnectors && (
                     <div>
-                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center gap-1.5">
-                          <Database className="w-3 h-3 text-gray-500" />
-                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Connectors</span>
-                        </div>
+                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
+                        <FileText className="w-3 h-3 text-gray-400" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Connectors</span>
                       </div>
-                      {sources.connectors.map((source) => {
-                        sourceCounter++;
-                        const currentNumber = sourceCounter;
+                      {references && references.map((ref) => {
+                        n++;
                         return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
-                              {currentNumber}
-                            </div>
+                          <div key={ref.number} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100 cursor-pointer" onClick={() => onCitationClick?.({ title: ref.title, pageNumber: ref.pageNumber, highlightedText: ref.highlightedText, context: ref.context, description: ref.description })}>
+                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-[11px] text-gray-900">{source.connector}: {source.documentName}</span>
+                                <span className="text-xs font-medium text-gray-800 truncate">{ref.title}</span>
+                              </div>
+                              {ref.description && <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{ref.description}</p>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {sources?.connectors && sources.connectors.map((source) => {
+                        n++;
+                        return (
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
+                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-medium text-gray-800 truncate">{source.connector}: {source.documentName}</span>
                                 <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               </div>
-                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
+                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                  
-                  {/* Your Uploads */}
-                  {sources.uploads && sources.uploads.length > 0 && (
-                    <div>
-                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center gap-1.5">
-                          <Upload className="w-3 h-3 text-gray-500" />
-                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Your Uploads</span>
-                        </div>
+
+                  {/* Uploads */}
+                  {hasUploads && (
+                    <div className={hasConnectors ? 'border-t border-gray-200' : ''}>
+                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
+                        <Upload className="w-3 h-3 text-gray-400" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Your Uploads</span>
                       </div>
-                      {sources.uploads.map((source) => {
-                        sourceCounter++;
-                        const currentNumber = sourceCounter;
+                      {sources!.uploads!.map((source) => {
+                        n++;
                         return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
-                              {currentNumber}
-                            </div>
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
+                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <span className="text-[11px] text-gray-900">{source.documentName}</span>
-                                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              </div>
-                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
+                              <span className="text-xs font-medium text-gray-800 truncate block">{source.documentName}</span>
+                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-                  
+
                   {/* Internet Sources */}
-                  {sources.internet && sources.internet.length > 0 && (
-                    <div>
-                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
-                        <div className="flex items-center gap-1.5">
-                          <Cloud className="w-3 h-3 text-gray-500" />
-                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Internet Sources</span>
-                        </div>
+                  {hasInternet && (
+                    <div className={(hasConnectors || hasUploads) ? 'border-t border-gray-200' : ''}>
+                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
+                        <Cloud className="w-3 h-3 text-gray-400" />
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Internet Sources</span>
                       </div>
-                      {sources.internet.map((source) => {
-                        sourceCounter++;
-                        const currentNumber = sourceCounter;
+                      {sources!.internet!.map((source) => {
+                        n++;
                         return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
-                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
-                              {currentNumber}
-                            </div>
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
+                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-[11px] text-gray-900">{source.documentName}</span>
+                                <span className="text-xs font-medium text-gray-800 truncate">{source.documentName}</span>
                                 <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               </div>
-                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
+                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
+
+                  <div className="h-2" />
                 </div>
+                </motion.div>
               );
             })()}
+            </AnimatePresence>
           </div>
         ) : (
           <>

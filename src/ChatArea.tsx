@@ -222,6 +222,22 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         confidence: 'High' as const,
         confidenceThresholdPassed: true,
         auditData: bsaAuditData,
+        internetSearchAssisted: true,
+        sources: {
+          connectors: [],
+          uploads: [],
+          internet: [
+            {
+              id: 'i1',
+              documentName: 'fincen.gov: Structuring — FinCEN Advisory FIN-2010-A001',
+              pageNumber: undefined,
+              highlightedText: 'Structuring is the act of breaking up financial transactions to avoid the $10,000 CTR reporting requirement. It is illegal regardless of whether the funds involved are from legal or illegal activity.',
+              context: '',
+              category: 'internet' as const,
+              url: 'https://www.fincen.gov',
+            },
+          ],
+        },
         references: [
           {
             number: 1,
