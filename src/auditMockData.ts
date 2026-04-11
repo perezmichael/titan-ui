@@ -4,7 +4,7 @@ export const bsaAuditData: AuditData = {
   assuranceLevel: 'sufficient',
   assuranceDesc:
     'Titan reviewed 90 days of transaction data, institution BSA policy, and FinCEN structuring rules. A clear pattern was identified with high confidence. SAR filing obligation confirmed against 31 CFR 1020.320.',
-  model: 'titan-banking-v2.1',
+  model: 'Titan Banking SLM',
   executionPlan: `TASK: BSA/AML exposure check — Meridian Logistics LLC (credit line renewal)
 APPROACH:
   1. Retrieve institution BSA/AML policy + FinCEN regulatory corpus
@@ -32,7 +32,7 @@ APPROACH:
           tool: 'planner',
           description: 'Classify request → pre-approval BSA/AML check → emit 4-step retrieval plan',
           durationMs: 290,
-          model: 'titan-banking-v2.1',
+          model: 'Titan Banking SLM',
           output:
             'Request classified as pre-approval BSA/AML exposure check for Meridian Logistics LLC. Plan: retrieve policy corpus + transaction history in parallel, run structuring rules + ownership lookup in parallel, then synthesize.',
           rawOutput: JSON.stringify(
@@ -184,7 +184,7 @@ APPROACH:
           description: 'Aggregate risk signals → final risk rating + SAR recommendation + cited response',
           durationMs: 1410,
           dependsOn: [4, 5],
-          model: 'titan-banking-v2.1',
+          model: 'Titan Banking SLM',
           output:
             'Risk rating: HIGH. Structuring pattern confirmed (9 deposits, $8,500–$9,800, 23-day window). SAR filing required within 30 days per 31 CFR 1020.320. Credit line approval should be paused pending compliance review. No prior SAR history or watchlist match — first detection for this entity.',
           sources: [
