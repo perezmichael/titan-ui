@@ -440,7 +440,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
       <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
-          <div className="border-b border-gray-200 bg-white px-4 py-3">
+          <div className="border-b border-gray-200 bg-white px-4 py-3 mr-[-12px]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h1 className="text-sm text-gray-900">
@@ -735,8 +735,6 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group bg-white"
             onMouseDown={handleAuditDividerMouseDown}
           >
-            {/* Bridge the chat header border-b across the drag handle gap */}
-            <div className="absolute top-0 left-0 right-0 h-[57px] border-b border-gray-200 pointer-events-none" />
             <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
             <div className="relative z-10 w-[5px] h-8 rounded-full bg-gray-300 group-hover:bg-blue-200 transition-colors" />
           </div>
