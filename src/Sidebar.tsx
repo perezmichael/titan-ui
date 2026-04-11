@@ -36,8 +36,8 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
         {
           id: '3',
           title: 'Audit Log Example',
-          preview: 'Before I approve the VFN Holdings credit memo, I need to confirm BSA/AML coverage.',
-          timestamp: '10:08 AM'
+          preview: 'Before I approve the Meridian Logistics credit line renewal, can you flag any BSA/AML exposure?',
+          timestamp: '2:14 PM'
         }
       ]
     }

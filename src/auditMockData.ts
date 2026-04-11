@@ -3,43 +3,45 @@ import type { AuditData } from './ChatMessage';
 export const bsaAuditData: AuditData = {
   assuranceLevel: 'sufficient',
   assuranceDesc:
-    'Titan has sufficient confidence to provide a direct answer. The response is grounded in your institution\'s BSA/AML policy documents, FinCEN guidance, and transaction data reviewed against established red-flag indicators.',
+    'Titan reviewed 90 days of transaction data, institution BSA policy, and FinCEN structuring rules. A clear pattern was identified with high confidence. SAR filing obligation confirmed against 31 CFR 1020.320.',
   model: 'titan-banking-v2.1',
-  executionPlan: `TASK: Evaluate BSA/AML exposure for commercial account #847291
+  executionPlan: `TASK: BSA/AML exposure check — Meridian Logistics LLC (credit line renewal)
 APPROACH:
-  1. Retrieve institution BSA policy + FinCEN regulatory corpus
-  2. Retrieve 90-day transaction history for account #847291
-  3. Screen transactions against AML red-flag patterns in parallel
-  4. Cross-reference beneficial ownership records
-  5. Synthesize risk rating with supporting citations`,
+  1. Retrieve institution BSA/AML policy + FinCEN regulatory corpus
+  2. Pull 90-day transaction history for account #847291
+  3. Screen transactions against structuring rules [parallel with step 2]
+  4. Look up beneficial ownership for Meridian Logistics LLC [parallel]
+  5. Synthesize risk rating, determine SAR obligation, compose response`,
   sources: [
     { num: 1, name: 'BSA/AML Compliance Policy v4.2 (Internal)' },
     { num: 2, name: 'FinCEN SAR Filing Requirements — 31 CFR 1020.320' },
     { num: 3, name: 'Account #847291 — 90-Day Transaction Ledger' },
-    { num: 4, name: 'Beneficial Ownership Registry — Entity: Meridian Logistics LLC' },
+    { num: 4, name: 'Beneficial Ownership Registry — Meridian Logistics LLC' },
     { num: 5, name: 'FFIEC BSA/AML Examination Manual (2023 Update)' },
   ],
   phases: [
     {
       name: 'Planning',
       description:
-        'Titan decomposed the request, identified required data sources, and generated a structured retrieval and analysis plan.',
+        'Titan parsed the request, identified it as a pre-approval BSA/AML exposure check, and generated a retrieval and analysis plan targeting transaction data and regulatory policy.',
       parallel: false,
-      durationMs: 312,
+      durationMs: 290,
       steps: [
         {
           num: 1,
           tool: 'planner',
-          description: 'Parse intent → classify as BSA/AML risk evaluation → emit retrieval plan',
-          durationMs: 312,
+          description: 'Classify request → pre-approval BSA/AML check → emit 4-step retrieval plan',
+          durationMs: 290,
           model: 'titan-banking-v2.1',
           output:
-            'Intent: Evaluate BSA/AML risk for commercial account. Classification: Regulatory compliance query. Plan: 5-step retrieval and analysis pipeline emitted.',
+            'Request classified as pre-approval BSA/AML exposure check for Meridian Logistics LLC. Plan: retrieve policy corpus + transaction history in parallel, run structuring rules + ownership lookup in parallel, then synthesize.',
           rawOutput: JSON.stringify(
             {
-              intent: 'bsa_aml_risk_evaluation',
+              intent: 'bsa_aml_exposure_check',
+              context: 'credit_line_renewal',
+              entity: 'Meridian Logistics LLC',
               account: '847291',
-              steps: ['policy_retrieval', 'transaction_retrieval', 'pattern_screening', 'ownership_lookup', 'synthesis'],
+              pipeline: ['policy_retrieval', 'transaction_retrieval', 'pattern_screening', 'ownership_lookup', 'synthesis'],
             },
             null,
             2
@@ -48,33 +50,34 @@ APPROACH:
       ],
     },
     {
-      name: 'Knowledge Retrieval',
+      name: 'Knowledge & Data Retrieval',
       description:
-        'Parallel retrieval of institution BSA policy, FinCEN regulations, and FFIEC examination manual from the knowledge base.',
+        'Parallel retrieval of BSA/AML policy documents from the knowledge base and 90-day transaction history from the core system.',
       parallel: true,
-      durationMs: 1840,
+      durationMs: 1760,
       steps: [
         {
           num: 2,
-          tool: 'vector_search',
-          description: 'Semantic search — BSA/AML policy corpus for structuring/smurfing red flags',
-          durationMs: 920,
+          tool: 'knowledge_search',
+          description: 'Semantic search — BSA/AML policy corpus for structuring thresholds and SAR filing obligations',
+          durationMs: 870,
           docCount: 3,
           chunkCount: 14,
           output:
-            'Retrieved 14 chunks across 3 documents covering: cash structuring thresholds, smurfing indicators, and SAR filing obligations.',
+            'Retrieved 14 relevant chunks across 3 documents: cash structuring thresholds ($10K CTR trigger), sub-threshold pattern indicators, and SAR filing timeline requirements (30 days from detection).',
           sources: [
             { name: 'BSA/AML Compliance Policy v4.2', relevance: 94 },
-            { name: 'FinCEN SAR Filing Requirements', relevance: 88 },
+            { name: 'FinCEN SAR Filing Requirements', relevance: 91 },
             { name: 'FFIEC BSA/AML Examination Manual', relevance: 76 },
           ],
           rawOutput: JSON.stringify(
             {
-              query: 'cash structuring smurfing red flag indicators',
+              query: 'cash structuring sub-threshold patterns SAR filing requirements',
               top_k: 14,
               results: [
                 { doc: 'BSA/AML Compliance Policy v4.2', chunk: 7, score: 0.94 },
-                { doc: 'FinCEN SAR Filing Requirements', chunk: 3, score: 0.88 },
+                { doc: 'FinCEN SAR Filing Requirements', chunk: 3, score: 0.91 },
+                { doc: 'FFIEC BSA/AML Examination Manual', chunk: 11, score: 0.76 },
               ],
             },
             null,
@@ -83,19 +86,24 @@ APPROACH:
         },
         {
           num: 3,
-          tool: 'sql_query',
-          description: 'Pull 90-day transaction history for account #847291 with amounts, counterparties, and timestamps',
-          durationMs: 1840,
+          tool: 'transaction_lookup',
+          description: 'Retrieve 90-day transaction history for account #847291 — amounts, counterparties, timestamps',
+          durationMs: 1760,
           output:
-            '47 transactions retrieved. Notable: 9 cash deposits ranging $8,500–$9,800 over 23 days. Multiple same-day splits detected.',
+            '47 transactions retrieved. 9 cash deposits identified ranging $8,500–$9,800 across a 23-day window. Multiple same-day split deposits detected. No CTR filings on record for this account.',
           sources: [
-            { name: 'Account #847291 — Transaction Ledger', relevance: 100 },
+            { name: 'Account #847291 — 90-Day Transaction Ledger', relevance: 100 },
           ],
           rawOutput: JSON.stringify(
             {
-              query: 'SELECT * FROM transactions WHERE account_id = 847291 AND date >= NOW() - INTERVAL 90 DAY',
-              rows_returned: 47,
-              flagged_patterns: ['repeated_sub_10k_cash', 'same_day_split'],
+              account_id: '847291',
+              period_days: 90,
+              total_transactions: 47,
+              cash_deposits: 9,
+              deposit_range: '$8,500–$9,800',
+              window_days: 23,
+              same_day_splits: true,
+              ctr_filings: 0,
             },
             null,
             2
@@ -106,18 +114,18 @@ APPROACH:
     {
       name: 'Pattern Screening & Ownership',
       description:
-        'Parallel screening of transactions against AML red-flag rules and lookup of beneficial ownership for linked entity.',
+        'Parallel: structuring rules engine applied to flagged transactions, and beneficial ownership lookup for Meridian Logistics LLC.',
       parallel: true,
-      durationMs: 2100,
+      durationMs: 1980,
       steps: [
         {
           num: 4,
           tool: 'rules_engine',
-          description: 'Apply FinCEN structuring rules — flag transactions < $10K with frequency pattern',
-          durationMs: 680,
+          description: 'Apply FinCEN structuring rules — score frequency, amount range, and split pattern against 31 CFR 1020.320',
+          durationMs: 640,
           dependsOn: [3],
           output:
-            'ALERT: 9 cash deposits between $8,500–$9,800 over 23 days match structuring pattern per 31 CFR 1020.320. Structuring risk: HIGH.',
+            '9 deposits ($8,500–$9,800) over 23 days exceed the frequency threshold for structuring under 31 CFR 1020.320. Pattern confidence: HIGH. Same-day splits reinforce intentionality. Structuring rule STRUCTURING_PATTERN_v3 triggered.',
           sources: [
             { name: 'FinCEN SAR Filing Requirements', relevance: 96 },
             { name: 'BSA/AML Compliance Policy v4.2', relevance: 91 },
@@ -127,9 +135,11 @@ APPROACH:
               rule: 'STRUCTURING_PATTERN_v3',
               triggered: true,
               deposits_flagged: 9,
-              range: '$8,500–$9,800',
+              amount_range: '$8,500–$9,800',
               window_days: 23,
-              risk_level: 'HIGH',
+              same_day_splits: true,
+              pattern_confidence: 'HIGH',
+              regulation: '31 CFR 1020.320',
             },
             null,
             2
@@ -138,20 +148,22 @@ APPROACH:
         {
           num: 5,
           tool: 'entity_lookup',
-          description: 'Retrieve beneficial ownership for Meridian Logistics LLC linked to account #847291',
-          durationMs: 2100,
+          description: 'Retrieve beneficial ownership record for Meridian Logistics LLC from the CIP/ownership registry',
+          durationMs: 1980,
           output:
-            'Meridian Logistics LLC — sole beneficial owner: James R. Collier (SSN on file). No prior SAR history. Incorporation: Delaware, 2021.',
+            'Meridian Logistics LLC — Delaware incorporation, March 2021. Sole beneficial owner: James R. Collier (DOB and SSN on file, CIP complete). No prior SAR history. No watchlist matches.',
           sources: [
             { name: 'Beneficial Ownership Registry — Meridian Logistics LLC', relevance: 100 },
           ],
           rawOutput: JSON.stringify(
             {
               entity: 'Meridian Logistics LLC',
-              beneficial_owner: 'James R. Collier',
-              prior_sars: 0,
               state: 'DE',
               incorporated: '2021-03-14',
+              beneficial_owner: 'James R. Collier',
+              cip_status: 'complete',
+              prior_sars: 0,
+              watchlist_match: false,
             },
             null,
             2
@@ -162,22 +174,22 @@ APPROACH:
     {
       name: 'Synthesis',
       description:
-        'Titan synthesized all retrieved evidence into a risk rating, identified SAR filing obligation, and composed the final response with citations.',
+        'Aggregated all signals into a final risk rating, determined SAR filing obligation, and composed a response with inline citations.',
       parallel: false,
-      durationMs: 1450,
+      durationMs: 1410,
       steps: [
         {
           num: 6,
           tool: 'synthesizer',
-          description: 'Aggregate risk signals → produce final risk rating, SAR recommendation, and cited response',
-          durationMs: 1450,
+          description: 'Aggregate risk signals → final risk rating + SAR recommendation + cited response',
+          durationMs: 1410,
           dependsOn: [4, 5],
           model: 'titan-banking-v2.1',
           output:
-            'Risk rating: HIGH. Structuring pattern confirmed against FinCEN threshold. SAR filing recommended within 30 days per 31 CFR 1020.320. No prior SAR history for entity owner.',
+            'Risk rating: HIGH. Structuring pattern confirmed (9 deposits, $8,500–$9,800, 23-day window). SAR filing required within 30 days per 31 CFR 1020.320. Credit line approval should be paused pending compliance review. No prior SAR history or watchlist match — first detection for this entity.',
           sources: [
-            { name: 'BSA/AML Compliance Policy v4.2', relevance: 94 },
             { name: 'FinCEN SAR Filing Requirements', relevance: 96 },
+            { name: 'BSA/AML Compliance Policy v4.2', relevance: 94 },
             { name: 'FFIEC BSA/AML Examination Manual', relevance: 78 },
           ],
           rawOutput: JSON.stringify(
@@ -186,8 +198,9 @@ APPROACH:
               sar_required: true,
               sar_deadline_days: 30,
               primary_indicator: 'cash_structuring',
+              approval_recommendation: 'pause_pending_compliance_review',
               citations: [2, 1, 5],
-              confidence_score: 0.93,
+              confidence_score: 0.94,
             },
             null,
             2

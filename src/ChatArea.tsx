@@ -207,86 +207,35 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   // Conversation 3: AI Assistant Core Capabilities
   const conversation3 = {
     title: 'Audit Log Example',
-    timestamp: 'Oct 24, 10:08 AM',
+    timestamp: 'Apr 10, 2:14 PM',
     messages: [
       {
         type: 'user' as const,
-        content: 'what is our credit policy',
-        timestamp: 'Oct 24, 10:12 AM'
+        content: 'Before I approve the Meridian Logistics credit line renewal, can you flag any BSA/AML exposure on the account?',
+        timestamp: 'Apr 10, 2:14 PM',
       },
       {
         type: 'assistant' as const,
-        content: 'That is a very general question. Can you please be more specific? For example, are you asking about consumer credit policies, commercial lending policies, credit risk assessment, or credit approval procedures?',
-        timestamp: 'Oct 24, 10:12 AM',
-        hasReactions: true,
-        confidence: 'Low' as const,
-        confidenceThresholdPassed: false,
-        chainOfThought: [
-          { step: 'Parsed user query: "what is our credit policy" - identified as broad, non-specific request requiring clarification', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 11 },
-          { step: 'Initiated semantic search across policy knowledge base using keywords: "credit policy", "credit", "lending policy"', confidencePassed: true, category: 'Search', confidenceScore: 95, timeMs: 156 },
-          { step: 'Retrieved 4 potentially relevant documents: "Consumer Credit Policy.docx", "Commercial Lending Standards.pdf", "Credit Risk Assessment Guidelines.docx", "Credit Approval Procedures.pdf" - unable to determine which document matches user intent due to query ambiguity', confidencePassed: false, category: 'Search', confidenceScore: 58, timeMs: 198 },
-          { step: 'Determined that providing specific answer without clarification would risk delivering incorrect or incomplete information', confidencePassed: true, category: 'Quality Check', confidenceScore: 96, timeMs: 34 },
-          { step: 'Generated clarifying response requesting user to specify which aspect of credit policy they need information about', confidencePassed: true, category: 'Synthesis', confidenceScore: 98, timeMs: 67 }
-        ]
-      },
-      {
-        type: 'user' as const,
-        content: 'what is our exact policy about using the office on the weekends',
-        timestamp: 'Oct 24, 10:16 AM'
-      },
-      {
-        type: 'assistant' as const,
-        content: 'I have checked the available policies and I don\'t have information about office usage on weekends. This specific policy may not be in my current knowledge base.',
-        timestamp: 'Oct 24, 10:16 AM',
+        content: 'There is a structuring risk flag on Meridian Logistics that needs to be resolved before you approve.\n\n**What Titan found:**\nAccount #847291 shows 9 cash deposits ranging $8,500–$9,800 over a 23-day window. This is a textbook structuring pattern — deposits are consistently kept just below the $10,000 CTR filing threshold. Multiple same-day split deposits were also detected, which reinforces the pattern.\n\n**Risk Rating: HIGH**\nThis meets the criteria for a Suspicious Activity Report under 31 CFR 1020.320 (FinCEN SAR filing requirements). A SAR must be filed within 30 days of detection.\n\n**Recommendation:**\nDo not approve the credit line renewal until BSA/AML review is complete and compliance sign-off is obtained.\n\n**Entity context:**\nMeridian Logistics LLC (Delaware, incorporated March 2021). Sole beneficial owner: James R. Collier — CIP complete, no prior SAR history, no watchlist matches. This would be the first filing for this entity.',
+        timestamp: 'Apr 10, 2:16 PM',
         hasReactions: true,
         confidence: 'High' as const,
-        confidenceThresholdPassed: false,
-        chainOfThought: [
-          { step: 'User asked about office weekend policy', confidencePassed: true, category: 'Analysis', confidenceScore: 99, timeMs: 8 },
-          { step: 'Searched knowledge base for weekend office usage policies', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 187 },
-          { step: 'No relevant policy documents found matching this query', confidencePassed: true, category: 'Search', confidenceScore: 94, timeMs: 223 },
-          { step: 'Confirmed absence of information rather than providing uncertain answer', confidencePassed: true, category: 'Quality Check', confidenceScore: 97, timeMs: 15 }
-        ]
-      },
-      {
-        type: 'user' as const,
-        content: 'what is the bank secrecy act',
-        timestamp: 'Oct 24, 10:20 AM'
-      },
-      {
-        type: 'assistant' as const,
-        content: 'The Bank Secrecy Act (BSA) is a U.S. federal law enacted in 1970 that requires financial institutions to assist government agencies in detecting and preventing money laundering and other financial crimes. The BSA mandates that banks and other financial institutions maintain certain records and file specific reports, such as Currency Transaction Reports (CTRs) for transactions over $10,000 and Suspicious Activity Reports (SARs) when they detect potential criminal activity. Financial institutions must also implement Anti-Money Laundering (AML) programs to ensure compliance with BSA requirements and prevent their services from being used to facilitate illegal activities such as terrorism financing or the transfer of criminally derived funds.\n\nReferences:',
-        timestamp: 'Oct 24, 10:23 AM',
-        hasReactions: true,
-        confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
         auditData: bsaAuditData,
-        chainOfThought: [
-          { step: 'Parsed user query: "what is the bank secrecy act" - identified as a request for regulatory definition', confidencePassed: true, category: 'Analysis', confidenceScore: 98, timeMs: 12 },
-          { step: 'Initiated semantic search across compliance policy knowledge base using keywords: "Bank Secrecy Act", "BSA", "regulatory compliance"', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 145 },
-          { step: 'Retrieved 3 relevant documents: "BANK SECRECY ACT AND ANTI-MONEY LAUNDERING COMPLIANCE POLICY.docx" (relevance: 0.94), "AML Program Overview.pdf" (relevance: 0.87), "Financial Crimes Enforcement.docx" (relevance: 0.82)', confidencePassed: true, category: 'Search', confidenceScore: 94, timeMs: 234 },
-          { step: 'Extracted key information from primary document: Enactment year (1970), core purpose (prevent money laundering), regulatory authority (FinCEN)', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 89 },
-          { step: 'Identified Currency Transaction Report (CTR) requirements: mandatory filing for cash transactions exceeding $10,000', confidencePassed: true, category: 'Analysis', confidenceScore: 96, timeMs: 67 },
-          { step: 'Identified Suspicious Activity Report (SAR) requirements: mandatory reporting of transactions indicating potential criminal activity, money laundering, or fraud', confidencePassed: true, category: 'Analysis', confidenceScore: 95, timeMs: 72 },
-          { step: 'Validated AML program requirements: financial institutions must establish and maintain written policies, designate compliance officers, conduct employee training, and perform independent audits', confidencePassed: true, category: 'Validation', confidenceScore: 93, timeMs: 103 },
-          { step: 'Cross-referenced information across all three documents to verify consistency and accuracy of key facts', confidencePassed: true, category: 'Validation', confidenceScore: 97, timeMs: 178 },
-          { step: 'Verified historical accuracy: Confirmed 1970 as enactment year through multiple source documents', confidencePassed: true, category: 'Validation', confidenceScore: 99, timeMs: 56 },
-          { step: 'Assessed scope applicability: Confirmed BSA applies to banks, credit unions, broker-dealers, money services businesses, and other financial institutions', confidencePassed: true, category: 'Validation', confidenceScore: 94, timeMs: 81 },
-          { step: 'Validated regulatory context: Confirmed FinCEN (Financial Crimes Enforcement Network) as primary enforcement agency', confidencePassed: true, category: 'Validation', confidenceScore: 98, timeMs: 64 },
-          { step: 'Synthesized comprehensive definition covering: legislative purpose, key reporting requirements (CTR/SAR), AML program mandates, and enforcement mechanisms', confidencePassed: true, category: 'Synthesis', confidenceScore: 96, timeMs: 112 },
-          { step: 'Quality check: Ensured response includes practical examples (transaction thresholds) and avoids technical jargon where possible', confidencePassed: true, category: 'Quality Check', confidenceScore: 95, timeMs: 43 },
-          { step: 'Prepared source citations: Selected 2 most relevant document excerpts to support response and enable user verification', confidencePassed: true, category: 'Quality Check', confidenceScore: 97, timeMs: 38 },
-          { step: 'Final validation: Confirmed all statements are factually supported by source documents and meet answer strength requirements', confidencePassed: true, category: 'Quality Check', confidenceScore: 98, timeMs: 29 }
-        ],
         references: [
           {
             number: 1,
-            title: 'BANK SECRECY ACT AND ANTI-MONEY LAUNDERING COMPLIANCE POLICY.docx',
-            description: 'Outlines expected the Bank Secrecy Act requirements to prevent financial institutions from being used as intermediaries for the transfer or deposit of money derived from criminal activity.'
-          }
-        ]
-      }
-    ]
+            title: 'FinCEN SAR Filing Requirements — 31 CFR 1020.320',
+            description: 'Federal regulation defining suspicious activity reporting obligations, including structuring patterns and the 30-day filing deadline.',
+          },
+          {
+            number: 2,
+            title: 'BSA/AML Compliance Policy v4.2 (Internal)',
+            description: 'Institution policy covering transaction monitoring thresholds, red-flag indicators, and escalation procedures.',
+          },
+        ],
+      },
+    ],
   };
 
   // Conversation 1: BSA AML Procedure Review
