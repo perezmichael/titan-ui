@@ -440,7 +440,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
       <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
-          <div className="border-b border-gray-200 bg-white px-4 py-3 mr-[-12px]">
+          <div className="border-b border-gray-200 bg-white px-4 py-3" style={{ width: 'calc(100% + 0.75rem)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h1 className="text-sm text-gray-900">
