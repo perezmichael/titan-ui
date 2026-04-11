@@ -529,11 +529,11 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
                 </button>
                 <button
                   onClick={() => onOpenAuditPanel?.({ auditData, confidenceThresholdPassed, references })}
-                  className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1"
+                  className="flex items-center gap-1.5 ml-1 pl-2.5 pr-2 py-1 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-all"
                 >
-                  <Info className="w-3.5 h-3.5" />
+                  <Info className="w-3.5 h-3.5 flex-shrink-0" />
                   <span>Audit Log</span>
-                  <ChevronRight className="w-3 h-3 opacity-40" />
+                  <ChevronRight className="w-3 h-3 opacity-50" />
                 </button>
               </div>
               
