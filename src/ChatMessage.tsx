@@ -517,24 +517,44 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
             {/* Message Footer - Actions and Metadata */}
             <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
               {/* Left side - Actions */}
-              <div className="flex items-center gap-2">
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Copy">
-                  <Copy className="w-3.5 h-3.5" />
-                </button>
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs up">
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                </button>
-                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs down">
-                  <ThumbsDown className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onOpenAuditPanel?.({ auditData, confidenceThresholdPassed, references })}
-                  className="flex items-center gap-1.5 ml-1 pl-2.5 pr-2 py-1 rounded-full border border-gray-200 bg-white hover:bg-gray-50 hover:border-gray-300 shadow-sm text-[11px] font-medium text-gray-600 hover:text-gray-800 transition-all"
-                >
-                  <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Audit Log</span>
-                  <ChevronRight className="w-3 h-3 opacity-50" />
-                </button>
+              <div className="flex items-center gap-0.5">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Copy response</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Give positive feedback</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
+                      <ThumbsDown className="w-3.5 h-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>Give negative feedback</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => onOpenAuditPanel?.({ auditData, confidenceThresholdPassed, references })}
+                      className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors ml-0.5"
+                    >
+                      <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                      <span>Audit Log</span>
+                      <ChevronRight className="w-3 h-3 opacity-40" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>View audit log for this response</TooltipContent>
+                </Tooltip>
               </div>
               
               {/* Right side - Internet assisted + Sources pill + timestamp */}
