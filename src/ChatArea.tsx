@@ -732,7 +732,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         <div className="flex h-full w-full">
           {/* Drag handle */}
           <div
-            className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group"
+            className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group bg-white"
             onMouseDown={handleAuditDividerMouseDown}
           >
             <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
