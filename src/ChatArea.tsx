@@ -437,7 +437,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   return (
     <div className="flex-1 flex h-screen bg-[#f5f5f3]">
       {/* Chat Section */}
-      <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
+      <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 relative z-[1] ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
           <div className="border-b border-gray-200 bg-white px-4 py-3 relative">
