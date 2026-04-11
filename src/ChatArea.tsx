@@ -735,11 +735,13 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group bg-white"
             onMouseDown={handleAuditDividerMouseDown}
           >
+            {/* Bridge the chat header border-b across the drag handle gap */}
+            <div className="absolute top-0 left-0 right-0 h-[57px] border-b border-gray-200 pointer-events-none" />
             <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
             <div className="relative z-10 w-[5px] h-8 rounded-full bg-gray-300 group-hover:bg-blue-200 transition-colors" />
           </div>
           {/* Panel content */}
-          <div className="flex-1 overflow-hidden bg-white border-l border-gray-200 flex flex-col">
+          <div className="flex-1 overflow-hidden bg-white flex flex-col">
             {auditPanel && (
               <AuditLogSheet
                 auditData={auditPanel.auditData}
