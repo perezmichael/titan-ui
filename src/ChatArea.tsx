@@ -440,7 +440,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
       <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
-          <div className="border-b border-gray-200 bg-white px-4 py-3" style={{ width: 'calc(100% + 0.75rem)' }}>
+          <div className="border-b border-gray-200 bg-white px-4 py-3 relative">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h1 className="text-sm text-gray-900">
@@ -454,6 +454,8 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             <div className="text-[10px] text-gray-500 mt-0.5">
               {isUploadProcessing ? 'Jan 14, 10:24 AM' : isNewConversationWithDoc ? 'Just now' : activeConversation.timestamp}
             </div>
+            {/* Extend border-b across the 12px drag handle gap */}
+            <div className="absolute inset-y-0 right-0 w-3 translate-x-full bg-white border-b border-gray-200 pointer-events-none" />
           </div>
         )}
 
