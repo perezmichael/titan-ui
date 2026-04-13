@@ -467,9 +467,6 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     }
   };
 
-  const selectedBorrowers = filteredBorrowers.filter(b => selectedIds.has(b.id));
-  const canOpenTabs = selectedIds.size >= 1 && selectedIds.size <= 5;
-
   const suggestedQueries = [
     'Which loans have maturities in the next 90 days?',
     'Show me all borrowers with risk rating 4 or 5',
@@ -604,12 +601,15 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
   const queryResult = lastMessage?.type === 'assistant' ? lastMessage.queryResult : null;
   
-  const filteredBorrowers = queryResult?.borrowers || mockBorrowers.filter(borrower => 
-    !searchQuery || 
+  const filteredBorrowers = queryResult?.borrowers || mockBorrowers.filter(borrower =>
+    !searchQuery ||
     borrower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.noteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.cipCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const selectedBorrowers = filteredBorrowers.filter(b => selectedIds.has(b.id));
+  const canOpenTabs = selectedIds.size >= 1 && selectedIds.size <= 5;
 
   const getRiskRatingBadgeClass = (rating: number) => {
     switch (rating) {
