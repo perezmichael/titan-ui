@@ -9,6 +9,8 @@ interface BorrowerPortfolioListProps {
   onBack: () => void;
   onWorkflowOpen?: (workflowId: string, workflowName: string) => void;
   onSettingsOpen?: () => void;
+  onOpenInTabs?: (borrowers: SelectedBorrower[]) => void;
+  onChatWithRecords?: (borrowers: SelectedBorrower[]) => void;
 }
 
 interface ChatMessage {
@@ -279,17 +281,153 @@ const mockBorrowers: Borrower[] = [
       }
     ],
     dateAdded: '2024-03-15'
+  },
+  {
+    id: '6',
+    name: 'Summit Industrial REIT',
+    cipCode: 'SUMIND',
+    relationshipId: '33-741258',
+    noteNumber: '20240091-001',
+    assetClass: 'Industrial',
+    totalCreditExposure: 14200000,
+    commitment: 15000000,
+    totalDepositBalance: 1800000,
+    loanOfficer: 'Michael Torres',
+    underwriter: 'Lisa Zhang',
+    maturityDate: '2029-01-31',
+    riskRating: 2,
+    riskRatingLabel: 'Strong',
+    status: 'Active',
+    facilities: [{ id: '8', noteNumber: '20240091-001', loanType: 'Term Loan', balance: 14200000, commitment: 15000000, interestRate: 'Term SOFR + 3.25%', maturityDate: '2029-01-31', assetClass: 'Industrial', status: 'Active' }],
+    dateAdded: '2024-04-01'
+  },
+  {
+    id: '7',
+    name: 'Lakeshore Hotel Group',
+    cipCode: 'LAKHTL',
+    relationshipId: '44-963852',
+    noteNumber: '20230088-001',
+    assetClass: 'Hospitality',
+    totalCreditExposure: 7100000,
+    commitment: 7500000,
+    totalDepositBalance: 420000,
+    loanOfficer: 'Jennifer Wu',
+    underwriter: 'David Kim',
+    maturityDate: '2026-06-30',
+    riskRating: 4,
+    riskRatingLabel: 'Satisfactory',
+    status: 'Renewal',
+    facilities: [{ id: '9', noteNumber: '20230088-001', loanType: 'Term Loan', balance: 7100000, commitment: 7500000, interestRate: '7.10% Fixed', maturityDate: '2026-06-30', assetClass: 'Hospitality', status: 'Renewal' }],
+    dateAdded: '2023-08-14'
+  },
+  {
+    id: '8',
+    name: 'Blue Ridge Multifamily Fund',
+    cipCode: 'BLRDGE',
+    relationshipId: '55-147369',
+    noteNumber: '20240102-001',
+    assetClass: 'Multifamily',
+    totalCreditExposure: 18500000,
+    commitment: 20000000,
+    totalDepositBalance: 3200000,
+    loanOfficer: 'Sarah Chen',
+    underwriter: 'Michael Park',
+    maturityDate: '2030-03-15',
+    riskRating: 2,
+    riskRatingLabel: 'Strong',
+    status: 'Active',
+    facilities: [{ id: '10', noteNumber: '20240102-001', loanType: 'Construction Loan', balance: 18500000, commitment: 20000000, interestRate: 'Term SOFR + 3.75%', maturityDate: '2030-03-15', assetClass: 'Multifamily', status: 'Active' }],
+    dateAdded: '2024-05-10'
+  },
+  {
+    id: '9',
+    name: 'Frontier Energy Solutions LLC',
+    cipCode: 'FRONTR',
+    relationshipId: '66-258147',
+    noteNumber: '20230071-001',
+    assetClass: 'Energy',
+    totalCreditExposure: 4900000,
+    commitment: 5000000,
+    totalDepositBalance: 310000,
+    loanOfficer: 'David Park',
+    underwriter: 'Rachel Martinez',
+    maturityDate: '2026-09-30',
+    riskRating: 5,
+    riskRatingLabel: 'Watch',
+    status: 'Renewal',
+    facilities: [{ id: '11', noteNumber: '20230071-001', loanType: 'Senior Loan', balance: 4900000, commitment: 5000000, interestRate: '8.50% Fixed', maturityDate: '2026-09-30', assetClass: 'Energy', status: 'Renewal' }],
+    dateAdded: '2023-06-22'
+  },
+  {
+    id: '10',
+    name: 'Nexus Technology Campus Inc',
+    cipCode: 'NEXUSC',
+    relationshipId: '77-369258',
+    noteNumber: '20240115-001',
+    assetClass: 'Data Center',
+    totalCreditExposure: 22000000,
+    commitment: 25000000,
+    totalDepositBalance: 4500000,
+    loanOfficer: 'Jennifer Wu',
+    underwriter: 'James Thompson',
+    maturityDate: '2031-06-01',
+    riskRating: 2,
+    riskRatingLabel: 'Strong',
+    status: 'Active',
+    facilities: [{ id: '12', noteNumber: '20240115-001', loanType: 'Term Loan', balance: 22000000, commitment: 25000000, interestRate: 'Term SOFR + 3.00%', maturityDate: '2031-06-01', assetClass: 'Data Center', status: 'Active' }],
+    dateAdded: '2024-06-15'
+  },
+  {
+    id: '11',
+    name: 'Cascade Valley Medical Partners',
+    cipCode: 'CASCVL',
+    relationshipId: '88-741963',
+    noteNumber: '20240031-001',
+    assetClass: 'CRE — Healthcare',
+    totalCreditExposure: 3800000,
+    commitment: 4000000,
+    totalDepositBalance: 750000,
+    loanOfficer: 'Michael Torres',
+    underwriter: 'Lisa Zhang',
+    maturityDate: '2028-12-31',
+    riskRating: 3,
+    riskRatingLabel: 'Strong Satisfactory',
+    status: 'Active',
+    facilities: [{ id: '13', noteNumber: '20240031-001', loanType: 'Term Loan', balance: 3800000, commitment: 4000000, interestRate: 'Term SOFR + 2.90%', maturityDate: '2028-12-31', assetClass: 'CRE — Healthcare', status: 'Active' }],
+    dateAdded: '2024-02-05'
+  },
+  {
+    id: '12',
+    name: 'Pinnacle Logistics Partners',
+    cipCode: 'PINNLG',
+    relationshipId: '99-852741',
+    noteNumber: '20230099-001',
+    assetClass: 'Industrial',
+    totalCreditExposure: 6300000,
+    commitment: 6500000,
+    totalDepositBalance: 920000,
+    loanOfficer: 'Sarah Chen',
+    underwriter: 'David Kim',
+    maturityDate: '2027-07-31',
+    riskRating: 3,
+    riskRatingLabel: 'Strong Satisfactory',
+    status: 'Active',
+    facilities: [{ id: '14', noteNumber: '20230099-001', loanType: 'Term Loan', balance: 6300000, commitment: 6500000, interestRate: '6.00% Fixed', maturityDate: '2027-07-31', assetClass: 'Industrial', status: 'Active' }],
+    dateAdded: '2023-12-01'
   }
 ];
 
-export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen }: BorrowerPortfolioListProps) {
+export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onOpenInTabs, onChatWithRecords }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
-  
+
+  // Multi-select state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // Query state
   const [queryInput, setQueryInput] = useState('');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  
+
   // Tab state
   const [activeTab, setActiveTab] = useState<'records' | 'workflows'>('records');
 
@@ -306,6 +444,31 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
 
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
+
+  const toSelectedBorrower = (b: Borrower): import('../CommercialLendingWorkspace').SelectedBorrower => ({
+    id: b.id, name: b.name, cipCode: b.cipCode, relationshipId: b.relationshipId,
+    noteNumber: b.noteNumber, riskRating: b.riskRating, riskRatingLabel: b.riskRatingLabel,
+    loanOfficer: b.loanOfficer, underwriter: b.underwriter, facilities: b.facilities,
+  });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredBorrowers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredBorrowers.map(b => b.id)));
+    }
+  };
+
+  const selectedBorrowers = filteredBorrowers.filter(b => selectedIds.has(b.id));
+  const canOpenTabs = selectedIds.size >= 1 && selectedIds.size <= 5;
 
   const suggestedQueries = [
     'Which loans have maturities in the next 90 days?',
@@ -731,45 +894,96 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
+                      <th className="px-3 py-3 w-8">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-[#455a4f] cursor-pointer"
+                          checked={filteredBorrowers.length > 0 && selectedIds.size === filteredBorrowers.length}
+                          ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredBorrowers.length; }}
+                          onChange={toggleSelectAll}
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
+                      <th className="px-4 py-3 text-left text-xs text-gray-600">Asset Class</th>
+                      <th className="px-4 py-3 text-left text-xs text-gray-600">Risk</th>
                       <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredBorrowers.map((borrower) => (
-                      <tr key={borrower.id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          {borrower.id === '1' ? (
-                            <button
-                              onClick={() => onBorrowerSelect({
-                                id: borrower.id,
-                                name: borrower.name,
-                                cipCode: borrower.cipCode,
-                                relationshipId: borrower.relationshipId,
-                                noteNumber: borrower.noteNumber,
-                                riskRating: borrower.riskRating,
-                                riskRatingLabel: borrower.riskRatingLabel,
-                                loanOfficer: borrower.loanOfficer,
-                                underwriter: borrower.underwriter,
-                                facilities: borrower.facilities
-                              })}
-                              className="text-sm text-[#455a4f] hover:underline cursor-pointer"
-                            >
-                              {borrower.name}
-                            </button>
-                          ) : (
-                            <span className="text-sm text-gray-900">
-                              {borrower.name}
-                            </span>
-                          )}
+                      <tr
+                        key={borrower.id}
+                        className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(borrower.id) ? 'bg-[#455a4f]/5' : ''}`}
+                      >
+                        <td className="px-3 py-3">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-[#455a4f] cursor-pointer"
+                            checked={selectedIds.has(borrower.id)}
+                            onChange={() => toggleSelect(borrower.id)}
+                          />
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{formatDate(borrower.dateAdded)}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => onBorrowerSelect(toSelectedBorrower(borrower))}
+                            className="text-sm text-[#455a4f] hover:underline cursor-pointer text-left"
+                          >
+                            {borrower.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{borrower.assetClass}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded-full border ${getRiskRatingBadgeClass(borrower.riskRating)}`}>
+                            {borrower.riskRating}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(borrower.dateAdded)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
+
+            {/* Selection Action Bar */}
+            {selectedIds.size > 0 && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-full shadow-xl">
+                <span className="text-sm font-medium">{selectedIds.size} record{selectedIds.size !== 1 ? 's' : ''} selected</span>
+                <div className="w-px h-4 bg-gray-600" />
+                {canOpenTabs && onOpenInTabs && (
+                  <button
+                    onClick={() => {
+                      onOpenInTabs(selectedBorrowers.map(toSelectedBorrower));
+                      setSelectedIds(new Set());
+                    }}
+                    className="text-sm text-white/90 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    Open in tabs
+                  </button>
+                )}
+                {canOpenTabs && onOpenInTabs && onChatWithRecords && (
+                  <div className="w-px h-4 bg-gray-600" />
+                )}
+                {onChatWithRecords && (
+                  <button
+                    onClick={() => {
+                      onChatWithRecords(selectedBorrowers.map(toSelectedBorrower));
+                      setSelectedIds(new Set());
+                    }}
+                    className="text-sm text-white/90 hover:text-white transition-colors flex items-center gap-1.5"
+                  >
+                    Chat with {selectedIds.size > 5 ? `${selectedIds.size} records` : 'selection'}
+                  </button>
+                )}
+                <div className="w-px h-4 bg-gray-600" />
+                <button
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  Clear
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
