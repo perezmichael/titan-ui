@@ -399,9 +399,10 @@ export function AgentsView({ onDocumentSelect, onChatNavigate, onAgentLaunch }: 
         <div className="max-w-2xl">
           {/* Dynamically render all agents */}
           {agents.map((agent) => (
-            <div 
+            <div
               key={agent.id}
-              className="bg-white rounded-lg border border-gray-200 p-6 hover:border-gray-300 transition-colors mb-4"
+              className={`bg-white rounded-lg border border-gray-200 p-6 transition-colors mb-4 ${agent.enabled ? 'hover:border-[#455a4f] cursor-pointer' : 'hover:border-gray-300'}`}
+              onClick={() => agent.enabled && onAgentLaunch?.(agent.id)}
             >
               <div className="flex items-start gap-4">
                 {/* Icon */}
