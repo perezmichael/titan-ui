@@ -599,7 +599,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                       <ChevronDown className="w-3 h-3" />
                     </button>
                     {showDossierOverflow && (
-                      <div className="absolute top-full left-0 mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                      <div className="absolute top-full right-0 mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                         {/* Search */}
                         <div className="p-2 border-b border-gray-100">
                           <input
