@@ -1,31 +1,23 @@
-import { useState, useRef } from 'react';
-import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings } from 'lucide-react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
+import { Search, ArrowLeft, ChevronDown, ChevronRight, Sparkles, Plus, X, Upload, FileText, Check, FolderOpen, Settings, Play, CheckCircle2, XCircle, MessageSquare, Layers } from 'lucide-react';
 import type { SelectedBorrower } from '../CommercialLendingWorkspace';
-import { WorkflowPanel } from './WorkflowPanel';
-import { WorkflowDetailInline } from './WorkflowDetailInline';
+import type { AgentAction } from '../AgentsView';
+import { CommercialLendingChat } from './CommercialLendingChat';
+
+interface AgentSession {
+  id: string;
+  title: string;
+  preview: string;
+  timestamp: string;
+}
 
 interface BorrowerPortfolioListProps {
   onBorrowerSelect: (borrower: SelectedBorrower) => void;
   onBack: () => void;
   onWorkflowOpen?: (workflowId: string, workflowName: string) => void;
   onSettingsOpen?: () => void;
-  onOpenInTabs?: (borrowers: SelectedBorrower[]) => void;
-  onChatWithRecords?: (borrowers: SelectedBorrower[]) => void;
-}
-
-interface ChatMessage {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: string;
-  queryResult?: QueryResult;
-}
-
-interface QueryResult {
-  type: 'summary' | 'filtered';
-  summary: string;
-  borrowers?: Borrower[];
-  insights?: string[];
+  onSessionCreated?: (session: AgentSession) => void;
+  initialAction?: AgentAction;
 }
 
 interface BorrowerFacility {
@@ -53,8 +45,6 @@ interface Borrower {
   loanOfficer: string;
   underwriter: string;
   maturityDate: string;
-  riskRating: number;
-  riskRatingLabel: string;
   status: 'Active' | 'Renewal' | 'Payoff';
   facilities: BorrowerFacility[];
   dateAdded: string;
@@ -74,8 +64,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Sarah Chen',
     underwriter: 'Michael Park',
     maturityDate: '2027-12-15',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
     status: 'Active',
     facilities: [
       {
@@ -105,8 +93,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Michael Torres',
     underwriter: 'Lisa Zhang',
     maturityDate: '2026-08-30',
-    riskRating: 3,
-    riskRatingLabel: 'Strong Satisfactory',
     status: 'Renewal',
     facilities: [
       {
@@ -158,8 +144,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Jennifer Wu',
     underwriter: 'David Kim',
     maturityDate: '2028-06-01',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
     status: 'Active',
     facilities: [
       {
@@ -233,8 +217,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'David Park',
     underwriter: 'Rachel Martinez',
     maturityDate: '2027-03-31',
-    riskRating: 4,
-    riskRatingLabel: 'Satisfactory',
     status: 'Active',
     facilities: [
       {
@@ -264,8 +246,6 @@ const mockBorrowers: Borrower[] = [
     loanOfficer: 'Sarah Chen',
     underwriter: 'James Thompson',
     maturityDate: '2028-09-15',
-    riskRating: 1,
-    riskRatingLabel: 'Superior',
     status: 'Active',
     facilities: [
       {
@@ -281,162 +261,320 @@ const mockBorrowers: Borrower[] = [
       }
     ],
     dateAdded: '2024-03-15'
-  },
-  {
-    id: '6',
-    name: 'Summit Industrial REIT',
-    cipCode: 'SUMIND',
-    relationshipId: '33-741258',
-    noteNumber: '20240091-001',
-    assetClass: 'Industrial',
-    totalCreditExposure: 14200000,
-    commitment: 15000000,
-    totalDepositBalance: 1800000,
-    loanOfficer: 'Michael Torres',
-    underwriter: 'Lisa Zhang',
-    maturityDate: '2029-01-31',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
-    status: 'Active',
-    facilities: [{ id: '8', noteNumber: '20240091-001', loanType: 'Term Loan', balance: 14200000, commitment: 15000000, interestRate: 'Term SOFR + 3.25%', maturityDate: '2029-01-31', assetClass: 'Industrial', status: 'Active' }],
-    dateAdded: '2024-04-01'
-  },
-  {
-    id: '7',
-    name: 'Lakeshore Hotel Group',
-    cipCode: 'LAKHTL',
-    relationshipId: '44-963852',
-    noteNumber: '20230088-001',
-    assetClass: 'Hospitality',
-    totalCreditExposure: 7100000,
-    commitment: 7500000,
-    totalDepositBalance: 420000,
-    loanOfficer: 'Jennifer Wu',
-    underwriter: 'David Kim',
-    maturityDate: '2026-06-30',
-    riskRating: 4,
-    riskRatingLabel: 'Satisfactory',
-    status: 'Renewal',
-    facilities: [{ id: '9', noteNumber: '20230088-001', loanType: 'Term Loan', balance: 7100000, commitment: 7500000, interestRate: '7.10% Fixed', maturityDate: '2026-06-30', assetClass: 'Hospitality', status: 'Renewal' }],
-    dateAdded: '2023-08-14'
-  },
-  {
-    id: '8',
-    name: 'Blue Ridge Multifamily Fund',
-    cipCode: 'BLRDGE',
-    relationshipId: '55-147369',
-    noteNumber: '20240102-001',
-    assetClass: 'Multifamily',
-    totalCreditExposure: 18500000,
-    commitment: 20000000,
-    totalDepositBalance: 3200000,
-    loanOfficer: 'Sarah Chen',
-    underwriter: 'Michael Park',
-    maturityDate: '2030-03-15',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
-    status: 'Active',
-    facilities: [{ id: '10', noteNumber: '20240102-001', loanType: 'Construction Loan', balance: 18500000, commitment: 20000000, interestRate: 'Term SOFR + 3.75%', maturityDate: '2030-03-15', assetClass: 'Multifamily', status: 'Active' }],
-    dateAdded: '2024-05-10'
-  },
-  {
-    id: '9',
-    name: 'Frontier Energy Solutions LLC',
-    cipCode: 'FRONTR',
-    relationshipId: '66-258147',
-    noteNumber: '20230071-001',
-    assetClass: 'Energy',
-    totalCreditExposure: 4900000,
-    commitment: 5000000,
-    totalDepositBalance: 310000,
-    loanOfficer: 'David Park',
-    underwriter: 'Rachel Martinez',
-    maturityDate: '2026-09-30',
-    riskRating: 5,
-    riskRatingLabel: 'Watch',
-    status: 'Renewal',
-    facilities: [{ id: '11', noteNumber: '20230071-001', loanType: 'Senior Loan', balance: 4900000, commitment: 5000000, interestRate: '8.50% Fixed', maturityDate: '2026-09-30', assetClass: 'Energy', status: 'Renewal' }],
-    dateAdded: '2023-06-22'
-  },
-  {
-    id: '10',
-    name: 'Nexus Technology Campus Inc',
-    cipCode: 'NEXUSC',
-    relationshipId: '77-369258',
-    noteNumber: '20240115-001',
-    assetClass: 'Data Center',
-    totalCreditExposure: 22000000,
-    commitment: 25000000,
-    totalDepositBalance: 4500000,
-    loanOfficer: 'Jennifer Wu',
-    underwriter: 'James Thompson',
-    maturityDate: '2031-06-01',
-    riskRating: 2,
-    riskRatingLabel: 'Strong',
-    status: 'Active',
-    facilities: [{ id: '12', noteNumber: '20240115-001', loanType: 'Term Loan', balance: 22000000, commitment: 25000000, interestRate: 'Term SOFR + 3.00%', maturityDate: '2031-06-01', assetClass: 'Data Center', status: 'Active' }],
-    dateAdded: '2024-06-15'
-  },
-  {
-    id: '11',
-    name: 'Cascade Valley Medical Partners',
-    cipCode: 'CASCVL',
-    relationshipId: '88-741963',
-    noteNumber: '20240031-001',
-    assetClass: 'CRE — Healthcare',
-    totalCreditExposure: 3800000,
-    commitment: 4000000,
-    totalDepositBalance: 750000,
-    loanOfficer: 'Michael Torres',
-    underwriter: 'Lisa Zhang',
-    maturityDate: '2028-12-31',
-    riskRating: 3,
-    riskRatingLabel: 'Strong Satisfactory',
-    status: 'Active',
-    facilities: [{ id: '13', noteNumber: '20240031-001', loanType: 'Term Loan', balance: 3800000, commitment: 4000000, interestRate: 'Term SOFR + 2.90%', maturityDate: '2028-12-31', assetClass: 'CRE — Healthcare', status: 'Active' }],
-    dateAdded: '2024-02-05'
-  },
-  {
-    id: '12',
-    name: 'Pinnacle Logistics Partners',
-    cipCode: 'PINNLG',
-    relationshipId: '99-852741',
-    noteNumber: '20230099-001',
-    assetClass: 'Industrial',
-    totalCreditExposure: 6300000,
-    commitment: 6500000,
-    totalDepositBalance: 920000,
-    loanOfficer: 'Sarah Chen',
-    underwriter: 'David Kim',
-    maturityDate: '2027-07-31',
-    riskRating: 3,
-    riskRatingLabel: 'Strong Satisfactory',
-    status: 'Active',
-    facilities: [{ id: '14', noteNumber: '20230099-001', loanType: 'Term Loan', balance: 6300000, commitment: 6500000, interestRate: '6.00% Fixed', maturityDate: '2027-07-31', assetClass: 'Industrial', status: 'Active' }],
-    dateAdded: '2023-12-01'
   }
 ];
 
-export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onOpenInTabs, onChatWithRecords }: BorrowerPortfolioListProps) {
+interface WorkflowType {
+  id: string;
+  name: string;
+  description: string;
+}
+
+interface WorkflowJob {
+  id: string;
+  workflowType: WorkflowType;
+  borrowerName: string;
+  status: 'in-progress' | 'completed' | 'failed';
+  startedAt: string;
+  completedAt?: string;
+}
+
+const workflowTypes: WorkflowType[] = [
+  { id: 'deal-qa',              name: 'Deal QA',              description: 'Full document review and quality assurance check' },
+  { id: 'annual-review',        name: 'Annual Review',        description: 'Comprehensive annual borrower assessment' },
+  { id: 'covenant-monitoring',  name: 'Covenant Monitoring',  description: 'Track and review all covenant compliance' },
+  { id: 'dscr-analysis',        name: 'DSCR Analysis',        description: 'Debt service coverage ratio calculation and trending' },
+  { id: 'loan-grading',         name: 'Loan Grading',         description: 'Assign and validate internal loan grade based on current financials' },
+];
+
+const initialWorkflowJobs: WorkflowJob[] = [
+  { id: 'job-1', workflowType: workflowTypes[0], borrowerName: 'VFN Holdings Inc',       status: 'in-progress', startedAt: '2026-03-23' },
+  { id: 'job-2', workflowType: workflowTypes[1], borrowerName: 'GH3 Cler SNU',           status: 'completed',   startedAt: '2026-03-21', completedAt: '2026-03-21' },
+  { id: 'job-3', workflowType: workflowTypes[2], borrowerName: 'Fibernet Solutions LLC', status: 'completed',   startedAt: '2026-03-20', completedAt: '2026-03-20' },
+  { id: 'job-4', workflowType: workflowTypes[3], borrowerName: 'Retail Plaza Holdings',  status: 'failed',      startedAt: '2026-03-18', completedAt: '2026-03-18' },
+];
+
+type HistoryEntryType = 'chat' | 'workflow' | 'records' | 'document';
+
+interface HistoryEntry {
+  id: string;
+  type: HistoryEntryType;
+  title: string;
+  meta: string;
+  status: 'completed' | 'in-progress' | 'failed';
+  timestamp: string;
+  group: 'today' | 'this-week' | 'last-week';
+}
+
+const historyEntries: HistoryEntry[] = [
+  // Today
+  { id: 'h1', type: 'workflow',  title: 'Deal QA',              meta: 'VFN Holdings Inc',                          status: 'in-progress', timestamp: '2:30 PM',          group: 'today' },
+  { id: 'h2', type: 'chat',     title: 'Portfolio Q&A',         meta: 'Asked about maturities in next 90 days',    status: 'completed',   timestamp: '11:15 AM',         group: 'today' },
+  { id: 'h3', type: 'records',  title: 'Records Session',       meta: 'VFN Holdings · Fibernet Solutions',          status: 'completed',   timestamp: '9:20 AM',          group: 'today' },
+  // This week
+  { id: 'h4', type: 'workflow',  title: 'Annual Review',        meta: 'GH3 Cler SNU',                              status: 'completed',   timestamp: 'Tue 3:45 PM',      group: 'this-week' },
+  { id: 'h5', type: 'document', title: 'New Record Created',    meta: 'Q4 2025 Financials — VFN Holdings Inc',     status: 'completed',   timestamp: 'Tue 10:00 AM',     group: 'this-week' },
+  { id: 'h6', type: 'chat',     title: 'Portfolio Q&A',         meta: 'Reviewed total Data Center exposure',        status: 'completed',   timestamp: 'Mon 2:15 PM',      group: 'this-week' },
+  { id: 'h7', type: 'workflow',  title: 'Covenant Monitoring',  meta: 'Fibernet Solutions LLC',                    status: 'completed',   timestamp: 'Mon 9:30 AM',      group: 'this-week' },
+  // Last week
+  { id: 'h8', type: 'workflow',  title: 'DSCR Analysis',        meta: 'Retail Plaza Holdings',                     status: 'failed',      timestamp: 'Mar 17, 4:10 PM',  group: 'last-week' },
+  { id: 'h9', type: 'records',  title: 'Records Session',       meta: 'GH3 Cler · Fibernet · Healthcare Properties', status: 'completed', timestamp: 'Mar 17, 1:45 PM', group: 'last-week' },
+  { id: 'h10', type: 'chat',    title: 'Portfolio Q&A',         meta: 'Covenant compliance overview',               status: 'completed',   timestamp: 'Mar 16, 11:00 AM', group: 'last-week' },
+  { id: 'h11', type: 'document', title: 'New Record Created',   meta: 'Credit Agreement — Healthcare Properties',  status: 'completed',   timestamp: 'Mar 15, 3:00 PM',  group: 'last-week' },
+];
+
+// ─── Dossier data (exported for use in CommercialLendingChat) ─────────────────
+
+export interface BorrowerDossier {
+  description: string;
+  dealDetails: Array<{ label: string; value: string }>;
+  documents: Array<{ name: string; date: string }>;
+  kbDocuments: string[];
+}
+
+export const borrowerDossiers: Record<string, BorrowerDossier> = {
+  '1': {
+    description: 'VFN Holdings Inc (Vero Fiber Networks, LLC) is a leading provider of fiber-optic communications services to the enterprise and wholesale markets. The company provides fiber-optic connectivity, network design and implementation, and network management.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Modification/Extension' },
+      { label: 'NAICS Code',               value: '517110' },
+      { label: 'Sponsor Name',             value: 'None' },
+      { label: 'Facility Type',            value: 'Development Line of Credit (DLOC), Revolving Line of Credit (Revolver), Delayed Draw Term Loan (DDTL)' },
+      { label: 'Loan Term',                value: '60 months' },
+      { label: 'Loan Maturity Date',       value: '9/20/2026' },
+      { label: 'Amortization Structure',   value: 'I/O then 25-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Arranger Name',            value: 'Hancock Whitney' },
+      { label: 'Interest Rate',            value: 'SOFR + 3750 bps' },
+      { label: 'Pricing Grid Present',     value: 'Yes' },
+      { label: 'Revenue (Most Recent)',    value: '$32,021,500,000' },
+      { label: 'EBITDA (Most Recent)',     value: '$1,136,500,000' },
+      { label: 'Total Funded Debt',        value: '$62,500,000' },
+      { label: 'Tangible Net Worth',       value: '$1,000,000,000' },
+      { label: 'Leverage Ratio',           value: '5.5' },
+      { label: 'Coverage Ratio (Actual)',  value: '1.43' },
+      { label: 'Financial Statement Quality', value: 'CPA Audited' },
+      { label: 'Revenue Model Type',       value: 'C&I General' },
+      { label: 'RAROC',                    value: '0.688%' },
+      { label: 'HLT Exception',            value: 'No' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on all assets of borrower and guarantors' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'Vero Fiber Networks, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Critical Exception Summary', value: 'None' },
+      { label: 'Transaction Purpose',      value: 'Construction / Development' },
+      { label: 'Primary Repayment Source', value: 'Operating Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 4 (Satisfactory)' },
+    ],
+    documents: [
+      { name: 'Credit Agreement.pdf',              date: '12/15/2024' },
+      { name: 'Loan Approval Form.pdf',            date: '12/10/2024' },
+      { name: 'Appraisal Report.pdf',              date: '11/20/2024' },
+      { name: 'Financial Statements Q4 2024.pdf',  date: '01/15/2025' },
+      { name: 'Annual Review 2024.pdf',            date: '12/31/2024' },
+      { name: 'Insurance Certificate.pdf',         date: '01/01/2025' },
+      { name: 'Environmental Report.pdf',          date: '11/15/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Data Center Asset Class Guidelines',
+      'CRE Underwriting Standards',
+    ],
+  },
+  '2': {
+    description: 'GH3 Cler SNU operates a portfolio of Class A office properties in suburban markets across the Southeast. The company focuses on long-term leases with investment-grade tenants and maintains active asset management.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Renewal' },
+      { label: 'NAICS Code',               value: '531120' },
+      { label: 'Property Type',            value: 'Class A Office' },
+      { label: 'Facility Type',            value: 'Senior Loan, Revolving Line of Credit (RLOC)' },
+      { label: 'Loan Term',                value: '36 months' },
+      { label: 'Loan Maturity Date',       value: '8/30/2026' },
+      { label: 'Interest Rate',            value: '5.68% Fixed' },
+      { label: 'Amortization Structure',   value: 'Interest Only' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'GH3 Capital Partners' },
+      { label: 'LTV (As-Is)',              value: '68%' },
+      { label: 'DSCR (Underwritten)',      value: '1.38x' },
+      { label: 'NOI (Most Recent)',        value: '$2,100,000' },
+      { label: 'Appraised Value',          value: '$7,750,000' },
+      { label: 'Occupancy Rate',           value: '91%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.20' },
+      { label: 'Collateral Description',   value: 'First lien on commercial real estate and assignment of rents' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Critical Exception Present', value: 'Yes' },
+      { label: 'Critical Exception Summary', value: 'Appraisal approaching 18-month staleness — renewal required by May 2026' },
+      { label: 'Primary Repayment Source', value: 'Property Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Loan Agreement.pdf',                date: '10/20/2023' },
+      { name: 'Financial Statements Q3 2025.pdf',  date: '11/01/2025' },
+      { name: 'Property Appraisal.pdf',            date: '09/15/2023' },
+      { name: 'Rent Roll Q4 2025.pdf',             date: '01/10/2026' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'CRE Underwriting Standards',
+      'Office Asset Class Guidelines',
+    ],
+  },
+  '3': {
+    description: 'Fibernet Solutions LLC builds and operates last-mile fiber networks serving residential and small business customers across rural and suburban markets in the mid-Atlantic region. The company is backed by Meridian Infrastructure Fund III.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'New Origination' },
+      { label: 'NAICS Code',               value: '517311' },
+      { label: 'Sponsor Name',             value: 'Meridian Infrastructure Fund III' },
+      { label: 'Facility Type',            value: 'Senior Loan, Delayed Draw Term Loan (DDTL), CapEx Loan' },
+      { label: 'Loan Term',                value: '48 months' },
+      { label: 'Loan Maturity Date',       value: '6/1/2028' },
+      { label: 'Interest Rate',            value: 'SOFR + 4250 bps' },
+      { label: 'Amortization Structure',   value: 'I/O then 20-year amortization' },
+      { label: 'Syndicated',               value: 'Yes' },
+      { label: 'Arranger Name',            value: 'First National Bank' },
+      { label: 'Revenue (Most Recent)',    value: '$8,450,000' },
+      { label: 'EBITDA (Most Recent)',     value: '$2,980,000' },
+      { label: 'Total Funded Debt',        value: '$15,000,000' },
+      { label: 'Leverage Ratio',           value: '5.0x' },
+      { label: 'Coverage Ratio (Actual)',  value: '1.51x' },
+      { label: 'Financial Statement Quality', value: 'CPA Reviewed' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on all network assets and fiber infrastructure' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'Meridian Infrastructure Fund III GP, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Network Buildout / Capital Expenditure' },
+      { label: 'Primary Repayment Source', value: 'Subscriber Revenue' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Credit Agreement.pdf',        date: '02/28/2024' },
+      { name: 'Financial Model.xlsx',        date: '02/15/2024' },
+      { name: 'Network Build Plan.pdf',      date: '02/01/2024' },
+      { name: 'Syndication Agreement.pdf',   date: '03/01/2024' },
+      { name: 'Insurance Certificate.pdf',   date: '03/15/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Fiber & Telecom Asset Class Guidelines',
+      'Syndicated Loan Underwriting Policy',
+    ],
+  },
+  '4': {
+    description: 'Retail Plaza Holdings owns and manages a portfolio of necessity-based retail centers anchored by grocery and pharmacy tenants. Properties are located in high-traffic suburban corridors with strong demographic profiles.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'Refinance' },
+      { label: 'NAICS Code',               value: '531120' },
+      { label: 'Property Type',            value: 'Anchored Retail / Shopping Center' },
+      { label: 'Facility Type',            value: 'Term Loan' },
+      { label: 'Loan Term',                value: '48 months' },
+      { label: 'Loan Maturity Date',       value: '3/31/2027' },
+      { label: 'Interest Rate',            value: '6.25% Fixed' },
+      { label: 'Amortization Structure',   value: '30-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'Retail Plaza Management LLC' },
+      { label: 'LTV (As-Is)',              value: '72%' },
+      { label: 'DSCR (Underwritten)',      value: '1.29x' },
+      { label: 'NOI (Most Recent)',        value: '$1,840,000' },
+      { label: 'Appraised Value',          value: '$11,400,000' },
+      { label: 'Occupancy Rate',           value: '96%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.20' },
+      { label: 'Collateral Description',   value: 'First lien on commercial real estate and assignment of rents' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Refinance of Existing Debt' },
+      { label: 'Primary Repayment Source', value: 'Property Cash Flow' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 3 (Acceptable)' },
+    ],
+    documents: [
+      { name: 'Term Loan Agreement.pdf',   date: '11/10/2023' },
+      { name: 'Rent Roll Q4 2025.pdf',     date: '01/10/2026' },
+      { name: 'Environmental Report.pdf',  date: '10/20/2023' },
+      { name: 'Appraisal Report.pdf',      date: '10/15/2023' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'CRE Underwriting Standards',
+      'Retail Asset Class Guidelines',
+    ],
+  },
+  '5': {
+    description: 'Healthcare Properties Inc acquires and leases medical office buildings and outpatient facilities to healthcare systems and physician groups under long-term net leases. The company is sponsored by HPI Capital Group with a focus on essential healthcare infrastructure.',
+    dealDetails: [
+      { label: 'Transaction Type',         value: 'New Origination' },
+      { label: 'NAICS Code',               value: '531190' },
+      { label: 'Property Type',            value: 'Medical Office / Outpatient Facility' },
+      { label: 'Facility Type',            value: 'Term Loan' },
+      { label: 'Loan Term',                value: '54 months' },
+      { label: 'Loan Maturity Date',       value: '9/15/2028' },
+      { label: 'Interest Rate',            value: 'SOFR + 2750 bps' },
+      { label: 'Amortization Structure',   value: 'I/O then 25-year amortization' },
+      { label: 'Syndicated',               value: 'No' },
+      { label: 'Sponsor Name',             value: 'HPI Capital Group' },
+      { label: 'LTV (As-Is)',              value: '65%' },
+      { label: 'DSCR (Underwritten)',      value: '1.52x' },
+      { label: 'NOI (Most Recent)',        value: '$1,620,000' },
+      { label: 'Appraised Value',          value: '$10,800,000' },
+      { label: 'Occupancy Rate',           value: '100%' },
+      { label: 'Primary Covenant Type',    value: 'Minimum DSCR' },
+      { label: 'Primary Covenant Threshold', value: '1.25' },
+      { label: 'Collateral Description',   value: 'First lien on medical office real estate and assignment of leases' },
+      { label: 'Lien Position',            value: '1st' },
+      { label: 'Guarantor Names',          value: 'HPI Capital Group, LLC' },
+      { label: 'Critical Exception Present', value: 'No' },
+      { label: 'Transaction Purpose',      value: 'Acquisition' },
+      { label: 'Primary Repayment Source', value: 'Net Lease Income' },
+      { label: 'Underwriter Recommendation', value: 'Approve — Risk Rating 2 (Pass)' },
+    ],
+    documents: [
+      { name: 'Loan Agreement.pdf',                date: '03/15/2024' },
+      { name: 'Financial Statements Q4 2025.pdf',  date: '01/20/2026' },
+      { name: 'Facility Appraisal.pdf',            date: '02/28/2024' },
+      { name: 'Lease Abstracts.pdf',               date: '03/01/2024' },
+      { name: 'Environmental Report.pdf',          date: '02/20/2024' },
+    ],
+    kbDocuments: [
+      'Axiom Commercial Lending Policy',
+      'Healthcare Real Estate Asset Class Guidelines',
+      'Net Lease Underwriting Standards',
+    ],
+  },
+};
+
+export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen, onSettingsOpen, onSessionCreated, initialAction }: BorrowerPortfolioListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedBorrowers, setExpandedBorrowers] = useState<Set<string>>(new Set());
 
-  // Multi-select state
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Tab state — derive initial tab from action
+  const initialTab = initialAction === 'workflow' ? 'workflows'
+    : initialAction === 'records' || initialAction === 'new-record' ? 'records'
+    : 'chat';
+  const [activeTab, setActiveTab] = useState<'records' | 'workflows' | 'chat' | 'history'>(initialTab);
+  const [chatStarted, setChatStarted] = useState(false);
+  const [chatKey, setChatKey] = useState(0);
 
-  // Query state
-  const [queryInput, setQueryInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-
-  // Tab state
-  const [activeTab, setActiveTab] = useState<'records' | 'workflows'>('records');
-
-  // Workflow detail state
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null);
-  const [selectedWorkflowName, setSelectedWorkflowName] = useState<string>('');
+  // Workflow jobs + run modal
+  const [workflowJobs, setWorkflowJobs] = useState<WorkflowJob[]>(initialWorkflowJobs);
+  const [showRunWorkflowModal, setShowRunWorkflowModal] = useState(initialAction === 'workflow');
+  const [runWorkflowStep, setRunWorkflowStep] = useState<'type' | 'record'>('type');
+  const [pendingWorkflowType, setPendingWorkflowType] = useState<WorkflowType | null>(null);
 
   // New record modal states
-  const [showNewRecordModal, setShowNewRecordModal] = useState(false);
+  const [showNewRecordModal, setShowNewRecordModal] = useState(initialAction === 'new-record');
+
+  // Records workspace
+  const [selectedRecordsForChat, setSelectedRecordsForChat] = useState<Borrower[]>([]);
+  const [recordsChatOpen, setRecordsChatOpen] = useState(false);
+  const [recordsChatMessages, setRecordsChatMessages] = useState<{id: string; role: 'user'|'assistant'; content: string}[]>([]);
+  const [recordsChatInput, setRecordsChatInput] = useState('');
+  const [activeDossierTab, setActiveDossierTab] = useState<string | null>(null);
+  const [recordsIsThinking, setRecordsIsThinking] = useState(false);
+  const recordsChatEndRef = useRef<HTMLDivElement>(null);
   const [newRecordStep, setNewRecordStep] = useState<'method' | 'upload'>('method');
   const [uploadedRecordDocs, setUploadedRecordDocs] = useState<Array<{ name: string; type: string; size: string }>>([]);
   const [isProcessingRecord, setIsProcessingRecord] = useState(false);
@@ -445,146 +583,70 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   // Settings state
   const [showSettings, setShowSettings] = useState(false);
 
-  const toSelectedBorrower = (b: Borrower): import('../CommercialLendingWorkspace').SelectedBorrower => ({
-    id: b.id, name: b.name, cipCode: b.cipCode, relationshipId: b.relationshipId,
-    noteNumber: b.noteNumber, riskRating: b.riskRating, riskRatingLabel: b.riskRatingLabel,
-    loanOfficer: b.loanOfficer, underwriter: b.underwriter, facilities: b.facilities,
-  });
+  const recordChatSuggestions = [
+    "What's the current DSCR?",
+    'Any open covenant exceptions?',
+    'When does this deal mature?',
+    'Show recent documents',
+    'Summarize key risk factors',
+  ];
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+  const toggleRecordForChat = (b: Borrower) => {
+    setSelectedRecordsForChat(prev => {
+      const exists = prev.some(r => r.id === b.id);
+      if (exists) {
+        const next = prev.filter(r => r.id !== b.id);
+        if (activeDossierTab === b.id && next.length > 0) setActiveDossierTab(next[0].id);
+        return next;
+      } else {
+        if (prev.length === 0) setActiveDossierTab(b.id);
+        return [...prev, b];
+      }
     });
   };
 
-  const toggleSelectAll = () => {
-    if (selectedIds.size === filteredBorrowers.length) {
-      setSelectedIds(new Set());
-    } else {
-      setSelectedIds(new Set(filteredBorrowers.map(b => b.id)));
-    }
+  const sendRecordsChat = (queryOverride?: string) => {
+    const q = (queryOverride ?? recordsChatInput).trim();
+    if (!q) return;
+    setRecordsChatMessages(prev => [...prev, { id: Date.now().toString(), role: 'user', content: q }]);
+    setRecordsChatInput('');
+    setRecordsIsThinking(true);
+    setTimeout(() => {
+      const names = selectedRecordsForChat.map(r => r.name).join(' and ');
+      const lq = q.toLowerCase();
+      let response = '';
+      if (lq.includes('dscr') || lq.includes('debt service')) {
+        response = `The DSCR for **${names}** is 1.42x as of the most recent review, which is above the covenant minimum of 1.25x.`;
+      } else if (lq.includes('covenant') || lq.includes('exception')) {
+        response = `No open covenant exceptions on file for **${names}**. Last covenant review completed 12/15/2024.`;
+      } else if (lq.includes('matur')) {
+        response = selectedRecordsForChat.length === 1
+          ? `The primary facility for **${names}** matures on ${formatDate(selectedRecordsForChat[0].maturityDate)}.`
+          : selectedRecordsForChat.map(r => `**${r.name}**: ${formatDate(r.maturityDate)}`).join('\n');
+      } else if (lq.includes('document') || lq.includes('file')) {
+        response = `Found 4 documents on file for **${names}**: Term Sheet (01/15/2024), Financial Statements Q4 2024, Appraisal Report (08/10/2024), Credit Agreement (01/15/2024).`;
+      } else if (lq.includes('risk')) {
+        response = `Key risk factors for **${names}**: (1) Sector concentration in ${selectedRecordsForChat[0].assetClass}, (2) Upcoming maturity requiring refinancing, (3) Interest rate sensitivity given floating rate structure.`;
+      } else {
+        response = `Based on available data for **${names}**: the relationship is ${selectedRecordsForChat[0].status} with total credit exposure of ${formatCurrency(selectedRecordsForChat[0].totalCreditExposure)} across ${selectedRecordsForChat[0].facilities.length} facilities. What would you like to explore?`;
+      }
+      setRecordsChatMessages(prev => [...prev, { id: (Date.now()+1).toString(), role: 'assistant', content: response }]);
+      setRecordsIsThinking(false);
+    }, 900);
   };
 
-  const suggestedQueries = [
-    'Which loans have maturities in the next 90 days?',
-    'Show me all borrowers with risk rating 4 or 5',
-    'What is the total exposure for Data Center asset class?',
-  ];
-
-  const clearQuery = () => {
-    setChatMessages([]);
-    setQueryInput('');
-  };
-
-  const handleStartWorkflow = (workflowId: string, stepNumber?: number) => {
-    // Generate portfolio-level workflow initiation message
-    const workflowMessages: Record<string, string> = {
-      'deal-qa': `I'll guide you through the Deal QA workflow. This comprehensive quality assurance review will verify loan documentation and data extraction across 7 steps.\n\nTo begin, please select a specific borrower from your portfolio list, and I'll walk you through a systematic QA review of their deal file.`,
-      
-      'annual-review': `I'll guide you through the Annual Review workflow. This systematic credit review assesses ongoing creditworthiness, covenant compliance, and risk rating across 8 comprehensive steps.\n\nYour portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(mockBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}.\n\nWould you like me to identify which borrowers are due for annual review, or would you like to select a specific borrower to begin the review process?`
+  const launchWorkflowJob = (wfType: WorkflowType, borrower: Borrower) => {
+    const newJob: WorkflowJob = {
+      id: `job-${Date.now()}`,
+      workflowType: wfType,
+      borrowerName: borrower.name,
+      status: 'in-progress',
+      startedAt: new Date().toISOString().slice(0, 10),
     };
-
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: `Start ${workflowId === 'deal-qa' ? 'Deal QA' : workflowId === 'annual-review' ? 'Annual Review' : ''} workflow`,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    };
-
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      type: 'assistant',
-      content: workflowMessages[workflowId] || 'Starting workflow...',
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-    };
-
-    setChatMessages(prev => [...prev, userMessage, assistantMessage]);
-  };
-
-  const handleQuery = (query: string) => {
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: 'user',
-      content: query,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-    };
-    
-    setChatMessages(prev => [...prev, userMessage]);
-    setQueryInput('');
-    
-    const lowerQuery = query.toLowerCase();
-    let queryResult: QueryResult;
-    
-    // Maturities in next 90 days
-    if (lowerQuery.includes('maturity') || lowerQuery.includes('maturities') || (lowerQuery.includes('90') && lowerQuery.includes('days'))) {
-      const today = new Date();
-      const next90Days = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000);
-      const upcomingMaturities = mockBorrowers.filter(b => {
-        const maturityDate = new Date(b.maturityDate);
-        return maturityDate <= next90Days && maturityDate >= today;
-      });
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${upcomingMaturities.length} loan${upcomingMaturities.length !== 1 ? 's' : ''} with maturities in the next 90 days`,
-        borrowers: upcomingMaturities,
-        insights: upcomingMaturities.length > 0 ? [
-          `Total exposure maturing: ${formatCurrency(upcomingMaturities.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Earliest maturity: ${formatDate(upcomingMaturities[0].maturityDate)}`
-        ] : []
-      };
-    }
-    // Risk rating filter
-    else if (lowerQuery.includes('risk rating 4') || lowerQuery.includes('risk rating 5') || (lowerQuery.includes('4 or 5'))) {
-      const highRiskBorrowers = mockBorrowers.filter(b => b.riskRating >= 4);
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${highRiskBorrowers.length} borrower${highRiskBorrowers.length !== 1 ? 's' : ''} with risk rating 4 or 5`,
-        borrowers: highRiskBorrowers,
-        insights: highRiskBorrowers.length > 0 ? [
-          `Total exposure: ${formatCurrency(highRiskBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Average risk rating: ${(highRiskBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / highRiskBorrowers.length).toFixed(1)}`
-        ] : []
-      };
-    }
-    // Asset class query
-    else if (lowerQuery.includes('data center')) {
-      const dataCenterBorrowers = mockBorrowers.filter(b => b.assetClass.toLowerCase().includes('data center'));
-      queryResult = {
-        type: 'filtered',
-        summary: `Found ${dataCenterBorrowers.length} Data Center loan${dataCenterBorrowers.length !== 1 ? 's' : ''}`,
-        borrowers: dataCenterBorrowers,
-        insights: dataCenterBorrowers.length > 0 ? [
-          `Total exposure: ${formatCurrency(dataCenterBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0))}`,
-          `Average risk rating: ${(dataCenterBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / dataCenterBorrowers.length).toFixed(1)}`
-        ] : []
-      };
-    }
-    // Default response
-    else {
-      const totalExposure = mockBorrowers.reduce((sum, b) => sum + b.totalCreditExposure, 0);
-      const avgRiskRating = mockBorrowers.reduce((sum, b) => sum + b.riskRating, 0) / mockBorrowers.length;
-      queryResult = {
-        type: 'summary',
-        summary: `Your portfolio includes ${mockBorrowers.length} borrowers with total credit exposure of ${formatCurrency(totalExposure)}. The average risk rating is ${avgRiskRating.toFixed(1)}.`,
-        insights: [
-          `Highest risk: ${mockBorrowers.filter(b => b.riskRating >= 4).length} borrowers`,
-          `Total commitments: ${formatCurrency(mockBorrowers.reduce((sum, b) => sum + b.commitment, 0))}`
-        ]
-      };
-    }
-    
-    // Add assistant response
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      type: 'assistant',
-      content: queryResult.summary,
-      timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-      queryResult
-    };
-    
-    setChatMessages(prev => [...prev, assistantMessage]);
+    setWorkflowJobs(prev => [newJob, ...prev]);
+    setShowRunWorkflowModal(false);
+    setRunWorkflowStep('type');
+    setPendingWorkflowType(null);
   };
 
   const toggleBorrowerExpansion = (borrowerId: string) => {
@@ -597,30 +659,17 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     setExpandedBorrowers(newExpanded);
   };
 
-  // Filter borrowers - either from query results or regular filters
-  const lastMessage = chatMessages.length > 0 ? chatMessages[chatMessages.length - 1] : null;
-  const queryResult = lastMessage?.type === 'assistant' ? lastMessage.queryResult : null;
-  
-  const filteredBorrowers = queryResult?.borrowers || mockBorrowers.filter(borrower =>
+  const filteredBorrowers = mockBorrowers.filter(borrower =>
     !searchQuery ||
     borrower.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.noteNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
     borrower.cipCode.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const selectedBorrowers = filteredBorrowers.filter(b => selectedIds.has(b.id));
-  const canOpenTabs = selectedIds.size >= 1 && selectedIds.size <= 5;
-
-  const getRiskRatingBadgeClass = (rating: number) => {
-    switch (rating) {
-      case 1: return 'bg-green-50 text-green-900 border-green-200';
-      case 2: return 'bg-green-50 text-green-700 border-green-200';
-      case 3: return 'bg-yellow-50 text-yellow-700 border-yellow-200';
-      case 4: return 'bg-orange-50 text-orange-700 border-orange-200';
-      case 5: return 'bg-red-50 text-red-700 border-red-200';
-      default: return 'bg-gray-50 text-gray-700 border-gray-200';
-    }
-  };
+  // Auto-scroll records chat
+  useEffect(() => {
+    recordsChatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [recordsChatMessages, recordsIsThinking]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -641,227 +690,499 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Header */}
       <div className="border-b border-gray-200 bg-white px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 sm:gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Agents</span>
-            </button>
-            <div className="h-4 w-px bg-gray-300 hidden sm:block"></div>
-            <h1 className="text-base sm:text-xl text-gray-900 truncate">Commercial Lending Agent</h1>
+          {/* Left: back + breadcrumb */}
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {chatStarted ? (
+              // Inside active chat: back exits to workspace landing
+              <>
+                <button
+                  onClick={() => { setChatStarted(false); setChatKey(k => k + 1); }}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Commercial Lending</span>
+                </button>
+                <span className="text-gray-300 hidden sm:inline">/</span>
+                <button
+                  onClick={onBack}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors hidden sm:block flex-shrink-0"
+                >
+                  Agents
+                </button>
+              </>
+            ) : (
+              // On landing: back goes to agents list
+              <>
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors flex-shrink-0 pl-8 sm:pl-0"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Agents</span>
+                </button>
+                <span className="text-gray-300 hidden sm:inline">/</span>
+                <h1 className="text-sm text-gray-900 truncate hidden sm:block flex-shrink-0">Commercial Lending</h1>
+              </>
+            )}
           </div>
-          <button
-            onClick={onSettingsOpen}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Settings"
-          >
-            <Settings className="w-5 h-5" />
-          </button>
+
+          {/* Center: pill toggle — hidden once chat is started */}
+          {!(activeTab === 'chat' && chatStarted) && (
+            <div className="flex items-center bg-gray-100 rounded-full p-1 gap-0.5 flex-shrink-0">
+              {(['chat', 'records', 'workflows', 'history'] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-4 py-1.5 text-sm rounded-full transition-all capitalize ${
+                    activeTab === tab
+                      ? 'bg-white text-gray-900 font-medium shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Right: settings */}
+          <div className="flex-1 flex justify-end">
+            <button
+              onClick={onSettingsOpen}
+              className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Settings"
+            >
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
-        {/* Processing Indicator */}
-        {isProcessingRecord && (
-          <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-[#455a4f] rounded-full flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white animate-spin" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900 mb-1">Processing Documents and Creating a New Record</h4>
-                <p className="text-xs text-gray-600">
-                  You may close this page. The new record will appear when processing is complete.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tab Navigation */}
-        <div className="flex gap-1 mb-6 border-b border-gray-200">
-          <button
-            onClick={() => setActiveTab('records')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative ${
-              activeTab === 'records'
-                ? 'text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Records
-            {activeTab === 'records' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-            )}
-          </button>
-          <button
-            onClick={() => setActiveTab('workflows')}
-            className={`px-4 py-2 text-sm font-medium transition-colors relative flex items-center gap-2 ${
-              activeTab === 'workflows'
-                ? 'text-gray-900'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Workflows
-            
-            {activeTab === 'workflows' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-            )}
-          </button>
+      {/* Chat Tab — full-height, manages its own scroll */}
+      {activeTab === 'chat' && (
+        <div className="flex-1 overflow-hidden">
+          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
         </div>
+      )}
 
-        {/* Query Section */}
-        {activeTab === 'records' && (
-          <div className="bg-white rounded-lg border border-gray-200 mb-6 flex flex-col" style={chatMessages.length > 0 ? { height: '400px' } : {}}>
-            {/* Header */}
-            <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-200">
-              <Sparkles className="w-5 h-5 text-[#455a4f]" />
-              <h2 className="text-base text-gray-900">Ask about your documents and data</h2>
-              {chatMessages.length > 0 && (
-                <button
-                  onClick={clearQuery}
-                  className="ml-auto text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Clear
-                </button>
-              )}
+      {/* History tab */}
+      {activeTab === 'history' && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+          <div className="mb-6">
+            <h2 className="text-lg text-gray-900">Activity History</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Every chat, workflow run, records session, and document processed in this workspace</p>
+          </div>
+
+          {(['today', 'this-week', 'last-week'] as const).map(group => {
+            const entries = historyEntries.filter(e => e.group === group);
+            if (entries.length === 0) return null;
+            const groupLabel = group === 'today' ? 'Today' : group === 'this-week' ? 'This Week' : 'Last Week';
+
+            const typeConfig: Record<HistoryEntryType, { icon: ReactNode; bg: string; label: string }> = {
+              chat:     { icon: <MessageSquare className="w-3.5 h-3.5 text-gray-500" />,   bg: 'bg-gray-100',   label: 'Portfolio Q&A' },
+              workflow: { icon: <Play className="w-3.5 h-3.5 text-[#455a4f]" />,          bg: 'bg-[#eef2f0]',  label: 'Workflow' },
+              records:  { icon: <Layers className="w-3.5 h-3.5 text-blue-500" />,         bg: 'bg-blue-50',    label: 'Records Session' },
+              document: { icon: <FileText className="w-3.5 h-3.5 text-amber-500" />,      bg: 'bg-amber-50',   label: 'Document' },
+            };
+
+            return (
+              <div key={group} className="mb-8">
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-3">{groupLabel}</div>
+                <div className="space-y-2">
+                  {entries.map(entry => {
+                    const cfg = typeConfig[entry.type];
+                    return (
+                      <div key={entry.id} className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex items-center gap-3 hover:border-gray-300 transition-colors cursor-default">
+                        {/* Type icon */}
+                        <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${cfg.bg}`}>
+                          {cfg.icon}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-gray-900">{entry.title}</span>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-xs text-gray-500 truncate">{entry.meta}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[10px] text-gray-400">{cfg.label}</span>
+                          </div>
+                        </div>
+
+                        {/* Right: status + timestamp */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${
+                            entry.status === 'completed'  ? 'bg-green-50 text-green-700'
+                            : entry.status === 'in-progress' ? 'bg-blue-50 text-blue-700'
+                            : 'bg-red-50 text-red-600'
+                          }`}>
+                            {entry.status === 'in-progress' ? 'In Progress' : entry.status === 'completed' ? 'Completed' : 'Failed'}
+                          </span>
+                          <span className="text-[10px] text-gray-400 whitespace-nowrap">{entry.timestamp}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Records split-pane workspace — visible when chat opened */}
+      {activeTab === 'records' && recordsChatOpen && (
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left chat panel — gets majority of the space */}
+          <div className="flex-1 min-w-0 flex flex-col border-r border-gray-200 bg-white">
+            {/* Back + selected record pills + Clear */}
+            <div className="px-4 py-3 border-b border-gray-200 flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setRecordsChatOpen(false)}
+                className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors flex-shrink-0 mr-1"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Records
+              </button>
+              <div className="flex items-center gap-2 flex-wrap flex-1">
+                {selectedRecordsForChat.map(r => (
+                  <span key={r.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-[#eef2f0] text-[#455a4f] text-xs rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#455a4f] flex-shrink-0" />
+                    {r.name}
+                    <button onClick={() => toggleRecordForChat(r)} className="ml-0.5 hover:opacity-70">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <button
+                onClick={() => { setSelectedRecordsForChat([]); setRecordsChatMessages([]); setActiveDossierTab(null); setRecordsChatOpen(false); }}
+                className="text-xs text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
+              >
+                Clear
+              </button>
             </div>
 
-            {/* Chat Messages Area */}
-            {chatMessages.length > 0 && (
-              <div className="flex-1 overflow-y-auto px-6 py-4">
+            {/* Messages area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {recordsChatMessages.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-500">
+                    {selectedRecordsForChat.length === 1
+                      ? `Deep dive into ${selectedRecordsForChat[0].name} — reference the dossier on the right`
+                      : `Analyze ${selectedRecordsForChat.length} records side by side — switch between dossiers using the tabs`}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {recordChatSuggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        onClick={() => sendRecordsChat(s)}
+                        className="text-left px-3 py-2 text-xs text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
                 <div className="space-y-4">
-                  {chatMessages.map((message) => (
-                    <div key={message.id} className="flex gap-3">
-                      {/* Avatar */}
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
-                        message.type === 'assistant' ? 'bg-[#ff6b5a] text-white' : 'bg-[#455a4f] text-white'
+                  {recordsChatMessages.map(msg => (
+                    <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start gap-2'}`}>
+                      {msg.role === 'assistant' && (
+                        <div className="w-6 h-6 rounded-md bg-[#455a4f] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Sparkles className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
+                      <div className={`max-w-[85%] px-3 py-2 rounded-xl text-xs ${
+                        msg.role === 'user'
+                          ? 'bg-white border border-gray-200 text-gray-900'
+                          : 'bg-gray-100 text-gray-900'
                       }`}>
-                        {message.type === 'assistant' ? (
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <rect x="3" y="3" width="8" height="8" fill="white" />
-                          </svg>
-                        ) : (
-                          'TB'
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {message.type === 'assistant' ? (
-                          <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
-                            <div className="text-xs text-gray-900">{message.content}</div>
-                            
-                            {/* Insights */}
-                            {message.queryResult?.insights && message.queryResult.insights.length > 0 && (
-                              <ul className="space-y-1 mt-2">
-                                {message.queryResult.insights.map((insight, index) => (
-                                  <li key={index} className="text-xs text-gray-600 flex items-start gap-2">
-                                    <span className="text-[#455a4f] mt-0.5">•</span>
-                                    <span>{insight}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-
-                            {/* Timestamp */}
-                            <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-2">
-                              <span>{message.timestamp}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="text-xs text-gray-900 mb-1.5">{message.content}</div>
-                            <div className="text-[10px] text-gray-500">{message.timestamp}</div>
-                          </>
-                        )}
+                        {msg.content}
                       </div>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* Input Area */}
-            <div className="px-6 py-4">
-              <div className="relative mb-3">
-                <input
-                  type="text"
-                  placeholder="Ask a question..."
-                  value={queryInput}
-                  onChange={(e) => setQueryInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && queryInput.trim()) {
-                      handleQuery(queryInput);
-                    }
-                  }}
-                  className="w-full px-4 py-3 pr-24 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#455a4f] focus:border-transparent"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <button
-                    onClick={() => queryInput.trim() && handleQuery(queryInput)}
-                    disabled={!queryInput.trim()}
-                    className="px-3 py-1.5 bg-[#455a4f] text-white text-sm rounded-md hover:bg-[#3a4a42] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Ask
-                  </button>
-                </div>
-              </div>
-
-              {/* Suggested Queries */}
-              {chatMessages.length === 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {suggestedQueries.map((query, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleQuery(query)}
-                      className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-full hover:bg-gray-200 transition-colors"
-                    >
-                      {query}
-                    </button>
-                  ))}
+                  {recordsIsThinking && (
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-md bg-[#455a4f] flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <div className="flex gap-1 px-3 py-2 bg-gray-100 rounded-xl">
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                      </div>
+                    </div>
+                  )}
+                  <div ref={recordsChatEndRef} />
                 </div>
               )}
             </div>
+
+            {/* Input */}
+            <div className="px-4 py-3 border-t border-gray-100">
+              <div className="flex items-end gap-2 bg-white border border-gray-200 rounded-2xl px-3 py-2 focus-within:border-[#E05C3A] transition-colors">
+                <Sparkles className="w-4 h-4 text-[#455a4f] flex-shrink-0 mb-0.5" />
+                <textarea
+                  rows={1}
+                  placeholder={selectedRecordsForChat.length === 1 ? `Ask about ${selectedRecordsForChat[0].name}…` : `Ask across ${selectedRecordsForChat.length} records…`}
+                  value={recordsChatInput}
+                  onChange={e => setRecordsChatInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      sendRecordsChat();
+                    }
+                  }}
+                  className="flex-1 resize-none text-sm text-gray-900 placeholder-gray-400 bg-transparent focus:outline-none"
+                />
+                <button
+                  onClick={() => sendRecordsChat()}
+                  disabled={!recordsChatInput.trim()}
+                  className="flex-shrink-0 w-7 h-7 bg-gray-200 hover:bg-gray-300 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                    <path d="M6 10V2M2 6l4-4 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Workflows Tab Content */}
-        {activeTab === 'workflows' && (
-          <>
-            {!selectedWorkflowId ? (
-              <WorkflowPanel 
-                borrowerName="Portfolio"
-                onStartWorkflow={handleStartWorkflow}
-                onWorkflowOpen={(workflowId, workflowName) => {
-                  setSelectedWorkflowId(workflowId);
-                  setSelectedWorkflowName(workflowName);
-                }}
-              />
-            ) : (
-              <WorkflowDetailInline 
-                workflowId={selectedWorkflowId}
-                workflowName={selectedWorkflowName}
-                onBack={() => {
-                  setSelectedWorkflowId(null);
-                  setSelectedWorkflowName('');
-                }}
-              />
+          {/* Right dossier panel — fixed width */}
+          <div className="w-[460px] flex-shrink-0 flex flex-col bg-[#f5f5f3]">
+            {/* Record switcher tabs */}
+            {selectedRecordsForChat.length > 1 && (
+              <div className="bg-white border-b border-gray-200 px-4 flex gap-0 flex-shrink-0">
+                {selectedRecordsForChat.map(r => (
+                  <button
+                    key={r.id}
+                    onClick={() => setActiveDossierTab(r.id)}
+                    className={`px-3 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                      activeDossierTab === r.id
+                        ? 'border-[#455a4f] text-gray-900'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {r.name}
+                  </button>
+                ))}
+              </div>
             )}
-          </>
-        )}
 
-        {/* Records Tab Content */}
-        {activeTab === 'records' && (
-          <>
-            {/* Controls Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h2 className="text-lg text-gray-900">
-                {chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult ? 'Query Results' : 'Records'}
-              </h2>
-              {!(chatMessages.length > 0 && chatMessages[chatMessages.length - 1].queryResult) ? (
+            {/* Dossier content — scrollable */}
+            {(() => {
+              const active = selectedRecordsForChat.find(r => r.id === activeDossierTab) ?? selectedRecordsForChat[0];
+              if (!active) return null;
+              const dossier = borrowerDossiers[active.id];
+              return (
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-6 space-y-6">
+
+                    {/* Company header */}
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">{active.name}</h2>
+                      {dossier && (
+                        <p className="text-sm text-gray-500 leading-relaxed">{dossier.description}</p>
+                      )}
+                    </div>
+
+                    {/* Deal Details card */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200">
+                          <h3 className="text-sm font-semibold text-gray-900">Deal Details</h3>
+                        </div>
+                        <div>
+                          {dossier.dealDetails.map((row, i) => (
+                            <div key={i} className={`flex gap-4 px-5 py-3 ${i < dossier.dealDetails.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <span className="w-44 flex-shrink-0 text-sm text-gray-400">{row.label}</span>
+                              <span className="flex-1 text-sm text-gray-900">{row.value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Documents card */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900">Documents ({dossier.documents.length})</h3>
+                          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-900 text-white text-xs rounded-lg hover:bg-gray-700 transition-colors">
+                            <Upload className="w-3.5 h-3.5" />
+                            Upload
+                          </button>
+                        </div>
+                        <div>
+                          {dossier.documents.map((doc, i) => (
+                            <div key={i} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors ${i < dossier.documents.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-sm text-gray-900 truncate">{doc.name}</p>
+                                <p className="text-xs text-gray-400">{doc.date}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Relevant Knowledge Base Documents */}
+                    {dossier && (
+                      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                        <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                          <h3 className="text-sm font-semibold text-gray-900">Relevant Knowledge Base Documents</h3>
+                          <button className="text-xs text-[#455a4f] hover:underline transition-colors">+ Add More</button>
+                        </div>
+                        <div>
+                          {dossier.kbDocuments.map((doc, i) => (
+                            <div key={i} className={`flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors ${i < dossier.kbDocuments.length - 1 ? 'border-b border-gray-100' : ''}`}>
+                              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <span className="text-sm text-gray-900">{doc}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Records default list + Workflows tab */}
+      {(activeTab === 'workflows' || (activeTab === 'records' && !recordsChatOpen)) && (
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
+          {/* Processing Indicator */}
+          {isProcessingRecord && (
+            <div className="mb-6 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-[#455a4f] rounded-lg p-4 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-[#455a4f] rounded-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white animate-spin" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-gray-900 mb-1">Processing Documents and Creating a New Record</h4>
+                  <p className="text-xs text-gray-600">
+                    You may close this page. The new record will appear when processing is complete.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Workflows Tab Content */}
+          {activeTab === 'workflows' && (
+            <>
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg text-gray-900">Workflow Jobs</h2>
+                  <p className="text-sm text-gray-500 mt-0.5">Track the status of running and completed workflows</p>
+                </div>
+                <button
+                  onClick={() => { setShowRunWorkflowModal(true); setRunWorkflowStep('type'); setPendingWorkflowType(null); }}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors flex-shrink-0"
+                >
+                  <Play className="w-4 h-4" />
+                  Run a workflow
+                </button>
+              </div>
+
+              {/* Job list */}
+              {workflowJobs.length === 0 ? (
+                <div className="text-center py-16 text-gray-500">
+                  <Play className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                  <p className="text-sm">No workflow jobs yet.</p>
+                  <p className="text-xs mt-1">Click "Run a workflow" to get started.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {workflowJobs.map(job => {
+                    const isInProgress = job.status === 'in-progress';
+                    const isCompleted = job.status === 'completed';
+                    return (
+                      <div key={job.id} className="bg-white rounded-lg border border-gray-200 px-5 py-4 flex items-center gap-4">
+                        {/* Status icon */}
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                          isInProgress ? 'bg-blue-50' : isCompleted ? 'bg-green-50' : 'bg-red-50'
+                        }`}>
+                          {isInProgress && (
+                            <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          )}
+                          {isCompleted && <CheckCircle2 className="w-4 h-4 text-green-600" />}
+                          {job.status === 'failed' && <XCircle className="w-4 h-4 text-red-500" />}
+                        </div>
+
+                        {/* Name + record */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-gray-900">{job.workflowType.name}</span>
+                            <span className="text-gray-300">·</span>
+                            <span className="text-sm text-gray-600 truncate">{job.borrowerName}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {isInProgress
+                              ? `Started ${formatDate(job.startedAt)}`
+                              : isCompleted
+                                ? `Completed ${formatDate(job.completedAt!)}`
+                                : `Failed ${formatDate(job.completedAt!)}`}
+                          </p>
+                        </div>
+
+                        {/* Status badge */}
+                        <span className={`flex-shrink-0 px-2.5 py-1 text-xs font-medium rounded-full ${
+                          isInProgress ? 'bg-blue-50 text-blue-700' : isCompleted ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'
+                        }`}>
+                          {isInProgress ? 'In Progress' : isCompleted ? 'Completed' : 'Failed'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Records Tab Content */}
+          {activeTab === 'records' && (
+            <>
+              {/* Action bar — appears when records are selected */}
+              {selectedRecordsForChat.length > 0 && (
+                <div className="flex items-center justify-between bg-[#f0f4f2] border border-[#c8d8d2] rounded-lg px-4 py-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-[#455a4f]" />
+                    <span className="text-sm text-[#455a4f] font-medium">
+                      {selectedRecordsForChat.length === 1
+                        ? `${selectedRecordsForChat[0].name} selected`
+                        : `${selectedRecordsForChat.length} records selected`}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => { setSelectedRecordsForChat([]); setActiveDossierTab(null); }}
+                      className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button
+                      onClick={() => setRecordsChatOpen(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Chat
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Controls Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                <h2 className="text-lg text-gray-900">Records</h2>
                 <div className="flex items-center gap-3">
                   <div className="relative flex-1 sm:w-80 sm:flex-none">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -885,108 +1206,151 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                     New Record
                   </button>
                 </div>
-              ) : null}
-            </div>
-
-            {/* Portfolio Table */}
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-3 py-3 w-8">
-                        <input
-                          type="checkbox"
-                          className="rounded border-gray-300 text-[#455a4f] cursor-pointer"
-                          checked={filteredBorrowers.length > 0 && selectedIds.size === filteredBorrowers.length}
-                          ref={el => { if (el) el.indeterminate = selectedIds.size > 0 && selectedIds.size < filteredBorrowers.length; }}
-                          onChange={toggleSelectAll}
-                        />
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Asset Class</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Risk</th>
-                      <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredBorrowers.map((borrower) => (
-                      <tr
-                        key={borrower.id}
-                        className={`border-b border-gray-200 hover:bg-gray-50 ${selectedIds.has(borrower.id) ? 'bg-[#455a4f]/5' : ''}`}
-                      >
-                        <td className="px-3 py-3">
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-[#455a4f] cursor-pointer"
-                            checked={selectedIds.has(borrower.id)}
-                            onChange={() => toggleSelect(borrower.id)}
-                          />
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => onBorrowerSelect(toSelectedBorrower(borrower))}
-                            className="text-sm text-[#455a4f] hover:underline cursor-pointer text-left"
-                          >
-                            {borrower.name}
-                          </button>
-                        </td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{borrower.assetClass}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-xs px-2 py-0.5 rounded-full border ${getRiskRatingBadgeClass(borrower.riskRating)}`}>
-                            {borrower.riskRating}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{formatDate(borrower.dateAdded)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               </div>
-            </div>
 
-            {/* Selection Action Bar */}
-            {selectedIds.size > 0 && (
-              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-gray-900 text-white px-5 py-3 rounded-full shadow-xl">
-                <span className="text-sm font-medium">{selectedIds.size} record{selectedIds.size !== 1 ? 's' : ''} selected</span>
-                <div className="w-px h-4 bg-gray-600" />
-                {canOpenTabs && onOpenInTabs && (
-                  <button
-                    onClick={() => {
-                      onOpenInTabs(selectedBorrowers.map(toSelectedBorrower));
-                      setSelectedIds(new Set());
-                    }}
-                    className="text-sm text-white/90 hover:text-white transition-colors flex items-center gap-1.5"
-                  >
-                    Open in tabs
-                  </button>
-                )}
-                {canOpenTabs && onOpenInTabs && onChatWithRecords && (
-                  <div className="w-px h-4 bg-gray-600" />
-                )}
-                {onChatWithRecords && (
-                  <button
-                    onClick={() => {
-                      onChatWithRecords(selectedBorrowers.map(toSelectedBorrower));
-                      setSelectedIds(new Set());
-                    }}
-                    className="text-sm text-white/90 hover:text-white transition-colors flex items-center gap-1.5"
-                  >
-                    Chat with {selectedIds.size > 5 ? `${selectedIds.size} records` : 'selection'}
-                  </button>
-                )}
-                <div className="w-px h-4 bg-gray-600" />
-                <button
-                  onClick={() => setSelectedIds(new Set())}
-                  className="text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                  Clear
+              {/* Portfolio Table */}
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 w-8" />
+                        <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
+                        <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
+                        <th className="px-4 py-3 w-20" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredBorrowers.map((borrower) => {
+                        const isChecked = selectedRecordsForChat.some(r => r.id === borrower.id);
+                        return (
+                          <tr key={borrower.id} className="group border-b border-gray-200 hover:bg-gray-50">
+                            <td className="px-4 py-3 w-8">
+                              <button
+                                onClick={() => toggleRecordForChat(borrower)}
+                                className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                                  isChecked
+                                    ? 'bg-[#455a4f] border-[#455a4f]'
+                                    : 'border-gray-300 hover:border-[#455a4f]'
+                                }`}
+                              >
+                                {isChecked && (
+                                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                    <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-sm text-gray-900">{borrower.name}</span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-500">{formatDate(borrower.dateAdded)}</td>
+                            <td className="px-4 py-3 w-20 text-right">
+                              <button
+                                onClick={() => {
+                                  setSelectedRecordsForChat([borrower]);
+                                  setActiveDossierTab(borrower.id);
+                                  setRecordsChatOpen(true);
+                                }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-[#455a4f] font-medium hover:underline flex items-center gap-1 ml-auto"
+                              >
+                                Chat
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Run a Workflow Modal */}
+      {showRunWorkflowModal && (
+        <>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => { setShowRunWorkflowModal(false); setRunWorkflowStep('type'); setPendingWorkflowType(null); }} />
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]" onClick={e => e.stopPropagation()}>
+              {/* Modal header */}
+              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {runWorkflowStep === 'record' && (
+                    <button onClick={() => { setRunWorkflowStep('type'); setPendingWorkflowType(null); }} className="text-gray-400 hover:text-gray-600 mr-1">
+                      <ArrowLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  <div>
+                    <h2 className="text-base font-medium text-gray-900">
+                      {runWorkflowStep === 'type' ? 'Select a workflow' : `Select a record — ${pendingWorkflowType?.name}`}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {runWorkflowStep === 'type' ? 'Choose the workflow type to run' : 'Choose which record to run this workflow on'}
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => { setShowRunWorkflowModal(false); setRunWorkflowStep('type'); setPendingWorkflowType(null); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
                 </button>
               </div>
-            )}
-          </>
-        )}
-      </div>
+
+              {/* Step 1: Pick workflow type */}
+              {runWorkflowStep === 'type' && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {workflowTypes.map(wf => (
+                    <button
+                      key={wf.id}
+                      onClick={() => { setPendingWorkflowType(wf); setRunWorkflowStep('record'); }}
+                      className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:border-[#455a4f] hover:bg-[#f8faf9] transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{wf.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{wf.description}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className="text-xs text-gray-400">{wf.totalSteps} steps</span>
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f]" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Step 2: Pick record */}
+              {runWorkflowStep === 'record' && (
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {mockBorrowers.map(borrower => (
+                    <button
+                      key={borrower.id}
+                      onClick={() => pendingWorkflowType && launchWorkflowJob(pendingWorkflowType, borrower)}
+                      className="w-full text-left border border-gray-200 rounded-lg px-4 py-3 hover:border-[#455a4f] hover:bg-[#f8faf9] transition-colors group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{borrower.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{borrower.assetClass} · {borrower.noteNumber}</p>
+                        </div>
+                        <div className="flex items-center gap-2 ml-4">
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${
+                            borrower.status === 'Active' ? 'bg-green-100 text-green-700' : borrower.status === 'Renewal' ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                          }`}>{borrower.status}</span>
+                          <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#455a4f]" />
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* New Record Modal */}
       {showNewRecordModal && (

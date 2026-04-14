@@ -1,134 +1,7 @@
 import { Pencil, Paperclip, X, FileText, ZoomIn, ZoomOut, ChevronLeft, ChevronRight, Globe } from 'lucide-react';
-import { ChatMessage, AuditLogSheet } from './ChatMessage';
-import type { AuditData } from './ChatMessage';
+import { ChatMessage } from './ChatMessage';
 import { TitanLogo } from './TitanLogo';
-import { bsaAuditData } from './auditMockData';
-import { useEffect, useState, useRef, useMemo } from 'react';
-
-// ── Thinking animation ────────────────────────────────────────────────────────
-
-const TITAN_ICON_PATH = "M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z";
-
-const THINKING_LABELS = [
-  'Validating message for PII',
-  'Searching compliance knowledge base',
-  'Referencing BSA/AML policy documents',
-  'Drafting response',
-];
-
-// Module-level flag — survives StrictMode double-mount
-const _thinkingPlayed = new Set<string>();
-
-function TitanMessageIcon({ spinning }: { spinning: boolean }) {
-  return (
-    <div className="relative flex-shrink-0 mt-0.5" style={{ width: 28, height: 28 }}>
-      <style>{`
-        @keyframes titan-arc-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .titan-arc-ring { transform-origin: 18px 18px; animation: titan-arc-spin 1.1s linear infinite; }
-      `}</style>
-      <div
-        className="absolute pointer-events-none"
-        style={{ inset: -4, opacity: spinning ? 1 : 0, transition: 'opacity 350ms ease' }}
-      >
-        <svg className="w-full h-full" viewBox="0 0 36 36" fill="none">
-          <defs>
-            <linearGradient id="arcGradMsg" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FF6E3C" stopOpacity="0" />
-              <stop offset="100%" stopColor="#FF6E3C" stopOpacity="1" />
-            </linearGradient>
-          </defs>
-          <g className="titan-arc-ring">
-            <circle cx="18" cy="18" r="16" stroke="#FF6E3C" strokeOpacity="0.15" strokeWidth="2" fill="none" />
-            <circle cx="18" cy="18" r="16" stroke="url(#arcGradMsg)" strokeWidth="2.2" fill="none"
-              strokeLinecap="round" strokeDasharray="75 26" />
-          </g>
-        </svg>
-      </div>
-      <div
-        className="w-full h-full"
-        style={{
-          transform: spinning ? 'scale(0.68)' : 'scale(0.88)',
-          transition: 'transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-          transformOrigin: 'center center',
-        }}
-      >
-        <svg viewBox="0 0 106 106" fill="none" className="w-full h-full">
-          <path d={TITAN_ICON_PATH} fill="#FF6E3C" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function ThinkingBubble({ onComplete }: { onComplete: () => void }) {
-  const [labelIndex, setLabelIndex] = useState(0);
-  const [displayed, setDisplayed] = useState(0);
-  const currentLabel = THINKING_LABELS[labelIndex];
-  const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
-
-  useEffect(() => {
-    setLabelIndex(0);
-    setDisplayed(0);
-    let i = 0;
-    const iv = setInterval(() => {
-      i = Math.min(i + 1, THINKING_LABELS.length - 1);
-      setLabelIndex(i);
-      setDisplayed(0);
-      if (i >= THINKING_LABELS.length - 1) {
-        clearInterval(iv);
-        const delay = THINKING_LABELS[i].length * 36 + 500;
-        setTimeout(() => onCompleteRef.current(), delay);
-      }
-    }, 1100);
-    return () => clearInterval(iv);
-  }, []);
-
-  useEffect(() => {
-    setDisplayed(0);
-    let ch = 0;
-    const t = setInterval(() => {
-      ch++;
-      setDisplayed(ch);
-      if (ch >= currentLabel.length) clearInterval(t);
-    }, 36);
-    return () => clearInterval(t);
-  }, [labelIndex, currentLabel]);
-
-  return (
-    <div className="mb-6 flex items-start gap-3">
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          <TitanMessageIcon spinning={true} />
-          <style>{`
-            @keyframes char-arrive { from { opacity: 0.15; } to { opacity: 1; } }
-            .char-arrive { animation: char-arrive 0.22s ease forwards; }
-          `}</style>
-          <span className="text-sm font-medium text-gray-800" aria-live="polite">
-            {currentLabel.split('').map((char, i) => (
-              <span
-                key={`${labelIndex}-${i}`}
-                className="char-arrive"
-                style={{ animationDelay: `${i * 36}ms`, opacity: i < displayed ? 1 : 0 }}
-              >
-                {char}
-              </span>
-            ))}
-          </span>
-        </div>
-        <div className="text-[10px] text-gray-400 mt-2 ml-9">Just now</div>
-      </div>
-    </div>
-  );
-}
-
-interface AuditPanelState {
-  auditData?: AuditData;
-  confidenceThresholdPassed?: boolean;
-  references?: { number: number; title: string; description?: string; pageNumber?: number; highlightedText?: string; context?: string }[];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
+import { useEffect, useState, useRef } from 'react';
 
 interface SelectedDocument {
   id: string;
@@ -163,39 +36,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const hasStartedUploadRef = useRef<boolean>(false);
   const [activeCitation, setActiveCitation] = useState<ActiveCitation | null>(null);
   const [internetSearchEnabled, setInternetSearchEnabled] = useState<boolean>(false);
-
-  // Audit panel (inline draggable slider) — preopen for conversation3
-  const [auditPanel, setAuditPanel] = useState<AuditPanelState | null>(
-    conversationId === '3' ? { auditData: bsaAuditData, confidenceThresholdPassed: true } : null
-  );
-  const [auditPanelWidth, setAuditPanelWidth] = useState(460);
-  const auditPanelRef = useRef<HTMLDivElement>(null);
-  const auditRefId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
-
-  // Thinking animation — disabled, show messages immediately
-  const [thinkingActive] = useState(false);
-  const [justRevealed] = useState(false);
-
-  const handleAuditDividerMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startWidth = auditPanelWidth;
-    if (auditPanelRef.current) auditPanelRef.current.style.transition = 'none';
-    const onMove = (ev: MouseEvent) => {
-      const w = Math.max(360, Math.min(760, startWidth + (startX - ev.clientX)));
-      if (auditPanelRef.current) auditPanelRef.current.style.width = `${w}px`;
-    };
-    const onUp = (ev: MouseEvent) => {
-      const w = Math.max(360, Math.min(760, startWidth + (startX - ev.clientX)));
-      if (auditPanelRef.current) auditPanelRef.current.style.transition = '';
-      setAuditPanelWidth(w);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  };
-
+  
   // Trigger upload start when user first views the upload-processing conversation
   useEffect(() => {
     if (conversationId === 'upload-processing' && !hasStartedUploadRef.current) {
@@ -206,52 +47,86 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
 
   // Conversation 3: AI Assistant Core Capabilities
   const conversation3 = {
-    title: 'Audit Log Example',
-    timestamp: 'Apr 10, 2:14 PM',
+    title: 'AI Assistant Core Capabilities',
+    timestamp: 'Oct 24, 10:08 AM',
     messages: [
       {
         type: 'user' as const,
-        content: 'Before I approve the Meridian Logistics credit line renewal, can you flag any BSA/AML exposure on the account?',
-        timestamp: 'Apr 10, 2:14 PM',
+        content: 'what is our credit policy',
+        timestamp: 'Oct 24, 10:12 AM'
       },
       {
         type: 'assistant' as const,
-        content: 'There is a structuring risk flag on Meridian Logistics that needs to be resolved before you approve.\n\n**What Titan found:**\nAccount #847291 shows 9 cash deposits ranging $8,500–$9,800 over a 23-day window. This is a textbook structuring pattern — deposits are consistently kept just below the $10,000 CTR filing threshold. Multiple same-day split deposits were also detected, which reinforces the pattern.\n\n**Risk Rating: HIGH**\nThis meets the criteria for a Suspicious Activity Report under 31 CFR 1020.320 (FinCEN SAR filing requirements). A SAR must be filed within 30 days of detection.\n\n**Recommendation:**\nDo not approve the credit line renewal until BSA/AML review is complete and compliance sign-off is obtained.\n\n**Entity context:**\nMeridian Logistics LLC (Delaware, incorporated March 2021). Sole beneficial owner: James R. Collier — CIP complete, no prior SAR history, no watchlist matches. This would be the first filing for this entity.',
-        timestamp: 'Apr 10, 2:16 PM',
+        content: 'That is a very general question. Can you please be more specific? For example, are you asking about consumer credit policies, commercial lending policies, credit risk assessment, or credit approval procedures?',
+        timestamp: 'Oct 24, 10:12 AM',
+        hasReactions: true,
+        confidence: 'Low' as const,
+        confidenceThresholdPassed: false,
+        chainOfThought: [
+          { step: 'Parsed user query: "what is our credit policy" - identified as broad, non-specific request requiring clarification', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 11 },
+          { step: 'Initiated semantic search across policy knowledge base using keywords: "credit policy", "credit", "lending policy"', confidencePassed: true, category: 'Search', confidenceScore: 95, timeMs: 156 },
+          { step: 'Retrieved 4 potentially relevant documents: "Consumer Credit Policy.docx", "Commercial Lending Standards.pdf", "Credit Risk Assessment Guidelines.docx", "Credit Approval Procedures.pdf" - unable to determine which document matches user intent due to query ambiguity', confidencePassed: false, category: 'Search', confidenceScore: 58, timeMs: 198 },
+          { step: 'Determined that providing specific answer without clarification would risk delivering incorrect or incomplete information', confidencePassed: true, category: 'Quality Check', confidenceScore: 96, timeMs: 34 },
+          { step: 'Generated clarifying response requesting user to specify which aspect of credit policy they need information about', confidencePassed: true, category: 'Synthesis', confidenceScore: 98, timeMs: 67 }
+        ]
+      },
+      {
+        type: 'user' as const,
+        content: 'what is our exact policy about using the office on the weekends',
+        timestamp: 'Oct 24, 10:16 AM'
+      },
+      {
+        type: 'assistant' as const,
+        content: 'I have checked the available policies and I don\'t have information about office usage on weekends. This specific policy may not be in my current knowledge base.',
+        timestamp: 'Oct 24, 10:16 AM',
         hasReactions: true,
         confidence: 'High' as const,
+        confidenceThresholdPassed: false,
+        chainOfThought: [
+          { step: 'User asked about office weekend policy', confidencePassed: true, category: 'Analysis', confidenceScore: 99, timeMs: 8 },
+          { step: 'Searched knowledge base for weekend office usage policies', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 187 },
+          { step: 'No relevant policy documents found matching this query', confidencePassed: true, category: 'Search', confidenceScore: 94, timeMs: 223 },
+          { step: 'Confirmed absence of information rather than providing uncertain answer', confidencePassed: true, category: 'Quality Check', confidenceScore: 97, timeMs: 15 }
+        ]
+      },
+      {
+        type: 'user' as const,
+        content: 'what is the bank secrecy act',
+        timestamp: 'Oct 24, 10:20 AM'
+      },
+      {
+        type: 'assistant' as const,
+        content: 'The Bank Secrecy Act (BSA) is a U.S. federal law enacted in 1970 that requires financial institutions to assist government agencies in detecting and preventing money laundering and other financial crimes. The BSA mandates that banks and other financial institutions maintain certain records and file specific reports, such as Currency Transaction Reports (CTRs) for transactions over $10,000 and Suspicious Activity Reports (SARs) when they detect potential criminal activity. Financial institutions must also implement Anti-Money Laundering (AML) programs to ensure compliance with BSA requirements and prevent their services from being used to facilitate illegal activities such as terrorism financing or the transfer of criminally derived funds.\n\nReferences:',
+        timestamp: 'Oct 24, 10:23 AM',
+        hasReactions: true,
+        confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
-        auditData: bsaAuditData,
-        internetSearchAssisted: true,
-        sources: {
-          connectors: [],
-          uploads: [],
-          internet: [
-            {
-              id: 'i1',
-              documentName: 'fincen.gov: Structuring — FinCEN Advisory FIN-2010-A001',
-              pageNumber: undefined,
-              highlightedText: 'Structuring is the act of breaking up financial transactions to avoid the $10,000 CTR reporting requirement. It is illegal regardless of whether the funds involved are from legal or illegal activity.',
-              context: '',
-              category: 'internet' as const,
-              url: 'https://www.fincen.gov',
-            },
-          ],
-        },
+        chainOfThought: [
+          { step: 'Parsed user query: "what is the bank secrecy act" - identified as a request for regulatory definition', confidencePassed: true, category: 'Analysis', confidenceScore: 98, timeMs: 12 },
+          { step: 'Initiated semantic search across compliance policy knowledge base using keywords: "Bank Secrecy Act", "BSA", "regulatory compliance"', confidencePassed: true, category: 'Search', confidenceScore: 96, timeMs: 145 },
+          { step: 'Retrieved 3 relevant documents: "BANK SECRECY ACT AND ANTI-MONEY LAUNDERING COMPLIANCE POLICY.docx" (relevance: 0.94), "AML Program Overview.pdf" (relevance: 0.87), "Financial Crimes Enforcement.docx" (relevance: 0.82)', confidencePassed: true, category: 'Search', confidenceScore: 94, timeMs: 234 },
+          { step: 'Extracted key information from primary document: Enactment year (1970), core purpose (prevent money laundering), regulatory authority (FinCEN)', confidencePassed: true, category: 'Analysis', confidenceScore: 97, timeMs: 89 },
+          { step: 'Identified Currency Transaction Report (CTR) requirements: mandatory filing for cash transactions exceeding $10,000', confidencePassed: true, category: 'Analysis', confidenceScore: 96, timeMs: 67 },
+          { step: 'Identified Suspicious Activity Report (SAR) requirements: mandatory reporting of transactions indicating potential criminal activity, money laundering, or fraud', confidencePassed: true, category: 'Analysis', confidenceScore: 95, timeMs: 72 },
+          { step: 'Validated AML program requirements: financial institutions must establish and maintain written policies, designate compliance officers, conduct employee training, and perform independent audits', confidencePassed: true, category: 'Validation', confidenceScore: 93, timeMs: 103 },
+          { step: 'Cross-referenced information across all three documents to verify consistency and accuracy of key facts', confidencePassed: true, category: 'Validation', confidenceScore: 97, timeMs: 178 },
+          { step: 'Verified historical accuracy: Confirmed 1970 as enactment year through multiple source documents', confidencePassed: true, category: 'Validation', confidenceScore: 99, timeMs: 56 },
+          { step: 'Assessed scope applicability: Confirmed BSA applies to banks, credit unions, broker-dealers, money services businesses, and other financial institutions', confidencePassed: true, category: 'Validation', confidenceScore: 94, timeMs: 81 },
+          { step: 'Validated regulatory context: Confirmed FinCEN (Financial Crimes Enforcement Network) as primary enforcement agency', confidencePassed: true, category: 'Validation', confidenceScore: 98, timeMs: 64 },
+          { step: 'Synthesized comprehensive definition covering: legislative purpose, key reporting requirements (CTR/SAR), AML program mandates, and enforcement mechanisms', confidencePassed: true, category: 'Synthesis', confidenceScore: 96, timeMs: 112 },
+          { step: 'Quality check: Ensured response includes practical examples (transaction thresholds) and avoids technical jargon where possible', confidencePassed: true, category: 'Quality Check', confidenceScore: 95, timeMs: 43 },
+          { step: 'Prepared source citations: Selected 2 most relevant document excerpts to support response and enable user verification', confidencePassed: true, category: 'Quality Check', confidenceScore: 97, timeMs: 38 },
+          { step: 'Final validation: Confirmed all statements are factually supported by source documents and meet answer strength requirements', confidencePassed: true, category: 'Quality Check', confidenceScore: 98, timeMs: 29 }
+        ],
         references: [
           {
             number: 1,
-            title: 'FinCEN SAR Filing Requirements — 31 CFR 1020.320',
-            description: 'Federal regulation defining suspicious activity reporting obligations, including structuring patterns and the 30-day filing deadline.',
-          },
-          {
-            number: 2,
-            title: 'BSA/AML Compliance Policy v4.2 (Internal)',
-            description: 'Institution policy covering transaction monitoring thresholds, red-flag indicators, and escalation procedures.',
-          },
-        ],
-      },
-    ],
+            title: 'BANK SECRECY ACT AND ANTI-MONEY LAUNDERING COMPLIANCE POLICY.docx',
+            description: 'Outlines expected the Bank Secrecy Act requirements to prevent financial institutions from being used as intermediaries for the transfer or deposit of money derived from criminal activity.'
+          }
+        ]
+      }
+    ]
   };
 
   // Conversation 1: BSA AML Procedure Review
@@ -275,7 +150,6 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         hasReactions: true,
         confidence: 'Medium' as const,
         confidenceThresholdPassed: true,
-        auditData: bsaAuditData,
         chainOfThought: [
           { step: 'Parsed user request: Document review for "2025 BSA AML Procedure Draft.docx" - identified as compliance document analysis task', confidencePassed: true, category: 'Analysis', confidenceScore: 99, timeMs: 15 },
           { step: 'Extracted text content from uploaded document: 45 pages, 12,847 words - detected structured policy sections', confidencePassed: true, category: 'Analysis', confidenceScore: 98, timeMs: 892 },
@@ -435,9 +309,9 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
   const showDocumentChip = selectedDocument && conversationId !== 'new-chat';
 
   return (
-    <div className="flex-1 flex h-screen bg-[#f5f5f3]">
+    <div className="flex-1 flex h-screen bg-white">
       {/* Chat Section */}
-      <div className={`flex flex-col h-screen bg-[#f5f5f3] transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
+      <div className={`flex flex-col h-screen bg-white transition-all duration-300 ${activeCitation ? 'w-1/2' : 'w-full'}`}>
         {/* Header */}
         {!isNewConversationWithDoc && (
           <div className="border-b border-gray-200 bg-white px-4 py-3">
@@ -533,7 +407,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
                       {uploadProgress < 100 ? (
                         <>
                           <div className="flex items-center gap-3">
-                            <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                             <div className="text-sm text-gray-900">Processing 6 files (39.6 MB)... • Step {Math.max(1, Math.min(Math.ceil(uploadProgress * 7 / 100), 7))} of 7 complete</div>
                           </div>
                           <div className="text-xs text-gray-500 mt-3">
@@ -576,7 +450,7 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
               {/* Input box positioned in center area */}
               <div className="w-full max-w-2xl px-4">
                 <div className="relative">
-                  <div className="w-full border border-gray-300 rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-20 focus-within:border-gray-400">
+                  <div className="w-full border border-gray-300 rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-20 focus-within:border-[#E05C3A] transition-colors">
                     {/* Document attachment chip inside input */}
                     {selectedDocument && (
                       <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-100 rounded px-2 py-1 mb-2">
@@ -635,38 +509,13 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             </div>
           ) : (
             <div className="max-w-3xl">
-              {(() => {
-                const msgs = activeConversation.messages;
-                const visibleMsgs = thinkingActive ? msgs.slice(0, msgs.length - 1) : msgs;
-                return (
-                  <>
-                    {visibleMsgs.map((message, index) => {
-                      const isLastRevealing = !thinkingActive && justRevealed && index === msgs.length - 1;
-                      return (
-                        <div
-                          key={index}
-                          style={isLastRevealing ? { animation: 'fadeIn 0.5s ease-out' } : {}}
-                        >
-                          <ChatMessage
-                            {...message}
-                            onCitationClick={setActiveCitation}
-                            onOpenAuditPanel={(data) => setAuditPanel(data)}
-                          />
-                        </div>
-                      );
-                    })}
-                    {thinkingActive && (
-                      <ThinkingBubble
-                        onComplete={() => {
-                          setThinkingActive(false);
-                          setJustRevealed(true);
-                          setTimeout(() => setJustRevealed(false), 600);
-                        }}
-                      />
-                    )}
-                  </>
-                );
-              })()}
+              {activeConversation.messages.map((message, index) => (
+                <ChatMessage 
+                  key={index} 
+                  {...message}
+                  onCitationClick={setActiveCitation}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -675,10 +524,10 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
         {!isNewConversationWithDoc && (
           <div className="border-t border-gray-200 bg-white p-4">
             <div className="max-w-3xl">
-              <div className="relative border border-gray-300 rounded-lg">
+              <div className="relative border border-gray-300 rounded-lg focus-within:border-[#E05C3A] transition-colors">
                 <textarea
-                  placeholder={selectedDocument ? `Ask about ${selectedDocument.name}...` : "Type a message..."}
-                  className="w-full resize-none rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-12 outline-none focus:border-gray-400 pb-12"
+                  placeholder={selectedDocument ? `Ask about ${selectedDocument.name}...` : "Type a message or drop files to begin..."}
+                  className="w-full resize-none rounded-lg py-3 px-4 text-sm placeholder:text-gray-400 pr-12 outline-none pb-12"
                   rows={1}
                   style={{ minHeight: '52px' }}
                 />
@@ -721,36 +570,6 @@ export function ChatArea({ conversationId, selectedDocument, onClearDocument, on
             </div>
           </div>
         )}
-      </div>
-
-      {/* Audit Log Panel — inline draggable slider */}
-      <div
-        ref={auditPanelRef}
-        className="flex-shrink-0 h-screen overflow-hidden transition-[width] duration-300 ease-in-out"
-        style={{ width: auditPanel ? auditPanelWidth : 0 }}
-      >
-        <div className="flex h-full w-full">
-          {/* Drag handle */}
-          <div
-            className="w-3 flex-shrink-0 relative flex items-center justify-center cursor-col-resize group bg-white"
-            onMouseDown={handleAuditDividerMouseDown}
-          >
-            <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200 group-hover:bg-blue-400 transition-colors" />
-            <div className="relative z-10 w-[5px] h-8 rounded-full bg-gray-300 group-hover:bg-blue-200 transition-colors" />
-          </div>
-          {/* Panel content */}
-          <div className="flex-1 overflow-hidden bg-white flex flex-col">
-            {auditPanel && (
-              <AuditLogSheet
-                auditData={auditPanel.auditData}
-                confidenceThresholdPassed={auditPanel.confidenceThresholdPassed}
-                references={auditPanel.references}
-                refId={auditRefId}
-                onClose={() => setAuditPanel(null)}
-              />
-            )}
-          </div>
-        </div>
       </div>
 
       {/* PDF Viewer Section - Only show when citation is active */}

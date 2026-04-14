@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { AuditReport } from './AuditReport';
 import { Sidebar } from './Sidebar';
 import { ChatArea } from './ChatArea';
 import { ConnectorsView } from './ConnectorsView';
 import { UploadsView } from './UploadsView';
-import { AgentsView } from './AgentsView';
+import { AgentsView, type AgentAction } from './AgentsView';
 import { TPRMWorkbench } from './TPRMWorkbench';
-import { CommercialLendingWorkspace } from './CommercialLendingWorkspace';
+import { CommercialLendingWorkspace, type AgentSession } from './CommercialLendingWorkspace';
 import { ChevronRight, Menu } from 'lucide-react';
 import { useIsMobile } from './ui/use-mobile';
 
@@ -20,19 +19,16 @@ interface SelectedDocument {
 }
 
 export default function App() {
-  // Route /audit-report to standalone page
-  if (window.location.pathname === '/audit-report') {
-    return <AuditReport />;
-  }
-
-
-  const [activeConversationId, setActiveConversationId] = useState('3');
-  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('chat');
+  const [activeConversationId, setActiveConversationId] = useState('new-chat');
+  const [activeView, setActiveView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'commercial-lending' | 'knowledge-base' | 'tprm'>('agents');
+  const [previousView, setPreviousView] = useState<'chat' | 'agents' | 'connectors' | 'uploads' | 'knowledge-base' | 'tprm' | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<SelectedDocument | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [uploadCompleted, setUploadCompleted] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [uploadStarted, setUploadStarted] = useState<boolean>(false);
+  const [agentSessions, setAgentSessions] = useState<AgentSession[]>([]);
+  const [initialCLAction, setInitialCLAction] = useState<AgentAction | undefined>(undefined);
   const hasStartedUploadRef = useRef<boolean>(false);
   const progressRef = useRef<number>(0);
   const isMobile = useIsMobile();
@@ -125,6 +121,7 @@ export default function App() {
         uploadProgress={uploadProgress}
         uploadStarted={uploadStarted}
         agentContext={activeView === 'commercial-lending' ? 'commercial-lending' : activeView === 'tprm' ? 'tprm' : null}
+        agentSessions={agentSessions}
       />
       {activeView === 'chat' && (
         <ChatArea 
@@ -153,8 +150,10 @@ export default function App() {
         <AgentsView 
           onDocumentSelect={handleDocumentSelect}
           onChatNavigate={handleChatNavigate}
-          onAgentLaunch={(agentId) => {
+          onAgentLaunch={(agentId, action) => {
+            setPreviousView(activeView as any);
             if (agentId === 'commercial-lending') {
+              setInitialCLAction(action);
               setActiveView('commercial-lending');
             } else if (agentId === 'knowledge-base') {
               setActiveView('knowledge-base');
@@ -165,8 +164,10 @@ export default function App() {
         />
       )}
       {activeView === 'commercial-lending' && (
-        <CommercialLendingWorkspace 
-          onBack={() => setActiveView('agents')}
+        <CommercialLendingWorkspace
+          onBack={() => setActiveView(previousView ?? 'agents')}
+          onSessionCreated={session => setAgentSessions(prev => [session, ...prev])}
+          initialAction={initialCLAction}
         />
       )}
       {activeView === 'knowledge-base' && (
@@ -176,8 +177,8 @@ export default function App() {
         />
       )}
       {activeView === 'tprm' && (
-        <TPRMWorkbench 
-          onBack={() => setActiveView('agents')}
+        <TPRMWorkbench
+          onBack={() => setActiveView(previousView ?? 'agents')}
         />
       )}
     </div>

@@ -1,14 +1,7 @@
-import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Info, FileText, ExternalLink, Upload, Database, Copy, ChevronRight, Cloud, Heart } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { ThumbsUp, ThumbsDown, Heart, ChevronDown, ChevronUp, Info, CheckCircle2, XCircle, FileText, ExternalLink, Cloud, Upload, Database, Copy } from 'lucide-react';
+import { useState } from 'react';
 import { Tooltip, TooltipTrigger, TooltipContent } from './ui/tooltip';
-
-const EASE = [0.4, 0, 0.2, 1] as const;
-const expandVariants = {
-  hidden: { height: 0, opacity: 0 },
-  visible: { height: 'auto', opacity: 1, transition: { duration: 0.22, ease: EASE } },
-  exit:    { height: 0, opacity: 0,    transition: { duration: 0.16, ease: EASE } },
-};
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from './ui/sheet';
 
 interface Reference {
   number: number;
@@ -44,46 +37,6 @@ interface ChainStep {
   timeMs?: number;
 }
 
-// ── Rich audit data types ─────────────────────────────────────────────────────
-
-export interface AuditStepSource {
-  name: string;
-  relevance: number; // 0–100
-}
-
-export interface AuditStep {
-  num: number;
-  tool: string;
-  description: string;
-  durationMs: number;
-  docCount?: number;
-  chunkCount?: number;
-  model?: string;
-  dependsOn?: number[];
-  output?: string;
-  sources?: AuditStepSource[];
-  rawOutput?: string;
-}
-
-export interface AuditPhase {
-  name: string;
-  description: string;
-  parallel: boolean;
-  durationMs: number;
-  steps: AuditStep[];
-}
-
-export interface AuditData {
-  assuranceLevel: 'sufficient' | 'limited' | 'partial';
-  assuranceDesc: string;
-  sources: { num: number; name: string }[];
-  model: string;
-  executionPlan: string;
-  phases: AuditPhase[];
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface ChatMessageProps {
   type: 'user' | 'assistant';
   content: string;
@@ -94,365 +47,42 @@ interface ChatMessageProps {
   confidence?: 'High' | 'Medium' | 'Low';
   chainOfThought?: ChainStep[];
   confidenceThresholdPassed?: boolean;
-  attachment?: { fileName: string; fileSize?: string };
+  attachment?: {
+    fileName: string;
+    fileSize?: string;
+  };
   sources?: CategorizedSources;
   internetSearchAssisted?: boolean;
-  auditData?: AuditData;
   onCitationClick?: (citation: { title: string; pageNumber?: number; highlightedText?: string; context?: string; description?: string; }) => void;
-  onOpenAuditPanel?: (data: { auditData?: AuditData; confidenceThresholdPassed?: boolean; references?: Reference[] }) => void;
 }
 
-function fmtMs(ms: number) {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${ms}ms`;
-}
-
-// ── Audit Log Sheet ───────────────────────────────────────────────────────────
-
-export function AuditLogSheet({ auditData, confidenceThresholdPassed, references, refId, onClose }: {
-  auditData?: AuditData;
-  confidenceThresholdPassed?: boolean;
-  references?: Reference[];
-  refId: string;
-  onClose?: () => void;
-}) {
-  const [s1Open, setS1Open] = useState(true);
-  const [s2Open, setS2Open] = useState(false);
-  const [s3Open, setS3Open] = useState(false);
-  const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
-  const [expandedRaw, setExpandedRaw] = useState<Set<string>>(new Set());
-
-  const toggleStep = (key: string) => setExpandedSteps(p => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
-  const toggleRaw  = (key: string) => setExpandedRaw(p => { const n = new Set(p); n.has(key) ? n.delete(key) : n.add(key); return n; });
-
-  const totalMs = auditData?.phases.reduce((a, p) => a + p.durationMs, 0) ?? 0;
-
-  const level = auditData?.assuranceLevel ?? (confidenceThresholdPassed !== false ? 'sufficient' : 'limited');
-  const levelLabel = level === 'sufficient' ? 'Sufficient' : level === 'partial' ? 'Partial' : 'Limited';
-  const levelCls   = level === 'sufficient'
-    ? 'bg-green-50 text-green-800 border-green-200'
-    : level === 'partial'
-    ? 'bg-amber-50 text-amber-800 border-amber-200'
-    : 'bg-red-50 text-red-800 border-red-200';
-
-  const displaySources = auditData?.sources ?? references?.map((r, i) => ({ num: i + 1, name: r.title })) ?? [];
-
-  // Section toggle header
-  const SectionBtn = ({ label, meta, open, onToggle }: { label: string; meta: string; open: boolean; onToggle: () => void }) => (
-    <button onClick={onToggle} className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors text-left">
-      <div>
-        <p className="text-sm font-semibold text-gray-900">{label}</p>
-        <p className="text-[11px] text-gray-400 mt-0.5">{meta}</p>
-      </div>
-      <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`} />
-    </button>
-  );
-
-  return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex-shrink-0 flex items-start justify-between">
-        <div>
-          <h2 className="text-[15px] font-semibold text-gray-900">Audit Log</h2>
-          <p className="text-[11px] text-gray-400 font-mono mt-0.5">Reference #{refId}</p>
-          {auditData && (
-            <a
-              href={`/audit-report?ref=${refId}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-[11px] font-medium text-[#166534] hover:underline mt-1.5"
-            >
-              <FileText className="w-3 h-3" />
-              View full report
-            </a>
-          )}
-        </div>
-        {onClose && (
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 p-1 -mr-1 rounded transition-colors">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-2"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round"/></svg>
-          </button>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
-
-        {/* ── Section 1: Trust ── */}
-        <div>
-          <SectionBtn
-            label="Trust"
-            meta="Assurance · Sources · Model"
-            open={s1Open}
-            onToggle={() => setS1Open(o => !o)}
-          />
-          <AnimatePresence initial={false}>
-          {s1Open && (
-            <motion.div key="s1" variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-            <div className="px-5 pb-5 space-y-4">
-              {/* Assurance */}
-              <div>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Assurance Level</p>
-                <span className={`inline-block text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg border ${levelCls}`}>
-                  {levelLabel}
-                </span>
-                <p className="text-sm text-gray-600 leading-relaxed mt-2">
-                  {auditData?.assuranceDesc ?? (confidenceThresholdPassed !== false
-                    ? 'A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence.'
-                    : 'A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence.')}
-                </p>
-              </div>
-
-              {/* Sources */}
-              {displaySources.length > 0 && (
-                <div>
-                  <hr className="border-gray-100 mb-4" />
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Sources</p>
-                  <div className="space-y-1.5">
-                    {displaySources.map((s) => (
-                      <div key={s.num} className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                        <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0">{s.num}</span>
-                        <span className="text-xs font-medium text-gray-700 leading-snug">{s.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Model */}
-              <div>
-                <hr className="border-gray-100 mb-4" />
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Model Attribution</p>
-                <div className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 rounded px-2.5 py-1.5">
-                  <div className="w-3.5 h-3.5 flex-shrink-0">
-                    <svg viewBox="0 0 106 106" fill="none" className="w-full h-full">
-                      <path d="M47.2423 71.4809L34.4963 58.7302C32.6352 56.86 33.2539 57.4793 31.7433 55.9716C14.6419 38.8588 11.7307 37.4185 11.7307 30.5882C11.7317 23.3304 17.5941 17.6895 24.6098 17.6892C31.1319 17.6892 33.976 21.7116 38.9795 26.7223L47.2461 18.4502C41.5612 12.7615 36.1899 6.00011 24.6098 6.00011C10.9317 6.00042 0.000739855 17.1042 0 30.5692C0 42.1253 6.79117 47.5434 12.4798 53.2358L12.5026 53.2167C27.7218 68.5006 21.6839 62.4498 38.9757 79.753L47.2423 71.4809ZM87.5299 53.2167C93.2148 47.5281 99.9717 42.1488 99.9717 30.5844C99.9742 8.56382 73.2786 -2.08453 57.9958 13.1992L26.2715 44.9446L34.5039 53.2129L66.2625 21.4714C74.3184 13.4114 88.2586 19.0372 88.26 30.5844C88.26 37.1225 84.2823 39.9222 79.2632 44.9446L87.5299 53.2167ZM75.3885 105.981C97.2753 105.981 108.216 79.4607 92.7735 64.0078L61.0226 32.2358L52.7598 40.5079L65.4982 53.2205C66.4132 54.1401 67.1959 54.9156 68.255 55.9754L68.2512 55.9792C79.9164 67.656 76.2804 64.0138 84.5183 72.2571C89.4984 77.2912 89.4986 85.4795 84.5107 90.5174C79.6319 95.4017 71.1332 95.3981 66.2625 90.5174L61.0188 85.2665L52.7522 93.5386C58.4563 99.2388 63.8207 105.981 75.3885 105.981ZM24.6098 106C37.5954 106 40.3064 100.475 73.7572 67.0024L65.4868 58.7378C31.2883 92.9512 31.712 94.292 24.6098 94.292C13.1508 94.2916 7.44711 80.3578 15.4876 72.2419L20.7275 66.9947L12.4798 58.7416L7.22096 64.0078C-8.26441 79.5034 2.88298 106 24.6098 106Z" fill="#FF6E3C" />
-                    </svg>
-                  </div>
-                  <span className="text-xs font-medium text-gray-700">Titan Banking SLM</span>
-                </div>
-              </div>
-            </div>
-            </motion.div>
-          )}
-          </AnimatePresence>
-        </div>
-
-        {/* ── Section 2: Titan's Reasoning ── */}
-        {auditData && (
-          <div>
-            <SectionBtn
-              label="Titan's Reasoning"
-              meta={`${auditData.phases.length} phases`}
-              open={s2Open}
-              onToggle={() => setS2Open(o => !o)}
-            />
-            <AnimatePresence initial={false}>
-            {s2Open && (
-              <motion.div key="s2" variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-              <div className="px-5 pb-5 space-y-4">
-                {/* Execution Plan */}
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-2">Execution Plan</p>
-                  <pre className="text-[11.5px] font-mono text-gray-600 leading-relaxed bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 whitespace-pre-wrap break-words">
-                    {auditData.executionPlan}
-                  </pre>
-                </div>
-
-                <hr className="border-gray-100" />
-
-                {/* Phase list */}
-                <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em] mb-3">Phases</p>
-                  <div className="space-y-4">
-                    {auditData.phases.map((phase, pi) => (
-                      <div key={pi} className="flex gap-3">
-                        <div className="w-7 h-7 rounded-md bg-[#166534] text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                          P{pi + 1}
-                        </div>
-                        <div className="pt-0.5">
-                          <p className="text-[11px] font-bold text-[#166534] uppercase tracking-wider mb-0.5">{phase.name}</p>
-                          <p className="text-xs text-gray-500 leading-relaxed">{phase.description}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              </motion.div>
-            )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* ── Section 3: AI Orchestration ── */}
-        {auditData && (
-          <div>
-            <SectionBtn
-              label="AI Orchestration"
-              meta={`${auditData.phases.length} phases · ${auditData.phases.reduce((a, p) => a + p.steps.length, 0)} steps · ${fmtMs(totalMs)}`}
-              open={s3Open}
-              onToggle={() => setS3Open(o => !o)}
-            />
-            <AnimatePresence initial={false}>
-            {s3Open && (
-              <motion.div key="s3" variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-              <div className="px-5 pb-5">
-                {/* Total time */}
-                <div className="flex items-center justify-end gap-1 text-[11.5px] font-semibold text-gray-500 mb-4">
-                  <svg viewBox="0 0 24 24" className="w-3 h-3 stroke-gray-400 fill-none stroke-2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                  Total: {fmtMs(totalMs)}
-                </div>
-
-                <div className="space-y-4">
-                  {auditData.phases.map((phase, pi) => (
-                    <div key={pi}>
-                      {/* Phase header */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <div className="w-6 h-6 rounded-md bg-[#166534] text-white text-[10px] font-extrabold flex items-center justify-center flex-shrink-0">
-                          P{pi}
-                        </div>
-                        <span className="text-[12.5px] font-bold text-gray-900 flex-1">{phase.name}</span>
-                        {phase.parallel && (
-                          <span className="text-[10px] font-semibold text-[#166534] bg-green-100 border border-green-300 rounded-full px-2 py-0.5 flex items-center gap-1">
-                            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-none stroke-[#166534] stroke-2"><path d="M17 1l4 4-4 4M7 1l-4 4 4 4M21 5H3M21 19H3M17 15l4 4-4 4M7 15l-4 4 4 4"/></svg>
-                            Parallel · {phase.steps.length} steps
-                          </span>
-                        )}
-                        <span className="text-[11px] text-gray-400 font-mono">{fmtMs(phase.durationMs)}</span>
-                      </div>
-
-                      {/* Steps */}
-                      <div className={`space-y-2 ${phase.parallel ? 'pl-2.5 border-l-2 border-indigo-100' : ''}`}>
-                        {phase.steps.map((step) => {
-                          const sk = `${pi}-${step.num}`;
-                          const rk = `raw-${pi}-${step.num}`;
-                          const stepOpen = expandedSteps.has(sk);
-                          const rawOpen  = expandedRaw.has(rk);
-                          return (
-                            <div key={step.num} className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
-                              <div className="px-3 pt-2.5 pb-2">
-                                {/* Row 1: dot + step num + tool + duration */}
-                                <div className="flex items-center gap-2 mb-1.5">
-                                  <div className="w-2 h-2 rounded-full bg-[#16a34a] flex-shrink-0" />
-                                  <span className="text-xs font-bold text-gray-900">Step {step.num}</span>
-                                  <span className="font-mono text-[10px] text-gray-600 bg-gray-200 rounded px-1.5 py-0.5">{step.tool}</span>
-                                  <span className="text-[10px] text-gray-400 font-mono ml-auto">{fmtMs(step.durationMs)}</span>
-                                </div>
-                                {/* Row 2: doc/chunk/model meta */}
-                                {(step.docCount !== undefined || step.model) && (
-                                  <div className="flex items-center gap-1.5 text-[11px] text-gray-400 mb-1.5">
-                                    <FileText className="w-3 h-3 flex-shrink-0" />
-                                    {step.docCount !== undefined && <span>{step.docCount} {step.docCount === 1 ? 'doc' : 'docs'}</span>}
-                                    {step.chunkCount !== undefined && <><span className="text-gray-300">·</span><span>{step.chunkCount} chunks</span></>}
-                                    {step.model && <><span className="text-gray-300">·</span><span className="font-mono">{step.model}</span></>}
-                                  </div>
-                                )}
-                                {/* Depends on */}
-                                {step.dependsOn && step.dependsOn.length > 0 && (
-                                  <p className="text-[11px] text-gray-400 mb-1.5">← After steps {step.dependsOn.join(', ')}</p>
-                                )}
-                                {/* Description */}
-                                <p className="text-[11.5px] font-mono text-gray-600 leading-relaxed mb-2">{step.description}</p>
-                                {/* View details toggle */}
-                                {step.output && (
-                                  <button
-                                    onClick={() => toggleStep(sk)}
-                                    className="flex items-center gap-1 text-[11.5px] font-semibold text-[#166534] hover:underline"
-                                  >
-                                    <ChevronRight className={`w-3 h-3 transition-transform ${stepOpen ? 'rotate-90' : ''}`} />
-                                    {stepOpen ? 'Hide details' : 'View details'}
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Progress bar */}
-                              <div className="h-0.5 bg-gray-200">
-                                <div className="h-full bg-gradient-to-r from-[#3d6b47] to-green-400 w-full" />
-                              </div>
-
-                              {/* Detail panel */}
-                              <AnimatePresence initial={false}>
-                              {stepOpen && step.output && (
-                                <motion.div key={sk} variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-                                <div className="border-t border-gray-200 bg-white px-3 py-2.5">
-                                  <p className="text-xs text-gray-700 leading-relaxed mb-2">{step.output}</p>
-
-                                  {/* Source relevance */}
-                                  {step.sources && step.sources.length > 0 && (
-                                    <div className="mb-2 divide-y divide-gray-100">
-                                      {step.sources.map((src, si) => (
-                                        <div key={si} className="flex items-center justify-between py-1.5 gap-2">
-                                          <span className="text-[11px] font-medium text-gray-700 flex-1">{src.name}</span>
-                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${src.relevance >= 50 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                            {src.relevance}%
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-
-                                  {/* Raw output toggle */}
-                                  {step.rawOutput && (
-                                    <>
-                                      <button
-                                        onClick={() => toggleRaw(rk)}
-                                        className="flex items-center gap-1 text-[11px] font-medium text-gray-500 hover:underline"
-                                      >
-                                        <ChevronRight className={`w-3 h-3 transition-transform duration-150 ${rawOpen ? 'rotate-90' : ''}`} />
-                                        {rawOpen ? 'Hide raw output' : 'View raw output'}
-                                      </button>
-                                      <AnimatePresence initial={false}>
-                                      {rawOpen && (
-                                        <motion.div key={rk} variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-                                          <pre className="mt-2 text-[10.5px] font-mono text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-2.5 whitespace-pre-wrap overflow-x-auto">
-                                            {step.rawOutput}
-                                          </pre>
-                                        </motion.div>
-                                      )}
-                                      </AnimatePresence>
-                                    </>
-                                  )}
-                                </div>
-                                </motion.div>
-                              )}
-                              </AnimatePresence>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              </motion.div>
-            )}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Footer */}
-        <div className="px-5 py-4 space-y-2">
-          <p className="text-[10px] text-gray-400 leading-relaxed">
-            ⓘ Always verify critical information with official sources. Titan provides responses based on available data and may not have access to the most current information.
-          </p>
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, auditData, onCitationClick, onOpenAuditPanel }: ChatMessageProps) {
+export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful, references, confidence, chainOfThought, confidenceThresholdPassed, attachment, sources, internetSearchAssisted, onCitationClick }: ChatMessageProps) {
+  const [expandedRef, setExpandedRef] = useState<number | null>(null);
   const [sourcesExpanded, setSourcesExpanded] = useState(false);
-  const refId = useMemo(() => `AL-${Math.random().toString(36).substring(2, 10).toUpperCase()}`, []);
+  const [viewingSource, setViewingSource] = useState<Source | null>(null);
+
+  const getConfidenceBadgeColor = (conf?: 'High' | 'Medium' | 'Low') => {
+    switch (conf) {
+      case 'High':
+        return 'bg-green-100 text-green-700 border-green-200';
+      case 'Medium':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+      case 'Low':
+        return 'bg-orange-100 text-orange-700 border-orange-200';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
 
   return (
     <div className="flex gap-3 mb-4">
       {/* Avatar */}
       <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs ${
-        type === 'assistant' ? 'bg-[#ff6b5a] text-white' : 'bg-[#455a4f] text-white'
+        type === 'assistant' ? 'bg-gray-100 text-gray-500' : 'bg-gray-200 text-gray-600'
       }`}>
         {type === 'assistant' ? (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="3" y="3" width="8" height="8" fill="white" />
+            <rect x="3" y="3" width="8" height="8" fill="currentColor" />
           </svg>
         ) : (
           'TB'
@@ -522,185 +152,247 @@ export function ChatMessage({ type, content, timestamp, hasReactions, wasHelpful
             {/* Message Footer - Actions and Metadata */}
             <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
               {/* Left side - Actions */}
-              <div className="flex items-center gap-0.5">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
-                      <Copy className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2">
+                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Copy">
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs up">
+                  <ThumbsUp className="w-3.5 h-3.5" />
+                </button>
+                <button className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-50 rounded" title="Thumbs down">
+                  <ThumbsDown className="w-3.5 h-3.5" />
+                </button>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 transition-colors ml-1">
+                      <Info className="w-3.5 h-3.5" />
+                      <span>More about this response</span>
                     </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Copy response</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
-                      <ThumbsUp className="w-3.5 h-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Give positive feedback</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button className="text-gray-400 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors">
-                      <ThumbsDown className="w-3.5 h-3.5" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>Give negative feedback</TooltipContent>
-                </Tooltip>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() => onOpenAuditPanel?.({ auditData, confidenceThresholdPassed, references })}
-                      className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-gray-700 p-1.5 hover:bg-gray-100 rounded-md transition-colors ml-0.5"
-                    >
-                      <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                      <span>Audit Log</span>
-                      <ChevronRight className="w-3 h-3 opacity-40" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>View audit log for this response</TooltipContent>
-                </Tooltip>
+                  </SheetTrigger>
+                  <SheetContent className="w-full sm:max-w-xl bg-[#f5f5f3] overflow-y-auto">
+                    <SheetHeader className="border-b border-gray-200 pb-4">
+                      <SheetTitle className="text-sm text-gray-900">Audit Log</SheetTitle>
+                      <SheetDescription className="text-xs text-gray-500 mt-1">
+                        Reference #AL-{Math.random().toString(36).substring(2, 15)}
+                      </SheetDescription>
+                    </SheetHeader>
+                    
+                    <div className="px-6 pb-6">
+                      {/* Chain of Thought Steps */}
+                      {chainOfThought && chainOfThought.length > 0 && (
+                        <div>
+                          {/* Internet Search Assisted Indicator */}
+                          {internetSearchAssisted && (
+                            <div className="mb-4 p-3 bg-slate-50 border border-slate-200 rounded">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Cloud className="w-3.5 h-3.5 text-slate-600" />
+                                <span className="text-sm text-slate-900 font-medium">Internet Search Assisted</span>
+                              </div>
+                              <p className="text-xs text-slate-700 leading-relaxed">
+                                This response used information gathered from the public internet. Online sources are not independently verified and may contain errors or outdated information. You should review the cited sources and confirm key facts with reliable references before relying on the information.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Answer Strength Section */}
+                          <div className="mb-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-sm text-gray-900">Assurance Level</span>
+                              {confidenceThresholdPassed ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-green-50 border border-green-200 text-[10px] text-green-700 uppercase tracking-wide">Sufficient</span>
+                              ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-yellow-50 border border-yellow-200 text-[10px] text-yellow-700 uppercase tracking-wide">Limited</span>
+                              )}
+                            </div>
+                            
+                            <p className="text-xs text-gray-700 leading-relaxed">
+                              {confidenceThresholdPassed 
+                                ? "A sufficient Assurance Level means Titan has enough confidence to provide a direct answer based on reasoning and evidence."
+                                : "A limited Assurance Level means Titan cannot provide a direct answer because it lacks confidence, typically when evidence is missing or multiple conflicting answers exist. It deliberately avoids guessing in these scenarios and may ask you to clarify or provide more details."}
+                            </p>
+                          </div>
+
+                          {/* Divider */}
+                          <div className="border-t border-gray-200 my-4"></div>
+
+                          {/* Chain-of-thought Section */}
+                          <div>
+                            <h4 className="text-sm text-gray-900 mb-3">Chain of Thought</h4>
+                            
+                            <div className="space-y-3">
+                              {chainOfThought.map((step, index) => (
+                                <div key={index} className="flex items-center gap-3">
+                                  {/* Circle number outside */}
+                                  <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#5a7a5e] text-white flex items-center justify-center text-[10px]">
+                                    {index + 1}
+                                  </div>
+                                  
+                                  {/* Step content */}
+                                  <div className="flex-1 border-l-2 border-[#5a7a5e] bg-white p-3">
+                                    {step.category && (
+                                      <div className="text-[10px] text-gray-500 mb-1 bg-[rgba(0,0,0,0)] uppercase tracking-wide">
+                                        {step.category}
+                                      </div>
+                                    )}
+                                    
+                                    <p className="text-xs text-gray-900">
+                                      {step.step}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Disclaimer */}
+                      <div className="mt-6 pt-6 border-t border-gray-200">
+                        <div>
+                          <p className="text-[10px] text-gray-700 leading-relaxed">
+                            <strong className="text-gray-900">Note:</strong> Always verify critical information with official sources. Titan provides responses based on available data but may not have access to the most current information.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
               
-              {/* Right side - Internet assisted + Sources pill + timestamp */}
-              {(() => {
-                const totalSources =
-                  (references?.length || 0) +
-                  (sources?.connectors?.length || 0) +
-                  (sources?.uploads?.length || 0) +
-                  (sources?.internet?.length || 0);
-                const hasSources = totalSources > 0;
-                return (
-                  <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
-                    {internetSearchAssisted && <span>Internet search assisted</span>}
-                    {internetSearchAssisted && <span>·</span>}
-                    {hasSources && (
-                      <button
+              {/* Right side - Sources count, internet assisted indicator, and timestamp */}
+              <div className="flex items-center gap-2 text-[11px] text-gray-500">
+                {internetSearchAssisted && (
+                  <>
+                    <span className="text-gray-500">Internet search assisted</span>
+                    <span>•</span>
+                  </>
+                )}
+                {sources && (sources.connectors?.length > 0 || sources.uploads?.length > 0 || sources.internet?.length > 0) && (() => {
+                  const totalSources = (sources.connectors?.length || 0) + (sources.uploads?.length || 0) + (sources.internet?.length || 0);
+                  return (
+                    <>
+                      <button 
                         onClick={() => setSourcesExpanded(!sourcesExpanded)}
-                        className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded-full px-2.5 py-0.5 transition-colors"
+                        className="text-gray-500 hover:text-gray-700 transition-colors bg-gray-100 hover:bg-gray-200 px-2 py-0.5 rounded text-[10px]"
                       >
-                        <span className="text-[11px] font-medium text-gray-700">
-                          {totalSources} {totalSources === 1 ? 'Source' : 'Sources'}
-                        </span>
-                        <ChevronDown className={`w-3 h-3 text-gray-500 transition-transform duration-150 ${sourcesExpanded ? 'rotate-180' : ''}`} />
+                        {totalSources} {totalSources === 1 ? 'Source' : 'Sources'}
                       </button>
-                    )}
-                    {hasSources && <span>·</span>}
-                    <span>{timestamp}</span>
-                  </div>
-                );
-              })()}
+                      <span>•</span>
+                    </>
+                  );
+                })()}
+                {references && references.length > 0 && (
+                  <>
+                    <span>{references.length} {references.length === 1 ? 'Source' : 'Sources'}</span>
+                    <span>•</span>
+                  </>
+                )}
+                <span>{timestamp}</span>
+              </div>
             </div>
             
-            {/* Sources Dropdown */}
-            <AnimatePresence initial={false}>
-            {sourcesExpanded && (() => {
-              let n = 0;
-              const hasConnectors = (references && references.length > 0) || (sources?.connectors && sources.connectors.length > 0);
-              const hasUploads = sources?.uploads && sources.uploads.length > 0;
-              const hasInternet = sources?.internet && sources.internet.length > 0;
-              if (!hasConnectors && !hasUploads && !hasInternet) return null;
-
+            {/* Sources Dropdown - Appears BELOW the message bubble */}
+            {sources && (sources.connectors?.length > 0 || sources.uploads?.length > 0 || sources.internet?.length > 0) && sourcesExpanded && (() => {
+              let sourceCounter = 0;
+              
               return (
-                <motion.div key="sources-panel" variants={expandVariants} initial="hidden" animate="visible" exit="exit" style={{ overflow: 'hidden' }}>
-                <div className="mt-1 rounded-lg border border-gray-200 bg-white overflow-hidden">
-
-                  {/* Connectors — references shown here */}
-                  {hasConnectors && (
+                <div className="mt-2 border border-gray-200 rounded bg-white">
+                  {/* Connectors */}
+                  {sources.connectors && sources.connectors.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
-                        <FileText className="w-3 h-3 text-gray-400" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Connectors</span>
+                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                        <div className="flex items-center gap-1.5">
+                          <Database className="w-3 h-3 text-gray-500" />
+                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Connectors</span>
+                        </div>
                       </div>
-                      {references && references.map((ref) => {
-                        n++;
+                      {sources.connectors.map((source) => {
+                        sourceCounter++;
+                        const currentNumber = sourceCounter;
                         return (
-                          <div key={ref.number} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100 cursor-pointer" onClick={() => onCitationClick?.({ title: ref.title, pageNumber: ref.pageNumber, highlightedText: ref.highlightedText, context: ref.context, description: ref.description })}>
-                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1">
-                                <span className="text-xs font-medium text-gray-800 truncate">{ref.title}</span>
-                              </div>
-                              {ref.description && <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{ref.description}</p>}
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
+                              {currentNumber}
                             </div>
-                          </div>
-                        );
-                      })}
-                      {sources?.connectors && sources.connectors.map((source) => {
-                        n++;
-                        return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
-                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-xs font-medium text-gray-800 truncate">{source.connector}: {source.documentName}</span>
+                                <span className="text-[11px] text-gray-900">{source.connector}: {source.documentName}</span>
                                 <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               </div>
-                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
+                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-
-                  {/* Uploads */}
-                  {hasUploads && (
-                    <div className={hasConnectors ? 'border-t border-gray-200' : ''}>
-                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
-                        <Upload className="w-3 h-3 text-gray-400" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Your Uploads</span>
+                  
+                  {/* Your Uploads */}
+                  {sources.uploads && sources.uploads.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                        <div className="flex items-center gap-1.5">
+                          <Upload className="w-3 h-3 text-gray-500" />
+                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Your Uploads</span>
+                        </div>
                       </div>
-                      {sources!.uploads!.map((source) => {
-                        n++;
+                      {sources.uploads.map((source) => {
+                        sourceCounter++;
+                        const currentNumber = sourceCounter;
                         return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
-                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
+                              {currentNumber}
+                            </div>
                             <div className="flex-1 min-w-0">
-                              <span className="text-xs font-medium text-gray-800 truncate block">{source.documentName}</span>
-                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
+                              <div className="flex items-center gap-1">
+                                <span className="text-[11px] text-gray-900">{source.documentName}</span>
+                                <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
+                              </div>
+                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-
+                  
                   {/* Internet Sources */}
-                  {hasInternet && (
-                    <div className={(hasConnectors || hasUploads) ? 'border-t border-gray-200' : ''}>
-                      <div className="flex items-center gap-1.5 px-3 pt-3 pb-1.5">
-                        <Cloud className="w-3 h-3 text-gray-400" />
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.12em]">Internet Sources</span>
+                  {sources.internet && sources.internet.length > 0 && (
+                    <div>
+                      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-200">
+                        <div className="flex items-center gap-1.5">
+                          <Cloud className="w-3 h-3 text-gray-500" />
+                          <span className="text-[10px] font-medium text-gray-700 uppercase tracking-wide">Internet Sources</span>
+                        </div>
                       </div>
-                      {sources!.internet!.map((source) => {
-                        n++;
+                      {sources.internet.map((source) => {
+                        sourceCounter++;
+                        const currentNumber = sourceCounter;
                         return (
-                          <div key={source.id} className="px-3 py-2 flex items-start gap-2.5 hover:bg-gray-50 border-t border-gray-100">
-                            <span className="w-5 h-5 rounded-full bg-gray-200 text-gray-600 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{n}</span>
+                          <div key={source.id} className="px-3 py-2 flex items-start gap-2 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                            <div className="w-4 h-4 rounded-full bg-gray-200 flex items-center justify-center text-[10px] text-gray-600 flex-shrink-0 mt-0.5">
+                              {currentNumber}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1">
-                                <span className="text-xs font-medium text-gray-800 truncate">{source.documentName}</span>
+                                <span className="text-[11px] text-gray-900">{source.documentName}</span>
                                 <ExternalLink className="w-3 h-3 text-gray-400 flex-shrink-0" />
                               </div>
-                              <p className="text-[11px] text-gray-400 italic mt-0.5 leading-snug">{source.highlightedText.substring(0, 100)}…</p>
+                              <div className="text-[10px] text-gray-500 italic mt-0.5">{source.highlightedText.substring(0, 80)}...</div>
                             </div>
                           </div>
                         );
                       })}
                     </div>
                   )}
-
-                  <div className="h-2" />
                 </div>
-                </motion.div>
               );
             })()}
-            </AnimatePresence>
           </div>
         ) : (
           <>
-            <div className="text-xs text-gray-900 mb-1.5">{content}</div>
+            <div className="bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs text-gray-900 mb-1.5 max-w-[85%] ml-auto">{content}</div>
             
             {/* Attachment for user messages */}
             {attachment && (
