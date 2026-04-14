@@ -30,14 +30,18 @@ interface Workflow {
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
 const mockBorrowers: Borrower[] = [
-  { id: '1', name: 'VFN Holdings Inc',          noteNumber: '20240001-001', assetClass: 'Data Center',      status: 'Active'  },
-  { id: '2', name: 'GH3 Cler SNU',              noteNumber: '20230045-001', assetClass: 'CRE — Office',     status: 'Renewal' },
-  { id: '3', name: 'Fibernet Solutions LLC',    noteNumber: '20240078-001', assetClass: 'Fiber/Telecom',    status: 'Active'  },
-  { id: '4', name: 'Retail Plaza Holdings',     noteNumber: '20230122-001', assetClass: 'CRE — Retail',     status: 'Active'  },
-  { id: '5', name: 'Healthcare Properties Inc', noteNumber: '20240055-001', assetClass: 'CRE — Healthcare', status: 'Active'  },
-  { id: '6', name: 'Meridian Office Partners',  noteNumber: '20230198-001', assetClass: 'CRE — Office',     status: 'Active'  },
-  { id: '7', name: 'Mesa Data Solutions LLC',   noteNumber: '20240112-001', assetClass: 'Data Center',      status: 'Active'  },
-  { id: '8', name: 'Desert Edge Colocation',    noteNumber: '20230287-001', assetClass: 'Data Center',      status: 'Renewal' },
+  { id: '1',  name: 'VFN Holdings Inc',          noteNumber: '20240001-001', assetClass: 'Data Center',      status: 'Active'  },
+  { id: '2',  name: 'GH3 Cler SNU',              noteNumber: '20230045-001', assetClass: 'CRE — Office',     status: 'Renewal' },
+  { id: '3',  name: 'Fibernet Solutions LLC',    noteNumber: '20240078-001', assetClass: 'Fiber/Telecom',    status: 'Active'  },
+  { id: '4',  name: 'Retail Plaza Holdings',     noteNumber: '20230122-001', assetClass: 'CRE — Retail',     status: 'Active'  },
+  { id: '5',  name: 'Healthcare Properties Inc', noteNumber: '20240055-001', assetClass: 'CRE — Healthcare', status: 'Active'  },
+  { id: '6',  name: 'Meridian Office Partners',  noteNumber: '20230198-001', assetClass: 'CRE — Office',     status: 'Active'  },
+  { id: '7',  name: 'Mesa Data Solutions LLC',   noteNumber: '20240112-001', assetClass: 'Data Center',      status: 'Active'  },
+  { id: '8',  name: 'Desert Edge Colocation',    noteNumber: '20230287-001', assetClass: 'Data Center',      status: 'Renewal' },
+  { id: '9',  name: 'Sunbelt Industrial REIT',   noteNumber: '20240163-001', assetClass: 'Industrial',       status: 'Active'  },
+  { id: '10', name: 'Pinnacle Life Sciences',    noteNumber: '20230341-001', assetClass: 'CRE — Healthcare', status: 'Active'  },
+  { id: '11', name: 'Lakefront Mixed-Use LLC',   noteNumber: '20240204-001', assetClass: 'CRE — Mixed-Use',  status: 'Renewal' },
+  { id: '12', name: 'Apex Logistics Center',     noteNumber: '20230419-001', assetClass: 'Industrial',       status: 'Active'  },
 ];
 
 const workflows: Workflow[] = [
@@ -146,14 +150,19 @@ interface CommercialLendingChatProps {
 export function CommercialLendingChat({ onChatStarted, onSessionCreated }: CommercialLendingChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [selectedRecords, setSelectedRecords] = useState<Borrower[]>([]);
+  const [selectedRecords, setSelectedRecords] = useState<Borrower[]>(mockBorrowers);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [showRecordDropdown, setShowRecordDropdown] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<Workflow | null>(null);
-  const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(null);
+  const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(mockBorrowers[0]);
+  const [showDossierOverflow, setShowDossierOverflow] = useState(false);
+  const [dossierOverflowSearch, setDossierOverflowSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recordDropdownRef = useRef<HTMLDivElement>(null);
+  const dossierOverflowRef = useRef<HTMLDivElement>(null);
+
+  const DOSSIER_MAX_TABS = 4;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -163,6 +172,9 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
     const handler = (e: MouseEvent) => {
       if (recordDropdownRef.current && !recordDropdownRef.current.contains(e.target as Node)) {
         setShowRecordDropdown(false);
+      }
+      if (dossierOverflowRef.current && !dossierOverflowRef.current.contains(e.target as Node)) {
+        setShowDossierOverflow(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -543,20 +555,25 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         const dossier = borrowerDossiers[openDossierRecord.id];
         // Build the tab list: all selectedRecords if any, otherwise just the open record
         const dossierTabs = selectedRecords.length > 0 ? selectedRecords : [openDossierRecord];
+        const visibleTabs = dossierTabs.slice(0, DOSSIER_MAX_TABS);
+        const overflowTabs = dossierTabs.slice(DOSSIER_MAX_TABS);
+        const filteredOverflow = overflowTabs.filter(r =>
+          r.name.toLowerCase().includes(dossierOverflowSearch.toLowerCase())
+        );
         return (
           <div className="w-[460px] flex-shrink-0 border-l border-gray-200 flex flex-col bg-[#f5f5f3] overflow-hidden">
             {/* Panel header — tabbed when multiple records */}
             <div className="bg-white border-b border-gray-200 flex-shrink-0">
-              <div className="flex items-center">
-                {/* Tabs row — horizontally scrollable */}
-                <div className="flex-1 flex items-end overflow-x-auto scrollbar-none min-w-0">
-                  {dossierTabs.map(r => {
+              <div className="flex items-center pr-1">
+                {/* Visible tabs */}
+                <div className="flex items-end overflow-hidden">
+                  {visibleTabs.map(r => {
                     const isActive = openDossierRecord.id === r.id;
                     return (
                       <button
                         key={r.id}
                         onClick={() => setOpenDossierRecord(r)}
-                        className={`flex-shrink-0 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 max-w-[140px] truncate ${
+                        className={`flex-shrink-0 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 max-w-[100px] truncate ${
                           isActive
                             ? 'text-gray-900 border-gray-900'
                             : 'text-gray-400 border-transparent hover:text-gray-600'
@@ -568,6 +585,55 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                     );
                   })}
                 </div>
+
+                {/* "+N more" overflow dropdown */}
+                {overflowTabs.length > 0 && (
+                  <div className="relative flex-shrink-0" ref={dossierOverflowRef}>
+                    <button
+                      onClick={() => { setShowDossierOverflow(v => !v); setDossierOverflowSearch(''); }}
+                      className={`px-2.5 py-3 text-xs font-medium flex items-center gap-1 whitespace-nowrap transition-colors border-b-2 ${
+                        showDossierOverflow ? 'text-gray-900 border-gray-900' : 'text-gray-400 border-transparent hover:text-gray-600'
+                      }`}
+                    >
+                      +{overflowTabs.length} more
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    {showDossierOverflow && (
+                      <div className="absolute top-full left-0 mt-1 w-60 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                        {/* Search */}
+                        <div className="p-2 border-b border-gray-100">
+                          <input
+                            autoFocus
+                            type="text"
+                            placeholder="Search records…"
+                            value={dossierOverflowSearch}
+                            onChange={e => setDossierOverflowSearch(e.target.value)}
+                            className="w-full px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-md outline-none focus:border-gray-400 placeholder-gray-400"
+                          />
+                        </div>
+                        {/* Results */}
+                        <div className="py-1 max-h-52 overflow-y-auto">
+                          {filteredOverflow.length > 0 ? filteredOverflow.map(r => (
+                            <button
+                              key={r.id}
+                              onClick={() => { setOpenDossierRecord(r); setShowDossierOverflow(false); setDossierOverflowSearch(''); }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
+                                openDossierRecord.id === r.id ? 'text-gray-900 font-medium' : 'text-gray-600'
+                              }`}
+                            >
+                              {r.name}
+                            </button>
+                          )) : (
+                            <p className="px-3 py-2 text-xs text-gray-400">No records found</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Spacer */}
+                <div className="flex-1" />
 
                 {/* Close button */}
                 <button
