@@ -566,11 +566,12 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                       <button
                         key={r.id}
                         onClick={() => setOpenDossierRecord(r)}
-                        className={`px-4 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${
+                        className={`flex-shrink-0 px-3 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 max-w-[130px] truncate ${
                           isActive
                             ? 'text-gray-900 border-gray-900'
                             : 'text-gray-400 border-transparent hover:text-gray-600'
                         }`}
+                        title={r.name}
                       >
                         {r.name}
                       </button>
@@ -579,7 +580,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
 
                   {/* "+N more" overflow */}
                   {overflowTabs.length > 0 && (
-                    <div className="relative flex-shrink-0" ref={dossierOverflowRef}>
+                    <div className="relative flex-shrink-0 ml-auto" ref={dossierOverflowRef}>
                       <button
                         onClick={() => setShowDossierOverflow(v => !v)}
                         className={`px-3 py-3 text-xs font-medium flex items-center gap-1 transition-colors border-b-2 ${
