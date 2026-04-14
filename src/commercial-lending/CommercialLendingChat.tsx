@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Sparkles, FileText, Zap, ChevronDown, X, ChevronRight, Upload } from 'lucide-react';
+import { Sparkles, FileText, Zap, ChevronDown, X, ChevronRight, Upload, ChevronLeft } from 'lucide-react';
 import { borrowerDossiers } from './BorrowerPortfolioList';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -152,9 +152,13 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   const [isThinking, setIsThinking] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<Workflow | null>(null);
   const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(null);
+  const [showDossierOverflow, setShowDossierOverflow] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recordDropdownRef = useRef<HTMLDivElement>(null);
+  const dossierOverflowRef = useRef<HTMLDivElement>(null);
+
+  const DOSSIER_MAX_TABS = 3;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -164,6 +168,9 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
     const handler = (e: MouseEvent) => {
       if (recordDropdownRef.current && !recordDropdownRef.current.contains(e.target as Node)) {
         setShowRecordDropdown(false);
+      }
+      if (dossierOverflowRef.current && !dossierOverflowRef.current.contains(e.target as Node)) {
+        setShowDossierOverflow(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -542,20 +549,73 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
       {/* Dossier panel — slides in when a record is opened */}
       {openDossierRecord && (() => {
         const dossier = borrowerDossiers[openDossierRecord.id];
+        // Build the tab list: all selectedRecords if any, otherwise just the open record
+        const dossierTabs = selectedRecords.length > 0 ? selectedRecords : [openDossierRecord];
+        const visibleTabs = dossierTabs.slice(0, DOSSIER_MAX_TABS);
+        const overflowTabs = dossierTabs.slice(DOSSIER_MAX_TABS);
         return (
           <div className="w-[460px] flex-shrink-0 border-l border-gray-200 flex flex-col bg-[#f5f5f3] overflow-hidden">
-            {/* Panel header */}
-            <div className="bg-white border-b border-gray-200 px-5 py-3.5 flex items-center justify-between flex-shrink-0">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{openDossierRecord.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{openDossierRecord.assetClass}</p>
+            {/* Panel header — tabbed when multiple records */}
+            <div className="bg-white border-b border-gray-200 flex-shrink-0">
+              <div className="flex items-center pr-2">
+                {/* Tabs row */}
+                <div className="flex-1 flex items-end overflow-hidden">
+                  {visibleTabs.map(r => {
+                    const isActive = openDossierRecord.id === r.id;
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => setOpenDossierRecord(r)}
+                        className={`px-4 py-3 text-xs font-medium whitespace-nowrap transition-colors border-b-2 ${
+                          isActive
+                            ? 'text-gray-900 border-gray-900'
+                            : 'text-gray-400 border-transparent hover:text-gray-600'
+                        }`}
+                      >
+                        {r.name}
+                      </button>
+                    );
+                  })}
+
+                  {/* "+N more" overflow */}
+                  {overflowTabs.length > 0 && (
+                    <div className="relative flex-shrink-0" ref={dossierOverflowRef}>
+                      <button
+                        onClick={() => setShowDossierOverflow(v => !v)}
+                        className={`px-3 py-3 text-xs font-medium flex items-center gap-1 transition-colors border-b-2 ${
+                          showDossierOverflow ? 'text-gray-900 border-gray-900' : 'text-gray-400 border-transparent hover:text-gray-600'
+                        }`}
+                      >
+                        +{overflowTabs.length} more
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                      {showDossierOverflow && (
+                        <div className="absolute top-full right-0 mt-1 w-52 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
+                          {overflowTabs.map(r => (
+                            <button
+                              key={r.id}
+                              onClick={() => { setOpenDossierRecord(r); setShowDossierOverflow(false); }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-gray-50 transition-colors ${
+                                openDossierRecord.id === r.id ? 'text-gray-900 font-medium' : 'text-gray-600'
+                              }`}
+                            >
+                              {r.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Close button */}
+                <button
+                  onClick={() => setOpenDossierRecord(null)}
+                  className="flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={() => setOpenDossierRecord(null)}
-                className="ml-3 flex-shrink-0 p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
             </div>
 
             {/* Scrollable dossier content */}
