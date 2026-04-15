@@ -570,6 +570,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
   // Records workspace
   const [selectedRecordsForChat, setSelectedRecordsForChat] = useState<Borrower[]>([]);
   const [recordsChatOpen, setRecordsChatOpen] = useState(false);
+  const [chatInitialRecords, setChatInitialRecords] = useState<Borrower[] | undefined>(undefined);
   const [recordsChatMessages, setRecordsChatMessages] = useState<{id: string; role: 'user'|'assistant'; content: string}[]>([]);
   const [recordsChatInput, setRecordsChatInput] = useState('');
   const [activeDossierTab, setActiveDossierTab] = useState<string | null>(null);
@@ -590,6 +591,12 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     'Show recent documents',
     'Summarize key risk factors',
   ];
+
+  const launchChat = (records: Borrower[]) => {
+    setChatInitialRecords(records);
+    setChatKey(k => k + 1);
+    setActiveTab('chat');
+  };
 
   const toggleRecordForChat = (b: Borrower) => {
     setSelectedRecordsForChat(prev => {
@@ -761,7 +768,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Chat Tab — full-height, manages its own scroll */}
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
-          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} />
+          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} initialRecords={chatInitialRecords} />
         </div>
       )}
 
@@ -1170,7 +1177,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                       Clear
                     </button>
                     <button
-                      onClick={() => setRecordsChatOpen(true)}
+                      onClick={() => launchChat(selectedRecordsForChat)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-[#455a4f] text-white text-sm rounded-lg hover:bg-[#3a4a42] transition-colors"
                     >
                       <Sparkles className="w-3.5 h-3.5" />
@@ -1195,6 +1202,13 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                     />
                   </div>
                   <button
+                    onClick={() => launchChat(filteredBorrowers)}
+                    className="flex items-center gap-2 px-4 py-2 border border-[#455a4f] text-[#455a4f] text-sm rounded-lg hover:bg-[#f0f4f2] transition-colors flex-shrink-0"
+                  >
+                    <Sparkles className="w-4 h-4" />
+                    Chat with all
+                  </button>
+                  <button
                     onClick={() => {
                       setShowNewRecordModal(true);
                       setNewRecordStep('method');
@@ -1214,7 +1228,31 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className="px-4 py-3 w-8" />
+                        <th className="px-4 py-3 w-8">
+                          <button
+                            onClick={() => {
+                              const allSelected = filteredBorrowers.every(b => selectedRecordsForChat.some(r => r.id === b.id));
+                              setSelectedRecordsForChat(allSelected ? [] : filteredBorrowers);
+                            }}
+                            className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors ${
+                              filteredBorrowers.length > 0 && filteredBorrowers.every(b => selectedRecordsForChat.some(r => r.id === b.id))
+                                ? 'bg-[#455a4f] border-[#455a4f]'
+                                : filteredBorrowers.some(b => selectedRecordsForChat.some(r => r.id === b.id))
+                                ? 'bg-[#455a4f]/40 border-[#455a4f]'
+                                : 'border-gray-300 hover:border-[#455a4f]'
+                            }`}
+                          >
+                            {filteredBorrowers.length > 0 && filteredBorrowers.every(b => selectedRecordsForChat.some(r => r.id === b.id)) && (
+                              <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                                <path d="M1 4l3 3 5-6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            )}
+                            {filteredBorrowers.some(b => selectedRecordsForChat.some(r => r.id === b.id)) &&
+                             !filteredBorrowers.every(b => selectedRecordsForChat.some(r => r.id === b.id)) && (
+                              <div className="w-2 h-0.5 bg-white rounded" />
+                            )}
+                          </button>
+                        </th>
                         <th className="px-4 py-3 text-left text-xs text-gray-600">Record</th>
                         <th className="px-4 py-3 text-left text-xs text-gray-600">Date Added</th>
                         <th className="px-4 py-3 w-20" />
@@ -1247,11 +1285,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                             <td className="px-4 py-3 text-sm text-gray-500">{formatDate(borrower.dateAdded)}</td>
                             <td className="px-4 py-3 w-20 text-right">
                               <button
-                                onClick={() => {
-                                  setSelectedRecordsForChat([borrower]);
-                                  setActiveDossierTab(borrower.id);
-                                  setRecordsChatOpen(true);
-                                }}
+                                onClick={() => launchChat([borrower])}
                                 className="opacity-0 group-hover:opacity-100 transition-opacity text-xs text-[#455a4f] font-medium hover:underline flex items-center gap-1 ml-auto"
                               >
                                 Chat

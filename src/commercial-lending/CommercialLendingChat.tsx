@@ -145,17 +145,18 @@ interface AgentSession {
 interface CommercialLendingChatProps {
   onChatStarted?: () => void;
   onSessionCreated?: (session: AgentSession) => void;
+  initialRecords?: Borrower[];
 }
 
-export function CommercialLendingChat({ onChatStarted, onSessionCreated }: CommercialLendingChatProps) {
+export function CommercialLendingChat({ onChatStarted, onSessionCreated, initialRecords }: CommercialLendingChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
-  const [selectedRecords, setSelectedRecords] = useState<Borrower[]>(mockBorrowers);
+  const [selectedRecords, setSelectedRecords] = useState<Borrower[]>(initialRecords ?? []);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [showRecordDropdown, setShowRecordDropdown] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [pendingWorkflow, setPendingWorkflow] = useState<Workflow | null>(null);
-  const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(mockBorrowers[0]);
+  const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(initialRecords?.[0] ?? null);
   const [showDossierOverflow, setShowDossierOverflow] = useState(false);
   const [dossierOverflowSearch, setDossierOverflowSearch] = useState('');
   const [showHeaderChip, setShowHeaderChip] = useState(false);
