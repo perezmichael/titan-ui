@@ -448,6 +448,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
         {/* Context header bar */}
         {(selectedRecords.length > 0 || selectedWorkflow) && (
           <div className="flex-shrink-0 border-b border-gray-100 px-6 py-2 flex items-center gap-2 bg-white">
+            <span className="text-xs text-gray-500">Chatting with</span>
             {/* Records chip */}
             {selectedRecords.length > 0 && (
               <div className="relative" ref={headerChipRef}>
@@ -519,6 +520,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
                 </button>
               </div>
             )}
+            <span className="text-xs text-gray-500">documents and data</span>
           </div>
         )}
 
