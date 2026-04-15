@@ -158,9 +158,12 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
   const [openDossierRecord, setOpenDossierRecord] = useState<Borrower | null>(mockBorrowers[0]);
   const [showDossierOverflow, setShowDossierOverflow] = useState(false);
   const [dossierOverflowSearch, setDossierOverflowSearch] = useState('');
+  const [showHeaderChip, setShowHeaderChip] = useState(false);
+  const [headerChipSearch, setHeaderChipSearch] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recordDropdownRef = useRef<HTMLDivElement>(null);
   const dossierOverflowRef = useRef<HTMLDivElement>(null);
+  const headerChipRef = useRef<HTMLDivElement>(null);
 
   const DOSSIER_MAX_TABS = 4;
 
@@ -175,6 +178,9 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
       }
       if (dossierOverflowRef.current && !dossierOverflowRef.current.contains(e.target as Node)) {
         setShowDossierOverflow(false);
+      }
+      if (headerChipRef.current && !headerChipRef.current.contains(e.target as Node)) {
+        setShowHeaderChip(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -438,32 +444,88 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated }: Comme
     <div className="flex h-full overflow-hidden">
       {/* Chat column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Message thread */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          <div className="max-w-2xl mx-auto space-y-5">
-            {/* Active context pills */}
-            {(selectedRecords.length > 0 || selectedWorkflow) && (
-              <div className="flex flex-wrap items-center gap-2 pb-2 border-b border-gray-100">
-                {selectedRecords.map(r => (
-                  <div key={r.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f4f2] border border-[#c8d8d2] rounded-full">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#455a4f]" />
-                    <span className="text-[11px] text-[#455a4f] font-medium">{r.name}</span>
-                    <button onClick={() => setSelectedRecords(prev => prev.filter(x => x.id !== r.id))} className="text-[#455a4f]/50 hover:text-[#455a4f] transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
-                {selectedWorkflow && (
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f4f2] border border-[#c8d8d2] rounded-full">
-                    <Zap className="w-3 h-3 text-[#455a4f]" />
-                    <span className="text-[11px] text-[#455a4f] font-medium">{selectedWorkflow.name}</span>
-                    <button onClick={() => setSelectedWorkflow(null)} className="text-[#455a4f]/50 hover:text-[#455a4f] transition-colors">
-                      <X className="w-3 h-3" />
-                    </button>
+
+        {/* Context header bar */}
+        {(selectedRecords.length > 0 || selectedWorkflow) && (
+          <div className="flex-shrink-0 border-b border-gray-100 px-6 py-2 flex items-center gap-2 bg-white">
+            {/* Records chip */}
+            {selectedRecords.length > 0 && (
+              <div className="relative" ref={headerChipRef}>
+                <button
+                  onClick={() => { setShowHeaderChip(v => !v); setHeaderChipSearch(''); }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f4f2] border border-[#c8d8d2] rounded-full text-[11px] text-[#455a4f] font-medium hover:bg-[#e4ece8] transition-colors"
+                >
+                  <FileText className="w-3 h-3" />
+                  {selectedRecords.length === 1 ? selectedRecords[0].name : `${selectedRecords.length} records`}
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showHeaderChip ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showHeaderChip && (
+                  <div className="absolute top-full left-0 mt-1.5 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+                    {/* Search */}
+                    <div className="p-2 border-b border-gray-100">
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Search records…"
+                        value={headerChipSearch}
+                        onChange={e => setHeaderChipSearch(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-md outline-none focus:border-gray-400 placeholder-gray-400"
+                      />
+                    </div>
+                    {/* Record list */}
+                    <div className="py-1 max-h-60 overflow-y-auto">
+                      {selectedRecords
+                        .filter(r => r.name.toLowerCase().includes(headerChipSearch.toLowerCase()))
+                        .map(r => (
+                          <div key={r.id} className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 group">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#455a4f] flex-shrink-0" />
+                            <span className="flex-1 text-xs text-gray-700 truncate">{r.name}</span>
+                            <button
+                              onClick={() => setSelectedRecords(prev => prev.filter(x => x.id !== r.id))}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-300 hover:text-red-400"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))
+                      }
+                      {selectedRecords.filter(r => r.name.toLowerCase().includes(headerChipSearch.toLowerCase())).length === 0 && (
+                        <p className="px-3 py-2 text-xs text-gray-400">No records found</p>
+                      )}
+                    </div>
+                    {/* Footer */}
+                    <div className="px-3 py-2 border-t border-gray-100 flex justify-between items-center">
+                      <span className="text-[10px] text-gray-400">{selectedRecords.length} record{selectedRecords.length !== 1 ? 's' : ''} in context</span>
+                      <button
+                        onClick={() => { setSelectedRecords([]); setShowHeaderChip(false); }}
+                        className="text-[10px] text-gray-400 hover:text-red-400 transition-colors"
+                      >
+                        Clear all
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             )}
+
+            {/* Workflow chip */}
+            {selectedWorkflow && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f4f2] border border-[#c8d8d2] rounded-full text-[11px] text-[#455a4f] font-medium">
+                <Zap className="w-3 h-3" />
+                {selectedWorkflow.name}
+                <button onClick={() => setSelectedWorkflow(null)} className="text-[#455a4f]/50 hover:text-[#455a4f] transition-colors ml-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Message thread */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="max-w-2xl mx-auto space-y-5">
+
 
             {messages.map(msg => (
               <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
