@@ -592,8 +592,11 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
     'Summarize key risk factors',
   ];
 
+  const [chatStartActive, setChatStartActive] = useState(false);
+
   const launchChat = (records: Borrower[]) => {
     setChatInitialRecords(records);
+    setChatStartActive(true);
     setChatKey(k => k + 1);
     setActiveTab('chat');
   };
@@ -768,7 +771,7 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
       {/* Chat Tab — full-height, manages its own scroll */}
       {activeTab === 'chat' && (
         <div className="flex-1 overflow-hidden">
-          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} initialRecords={chatInitialRecords} />
+          <CommercialLendingChat key={chatKey} onChatStarted={() => setChatStarted(true)} onSessionCreated={onSessionCreated} initialRecords={chatInitialRecords} startActive={chatStartActive} />
         </div>
       )}
 

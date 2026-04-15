@@ -146,9 +146,10 @@ interface CommercialLendingChatProps {
   onChatStarted?: () => void;
   onSessionCreated?: (session: AgentSession) => void;
   initialRecords?: Borrower[];
+  startActive?: boolean;
 }
 
-export function CommercialLendingChat({ onChatStarted, onSessionCreated, initialRecords }: CommercialLendingChatProps) {
+export function CommercialLendingChat({ onChatStarted, onSessionCreated, initialRecords, startActive }: CommercialLendingChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [selectedRecords, setSelectedRecords] = useState<Borrower[]>(initialRecords ?? []);
@@ -190,6 +191,14 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated, initial
 
   const suggestions = selectedRecords.length === 1 ? recordSuggestions : globalSuggestions;
   const hasMessages = messages.length > 0;
+  const allRecordsSelected = selectedRecords.length === mockBorrowers.length;
+  const recordsChipLabel = selectedRecords.length === 0
+    ? 'Work in a record'
+    : selectedRecords.length === 1
+    ? selectedRecords[0].name
+    : allRecordsSelected
+    ? 'All records'
+    : `${selectedRecords.length} records`;
 
   const toggleRecord = (b: Borrower) => {
     setSelectedRecords(prev =>
@@ -313,7 +322,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated, initial
           >
             <FileText className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="max-w-[130px] truncate">
-              {selectedRecords.length === 0 ? 'Work in a record' : selectedRecords.length === 1 ? selectedRecords[0].name : `${selectedRecords.length} records`}
+              {recordsChipLabel}
             </span>
             {selectedRecords.length > 0 ? (
               <X className="w-3 h-3 flex-shrink-0 ml-0.5 hover:text-red-500 transition-colors" onClick={e => { e.stopPropagation(); setSelectedRecords([]); }} />
@@ -402,7 +411,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated, initial
   }
 
   // ── Empty state ───────────────────────────────────────────────────────────────
-  if (!hasMessages) {
+  if (!hasMessages && !startActive) {
     return (
       <div className="flex flex-col items-center justify-center h-full px-6 pb-6 pt-2 overflow-y-auto">
         <div className="w-full max-w-2xl">
@@ -458,7 +467,7 @@ export function CommercialLendingChat({ onChatStarted, onSessionCreated, initial
                   className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#f0f4f2] border border-[#c8d8d2] rounded-full text-[11px] text-[#455a4f] font-medium hover:bg-[#e4ece8] transition-colors"
                 >
                   <FileText className="w-3 h-3" />
-                  {selectedRecords.length === 1 ? selectedRecords[0].name : `${selectedRecords.length} records`}
+                  {selectedRecords.length === 1 ? selectedRecords[0].name : allRecordsSelected ? 'All records' : `${selectedRecords.length} records`}
                   <ChevronDown className={`w-3 h-3 transition-transform ${showHeaderChip ? 'rotate-180' : ''}`} />
                 </button>
 
