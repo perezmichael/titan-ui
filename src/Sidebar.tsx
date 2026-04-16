@@ -1,6 +1,22 @@
 import { Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight, Play, FileText, Layers, Zap } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { TitanLogo } from './TitanLogo';
 import { useIsMobile } from './ui/use-mobile';
+
+type SidebarVariant = 'A' | 'B' | 'C' | 'D';
+
+const MATRIX_CHARS = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789';
+
+function MatrixRow({ seed }: { seed: number }) {
+  const chars = Array.from({ length: 18 }, (_, i) =>
+    MATRIX_CHARS[(seed * 7 + i * 13) % MATRIX_CHARS.length]
+  ).join(' ');
+  return (
+    <div className="text-[8px] font-mono text-[#00ff41]/20 tracking-widest whitespace-nowrap overflow-hidden select-none">
+      {chars}
+    </div>
+  );
+}
 
 type ConvType = 'chat' | 'workflow' | 'records' | 'document';
 
@@ -33,6 +49,57 @@ interface SidebarProps {
 
 export function Sidebar({ activeConversationId, onConversationSelect, activeView, onViewChange, collapsed, onToggleCollapse, uploadCompleted, uploadProgress, uploadStarted, agentContext, agentSessions }: SidebarProps) {
   const isMobile = useIsMobile();
+  const [variant, setVariant] = useState<SidebarVariant>('A');
+  const [cursorVisible, setCursorVisible] = useState(true);
+
+  useEffect(() => {
+    const t = setInterval(() => setCursorVisible(v => !v), 530);
+    return () => clearInterval(t);
+  }, []);
+
+  const agentName = agentContext === 'commercial-lending' ? 'Commercial Lending' : 'TPRM';
+
+  const agentStrip = agentContext ? (
+    <>
+      {/* Option A — green gradient */}
+      {variant === 'A' && (
+        <div className="bg-gradient-to-r from-[#3a5c45] to-[#4d7a5e] px-3 py-2.5">
+          <p className="text-[10px] font-medium text-white/60 uppercase tracking-widest mb-0.5">Agent Workspace</p>
+          <p className="text-xs font-semibold text-white">{agentName}</p>
+        </div>
+      )}
+
+      {/* Option B — light tint bg, agent name pinned above list */}
+      {variant === 'B' && (
+        <div className="bg-[#f0f4f2] border-b border-[#c8d8d2] px-3 py-2.5">
+          <p className="text-[10px] font-medium text-[#455a4f]/60 uppercase tracking-widest mb-0.5">Agent Workspace</p>
+          <p className="text-xs font-semibold text-[#455a4f]">{agentName}</p>
+        </div>
+      )}
+
+      {/* Option C — muted/neutral strip, less green */}
+      {variant === 'C' && (
+        <div className="bg-gradient-to-r from-[#4a5568] to-[#5a6478] px-3 py-2.5">
+          <p className="text-[10px] font-medium text-white/50 uppercase tracking-widest mb-0.5">Agent Workspace</p>
+          <p className="text-xs font-semibold text-white">{agentName}</p>
+        </div>
+      )}
+
+      {/* Option D — Matrix / Terminal */}
+      {variant === 'D' && (
+        <div className="bg-black px-3 py-2 overflow-hidden relative">
+          <MatrixRow seed={1} />
+          <div className="relative z-10 py-1">
+            <p className="text-[10px] font-mono text-[#00ff41]/70 tracking-widest mb-0.5">&gt; AGENT WORKSPACE</p>
+            <p className="text-xs font-mono font-bold text-[#00ff41]" style={{ textShadow: '0 0 8px #00ff41' }}>
+              {agentName}{cursorVisible ? '█' : ' '}
+            </p>
+          </div>
+          <MatrixRow seed={42} />
+        </div>
+      )}
+    </>
+  ) : null;
   const conversationGroups: ConversationGroup[] = [
     {
       title: 'TODAY',
@@ -156,15 +223,7 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
       {/* Conversations */}
       {!collapsed && (
         <div className="flex-1 overflow-y-auto">
-          {/* Agent workspace strip */}
-          {agentContext && (
-            <div className="bg-gradient-to-r from-[#3a5c45] to-[#4d7a5e] px-3 py-2.5">
-              <p className="text-[10px] font-medium text-white/60 uppercase tracking-widest mb-0.5">Agent Workspace</p>
-              <p className="text-xs font-semibold text-white">
-                {agentContext === 'commercial-lending' ? 'Commercial Lending' : 'TPRM'}
-              </p>
-            </div>
-          )}
+          {agentStrip}
 
           {/* Live sessions from this visit */}
           {agentContext && agentSessions && agentSessions.length > 0 && (
@@ -243,6 +302,26 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Variant switcher — visible only when in agent context */}
+      {!collapsed && agentContext && (
+        <div className="px-3 py-2 border-t border-gray-200 flex items-center gap-1.5">
+          <span className="text-[9px] text-gray-400 uppercase tracking-wide mr-1">Style</span>
+          {(['A', 'B', 'C', 'D'] as SidebarVariant[]).map(v => (
+            <button
+              key={v}
+              onClick={() => setVariant(v)}
+              className={`w-5 h-5 text-[9px] font-bold rounded transition-colors ${
+                variant === v
+                  ? v === 'D' ? 'bg-black text-[#00ff41]' : 'bg-[#455a4f] text-white'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
+            >
+              {v}
+            </button>
+          ))}
         </div>
       )}
 
