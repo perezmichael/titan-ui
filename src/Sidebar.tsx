@@ -19,13 +19,20 @@ function MatrixCanvas({ width, height }: { width: number; height: number }) {
     canvas.width = width;
     canvas.height = height;
 
-    const fontSize = 11;
+    const fontSize = 14;
     const cols = Math.floor(width / fontSize);
     const drops = Array.from({ length: cols }, () => Math.random() * -height);
 
     let raf: number;
-    const draw = () => {
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    let lastTime = 0;
+    const speed = 40; // ms per step — higher = slower
+
+    const draw = (timestamp: number) => {
+      raf = requestAnimationFrame(draw);
+      if (timestamp - lastTime < speed) return;
+      lastTime = timestamp;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(0, 0, width, height);
 
       for (let i = 0; i < cols; i++) {
@@ -41,12 +48,11 @@ function MatrixCanvas({ width, height }: { width: number; height: number }) {
         ctx.fillText(MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)], i * fontSize, y - fontSize);
 
         if (y > height && Math.random() > 0.97) drops[i] = 0;
-        drops[i] += 0.4;
+        drops[i] += 0.5;
       }
-      raf = requestAnimationFrame(draw);
     };
 
-    draw();
+    raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
   }, [width, height]);
 
