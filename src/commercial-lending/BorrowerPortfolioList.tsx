@@ -1606,9 +1606,8 @@ export function BorrowerPortfolioList({ onBorrowerSelect, onBack, onWorkflowOpen
                   </div>
                   <button
                     onClick={() => launchChat(filteredBorrowers)}
-                    className="flex items-center gap-2 px-4 py-2 border border-[#455a4f] text-[#455a4f] text-sm rounded-lg hover:bg-[#f0f4f2] transition-colors flex-shrink-0"
+                    className="px-4 py-2 border border-[#455a4f] text-[#455a4f] text-sm rounded-lg hover:bg-[#f0f4f2] transition-colors flex-shrink-0"
                   >
-                    <Sparkles className="w-4 h-4" />
                     Chat with all
                   </button>
                   <button
