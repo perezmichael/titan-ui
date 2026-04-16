@@ -1,21 +1,56 @@
 import { Menu, Bot, Plug, MessageSquare, Upload, ChevronLeft, ChevronRight, Play, FileText, Layers, Zap } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TitanLogo } from './TitanLogo';
 import { useIsMobile } from './ui/use-mobile';
 
 type SidebarVariant = 'A' | 'B' | 'C' | 'D';
 
-const MATRIX_CHARS = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ012345789';
+const MATRIX_CHARS = 'ｦｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ﾞﾟ･ｦ';
 
-function MatrixRow({ seed }: { seed: number }) {
-  const chars = Array.from({ length: 18 }, (_, i) =>
-    MATRIX_CHARS[(seed * 7 + i * 13) % MATRIX_CHARS.length]
-  ).join(' ');
-  return (
-    <div className="text-[8px] font-mono text-[#00ff41]/20 tracking-widest whitespace-nowrap overflow-hidden select-none">
-      {chars}
-    </div>
-  );
+function MatrixCanvas({ width, height }: { width: number; height: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const fontSize = 11;
+    const cols = Math.floor(width / fontSize);
+    const drops = Array.from({ length: cols }, () => Math.random() * -height);
+
+    let raf: number;
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < cols; i++) {
+        const char = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+        const y = drops[i] * fontSize;
+        // Bright head char
+        ctx.fillStyle = '#ccffcc';
+        ctx.font = `bold ${fontSize}px monospace`;
+        ctx.fillText(char, i * fontSize, y);
+        // Trail
+        ctx.fillStyle = '#00cc33';
+        ctx.font = `${fontSize}px monospace`;
+        ctx.fillText(MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)], i * fontSize, y - fontSize);
+
+        if (y > height && Math.random() > 0.97) drops[i] = 0;
+        drops[i] += 0.4;
+      }
+      raf = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [width, height]);
+
+  return <canvas ref={canvasRef} style={{ display: 'block', width, height }} />;
 }
 
 type ConvType = 'chat' | 'workflow' | 'records' | 'document';
@@ -77,25 +112,18 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
         </div>
       )}
 
-      {/* Option C — muted/neutral strip, less green */}
-      {variant === 'C' && (
-        <div className="bg-gradient-to-r from-[#4a5568] to-[#5a6478] px-3 py-2.5">
-          <p className="text-[10px] font-medium text-white/50 uppercase tracking-widest mb-0.5">Agent Workspace</p>
-          <p className="text-xs font-semibold text-white">{agentName}</p>
-        </div>
-      )}
-
-      {/* Option D — Matrix / Terminal */}
+      {/* Option D — Matrix digital rain canvas */}
       {variant === 'D' && (
-        <div className="bg-black px-3 py-2 overflow-hidden relative">
-          <MatrixRow seed={1} />
-          <div className="relative z-10 py-1">
-            <p className="text-[10px] font-mono text-[#00ff41]/70 tracking-widest mb-0.5">&gt; AGENT WORKSPACE</p>
-            <p className="text-xs font-mono font-bold text-[#00ff41]" style={{ textShadow: '0 0 8px #00ff41' }}>
-              {agentName}{cursorVisible ? '█' : ' '}
+        <div className="relative overflow-hidden" style={{ height: 72 }}>
+          <div className="absolute inset-0">
+            <MatrixCanvas width={240} height={72} />
+          </div>
+          <div className="absolute inset-0 flex flex-col justify-center px-3 z-10">
+            <p className="text-[10px] font-mono text-[#00ff41]/80 tracking-widest mb-0.5">&gt; AGENT WORKSPACE</p>
+            <p className="text-sm font-mono font-bold text-white" style={{ textShadow: '0 0 10px #00ff41, 0 0 20px #00ff41' }}>
+              {agentName}{cursorVisible ? '█' : '\u00a0'}
             </p>
           </div>
-          <MatrixRow seed={42} />
         </div>
       )}
     </>
@@ -138,8 +166,10 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
 
   const activeConversations = agentContext === 'commercial-lending' ? commercialLendingConversations : conversationGroups;
 
+  const sidebarBg = agentContext && variant === 'C' ? 'bg-[#f0f4f2]' : 'bg-[#efeeeb]';
+
   return (
-    <div className={`bg-[#efeeeb] flex flex-col h-screen border-r border-gray-200 transition-all duration-300 ${
+    <div className={`${sidebarBg} flex flex-col h-screen border-r border-gray-200 transition-all duration-300 ${
       isMobile
         ? collapsed
           ? 'w-0 overflow-hidden border-0'
@@ -223,7 +253,14 @@ export function Sidebar({ activeConversationId, onConversationSelect, activeView
       {/* Conversations */}
       {!collapsed && (
         <div className="flex-1 overflow-y-auto">
-          {agentStrip}
+          {/* Option C — no strip, pinned label above chats */}
+          {agentContext && variant === 'C' && (
+            <div className="px-3 pt-3 pb-2 border-b border-[#c8d8d2]">
+              <p className="text-[10px] font-medium text-[#455a4f]/50 uppercase tracking-widest mb-0.5">Agent Workspace</p>
+              <p className="text-xs font-semibold text-[#455a4f]">{agentName}</p>
+            </div>
+          )}
+          {variant !== 'C' && agentStrip}
 
           {/* Live sessions from this visit */}
           {agentContext && agentSessions && agentSessions.length > 0 && (
